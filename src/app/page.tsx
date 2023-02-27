@@ -9,7 +9,7 @@ import { FiltrableListTargets } from "./targets";
 const useTargets = () => {
   const url = "/api/timetable/targets";
   const { data, error, isLoading } = useSWR<Target[]>(url, fetcher, {
-    refreshInterval: 10_000,
+    refreshInterval: 0,
   });
 
   return {
@@ -21,8 +21,6 @@ const useTargets = () => {
 
 export default function Home() {
   const { data, isLoading } = useTargets();
-
-  console.log(data);
 
   if (isLoading) return <LoadingPage />;
 
