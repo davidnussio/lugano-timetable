@@ -4,9 +4,11 @@ import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
+import Loading from "~/app/components/loading";
 import type { Itineraries } from "~/timetable/models";
+import { shimmer } from "~/ui/utils/shimmer";
+import { toBase64 } from "~/utils/base64";
 import { fetcher } from "~/utils/fetcher";
-import LoadingPage from "./loading";
 
 type FermatePageProps = {
   params: {
@@ -18,6 +20,7 @@ function useItineraries(itineraries: string[]) {
   const url = `/api/timetable/itineraries?${itineraries
     .map((i) => `itineraries=${i}`)
     .join("&")}`;
+
   const { data, error, isLoading } = useSWR<Itineraries[]>(url, fetcher, {
     refreshInterval: 10_000,
   });
@@ -29,30 +32,12 @@ function useItineraries(itineraries: string[]) {
   };
 }
 
-const shimmer = (w: number, h: number) => `
-<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <defs>
-    <linearGradient id="g">
-      <stop stop-color="#333" offset="20%" />
-      <stop stop-color="#222" offset="50%" />
-      <stop stop-color="#333" offset="70%" />
-    </linearGradient>
-  </defs>
-  <rect width="${w}" height="${h}" fill="#333" />
-  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
-</svg>`;
-
-const toBase64 = (str: string) =>
-  typeof window === "undefined"
-    ? Buffer.from(str).toString("base64")
-    : window.btoa(str);
+const colors = [{ from: "#300", via: "#333", to: "#300" }];
 
 export default function FermatePage({ params }: FermatePageProps) {
   const { data, isLoading } = useItineraries(params.fermata);
-  console.log(data);
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading) return <Loading />;
 
   return (
     <div>
@@ -74,7 +59,7 @@ export default function FermatePage({ params }: FermatePageProps) {
                   width={40}
                   height={40}
                   blurDataURL={`data:image/svg+xml;base64,${toBase64(
-                    shimmer(700, 475)
+                    shimmer(40, 40, colors[0])
                   )}`}
                 />
               </div>

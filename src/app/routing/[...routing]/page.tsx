@@ -1,10 +1,10 @@
 "use client";
 
 import useSWR from "swr";
+import Loading from "~/app/components/loading";
 import { Routing, RoutingStatus, Target } from "~/timetable/models";
 import { cn } from "~/ui/utils/cn";
 import { fetcher } from "~/utils/fetcher";
-import LoadingPage from "./loading";
 
 type RoutingPageProps = {
   params: {
@@ -40,7 +40,7 @@ const Circle = ({ color }: { color: number }) => (
 export default function RoutingPage({ params }: RoutingPageProps) {
   const { data, isLoading } = useRouting(params.routing);
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading) return <Loading />;
 
   return (
     <ul role="list" className="divide-y divide-gray-200 border rounded-lg">

@@ -8,6 +8,7 @@ import {
 import { ApiCommand } from "./api.command";
 import type { Redis } from "@upstash/redis";
 import { wait } from "~/utils/wait";
+import { getTargets } from "../api";
 
 export class CommandBus {
   constructor(private redisCli: Redis) {}
@@ -15,7 +16,7 @@ export class CommandBus {
   private async saveToken(source: string) {
     if (source) {
       console.log("Saving token", { source });
-      await this.redisCli.set("token", source);
+      await this.redisCli.set("token", source, { ex: 60 * 10 });
     }
   }
   private async getToken(): Promise<string> {
@@ -45,6 +46,11 @@ export class CommandBus {
         if ("validity" in json && json.validity !== "OK") {
           await wait(1000);
           continue;
+        }
+        // Api needs new token after x amount of time (?)
+        if ("data" in json && json.data.length === 0) {
+          await wait(1000);
+          await getTargets();
         }
         return Promise.resolve(json);
       } catch (error) {
