@@ -28,7 +28,7 @@ const commandBus = new CommandBus(redis);
 async function getTargets(req: NextApiRequest, res: NextApiResponse<Data>) {
   const result = await commandBus.execute<TargetResponse>(new GetTargets());
   if (result.cached) {
-    res.status(200).json(result.data);
+    res.status(200).json(result.data.data);
     return;
   }
 
@@ -40,7 +40,7 @@ async function getTargets(req: NextApiRequest, res: NextApiResponse<Data>) {
     }
   }
   await redis.mset(cacheData);
-  res.status(200).json(result);
+  res.status(200).json(result.data.data);
 }
 
 async function getItineraries(req: NextApiRequest, res: NextApiResponse<Data>) {

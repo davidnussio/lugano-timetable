@@ -1,22 +1,37 @@
+"use client";
+
+import useSWR from "swr";
 import type { Target } from "~/timetable/models";
+import { fetcher } from "~/utils/fetcher";
+import LoadingPage from "./fermata/[...fermata]/loading";
 import { FiltrableListTargets } from "./targets";
 
-const getTargets = async (): Promise<Target[]> => {
-  const response = await fetch("http://localhost:3000/api/timetable/targets", {
-    next: { revalidate: 86_400 },
+const useTargets = () => {
+  const url = "/api/timetable/targets";
+  const { data, error, isLoading } = useSWR<Target[]>(url, fetcher, {
+    refreshInterval: 10_000,
   });
-  const targets = await response.json();
-  return targets.data;
+
+  return {
+    data: data ?? [],
+    isLoading,
+    isError: error,
+  };
 };
 
-export default async function Home() {
-  const targets = await getTargets();
+export default function Home() {
+  const { data, isLoading } = useTargets();
+
+  console.log(data);
+
+  if (isLoading) return <LoadingPage />;
+
   return (
     <main>
       <h1 className="m-4 text-3xl font-bold tracking-tight text-center">
         Fermate
       </h1>
-      <FiltrableListTargets targets={targets} />
+      <FiltrableListTargets targets={data} />
     </main>
   );
 }
