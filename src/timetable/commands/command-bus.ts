@@ -13,11 +13,12 @@ import { getTargets } from "../api";
 export class CommandBus {
   constructor(private redisCli: Redis) {}
 
-  private async saveToken(source: string) {
-    if (source) {
-      console.log("Saving token", { source });
-      await this.redisCli.set("token", source, { ex: 60 * 10 });
+  private async saveToken(token: string): Promise<boolean> {
+    if (token) {
+      await this.redisCli.set("token", token, { ex: 60 * 10 });
+      return true;
     }
+    return false;
   }
   private async getToken(): Promise<string> {
     return (await this.redisCli.get("token")) ?? "";
@@ -49,6 +50,7 @@ export class CommandBus {
         }
         // Api needs new token after x amount of time (?)
         if ("data" in json && json.data.length === 0) {
+          console.log("- Data is empty, getting new token");
           await wait(1000);
           await getTargets();
         }
@@ -75,6 +77,12 @@ export class CommandBus {
     }
 
     const token = await this.getToken();
+
+    if (command.needsToken() && !token) {
+      console.log("No token, getting new token");
+      await getTargets();
+    }
+
     const url = command.getRequestUrl(token);
     console.log("Live response:", url);
 

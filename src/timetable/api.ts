@@ -17,6 +17,8 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
+
+
 const commandBus = new CommandBus(redis);
 
 export async function getTargets(): Promise<Target[]> {

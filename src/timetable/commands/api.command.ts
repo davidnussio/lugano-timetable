@@ -47,6 +47,10 @@ export abstract class ApiCommand {
     return `{${urlObject}}`;
   }
 
+  public needsToken() {
+    return true;
+  }
+
   public getName() {
     return this.name;
   }

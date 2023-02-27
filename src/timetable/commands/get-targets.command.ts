@@ -8,6 +8,10 @@ export class GetTargets extends ApiCommand {
     super(GetTargets.NAME);
   }
 
+  public needsToken() {
+    return false;
+  }
+
   public useCache() {
     return true;
   }
