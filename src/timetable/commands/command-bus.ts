@@ -8,7 +8,7 @@ import {
 import { ApiCommand } from "./api.command";
 import type { Redis } from "@upstash/redis";
 import { wait } from "~/utils/wait";
-import { getTargets } from "../api";
+import { getTargets, refreshToken } from "../api";
 
 export class CommandBus {
   constructor(private redisCli: Redis) {}
@@ -52,7 +52,7 @@ export class CommandBus {
         if ("data" in json && json.data.length === 0) {
           console.log("- Data is empty, getting new token");
           await wait(1000);
-          await getTargets();
+          await refreshToken();
         }
         return Promise.resolve(json);
       } catch (error) {
@@ -69,18 +69,20 @@ export class CommandBus {
   >(command: ApiCommand): Promise<{ data: R; cached: boolean }> {
     console.log("Executing command: " + command.getName());
 
-    const cachedResponse = await this.redisCli.get<R>(command.getName());
+    if (command.useCache()) {
+      const cachedResponse = await this.redisCli.get<R>(command.getName());
 
-    if (cachedResponse !== null) {
-      console.log("Using cached response");
-      return { data: cachedResponse, cached: true };
+      if (cachedResponse !== null) {
+        console.log("Using cached response");
+        return { data: cachedResponse, cached: true };
+      }
     }
 
     const token = await this.getToken();
 
     if (command.needsToken() && !token) {
       console.log("No token, getting new token");
-      await getTargets();
+      await refreshToken();
     }
 
     const url = command.getRequestUrl(token);

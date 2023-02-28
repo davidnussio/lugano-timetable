@@ -4,7 +4,7 @@ import { ApiCommand } from "./api.command";
 export class GetTargets extends ApiCommand {
   static readonly NAME = "get_targets";
 
-  constructor() {
+  constructor(protected readonly skipCache: boolean = false) {
     super(GetTargets.NAME);
   }
 
@@ -13,7 +13,7 @@ export class GetTargets extends ApiCommand {
   }
 
   public useCache() {
-    return true;
+    return this.skipCache;
   }
 }
 
