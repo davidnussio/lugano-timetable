@@ -20,7 +20,7 @@ const redis = new Redis({
 const commandBus = new CommandBus(redis);
 
 export async function refreshToken(): Promise<boolean> {
-  await commandBus.execute<TargetResponse>(new GetTargets(true));
+  await commandBus.execute<TargetResponse>(new GetTargets(false));
   return true;
 }
 

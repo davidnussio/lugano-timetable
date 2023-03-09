@@ -35,30 +35,31 @@ export class CommandBus {
     R extends TargetResponse | ItinerariesResponse | RoutingResponse
   >(url: string): Promise<R> {
     console.log("- Executing request", { url });
-    for (let i = 0; i < 3; i++) {
+    const backoff = 100;
+    for (let i = 0; i < 5; i++) {
       console.log("- Attempt", i, new Date().toISOString());
       try {
         const response = await fetch(url);
         const json: R = await response.json();
         if (json.status !== "OK") {
-          await wait(1000);
+          await wait(backoff * i);
           continue;
         }
         if ("validity" in json && json.validity !== "OK") {
-          await wait(1000);
+          await wait(backoff * i);
           continue;
         }
         // Api needs new token after x amount of time (?)
         if ("data" in json && json.data.length === 0) {
           console.log("- Data is empty, getting new token");
-          await wait(1000);
+          await wait(backoff * i);
           await refreshToken();
         }
         return Promise.resolve(json);
       } catch (error) {
         console.log("- Error");
         console.error(error);
-        await wait(1000);
+        await wait(backoff * i);
       }
     }
     return Promise.reject("Failed to execute command");
@@ -67,26 +68,32 @@ export class CommandBus {
   public async execute<
     R extends TargetResponse | ItinerariesResponse | RoutingResponse
   >(command: ApiCommand): Promise<{ data: R; cached: boolean }> {
-    console.log("Executing command: " + command.getName());
+    const uuid = Math.random().toString(36).substring(7);
+    console.log(
+      uuid,
+      "Executing command: " + command.getName(),
+      command.useCache()
+    );
 
     if (command.useCache()) {
       const cachedResponse = await this.redisCli.get<R>(command.getName());
 
       if (cachedResponse !== null) {
-        console.log("Using cached response");
+        console.log(uuid, "Using cached response");
         return { data: cachedResponse, cached: true };
       }
     }
 
-    const token = await this.getToken();
-
+    let token = await this.getToken();
+    console.log(uuid, "Token:", token);
     if (command.needsToken() && !token) {
-      console.log("No token, getting new token");
+      console.log(uuid, "No token, getting new token");
       await refreshToken();
+      token = await this.getToken();
     }
 
     const url = command.getRequestUrl(token);
-    console.log("Live response:", url);
+    console.log(uuid, "Live response:", url);
 
     const json = await this.executeRequest<R>(url);
 
@@ -97,7 +104,7 @@ export class CommandBus {
     await this.saveToken(json.source);
 
     if (command.useCache()) {
-      console.log("Cache response");
+      console.log(uuid, "Cache response");
       await this.cacheCommandResponse(command.getName(), json);
     }
 

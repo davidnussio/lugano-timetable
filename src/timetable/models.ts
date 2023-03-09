@@ -49,7 +49,7 @@ export interface Routing {
   UID: string;
   Code: string;
   Time: string;
-  Pred: number;
+  Pred: number; // What is this?
 }
 
 export interface RoutingResponse extends ApiResponse<Routing> {
