@@ -41,7 +41,7 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   swr: 2.0.4_react@18.2.0
-  tailwind-merge: 1.10.0
+  tailwind-merge: 1.14.0
   tailwindcss-animate: 1.0.5_tailwindcss@3.2.7
   typescript: 4.9.5
   vitest: 0.28.5
@@ -3408,8 +3408,8 @@ packages:
       tslib: 2.5.0
     dev: false
 
-  /tailwind-merge/1.10.0:
-    resolution: {integrity: sha512-WFnDXSS4kFTZwjKg5/oZSGzBRU/l+qcbv5NVTzLUQvJ9yovDAP05h0F2+ZFW0Lw9EcgRoc2AfURUdZvnEFrXKg==}
+  /tailwind-merge/1.14.0:
+    resolution: {integrity: sha512-3mFKyCo/MBcgyOTlrY8T7odzZFx+w+qKSMAmdFzRvqBfLlSigU6TZnlFHK0lkMwj9Bj8OYU+9yW9lmGuS0QEnQ==}
     dev: false
 
   /tailwindcss-animate/1.0.5_tailwindcss@3.2.7:
