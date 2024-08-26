@@ -9,7 +9,7 @@ specifiers:
   '@upstash/redis': ^1.20.0
   autoprefixer: ^10.4.13
   class-variance-authority: ^0.7.0
-  clsx: ^1.2.1
+  clsx: ^2.0.0
   eslint: 8.57.0
   eslint-config-next: 14.2.6
   execa: ^7.0.0
@@ -33,7 +33,7 @@ dependencies:
   '@types/react-dom': 18.0.11
   '@upstash/redis': 1.34.0
   class-variance-authority: 0.7.0
-  clsx: 1.2.1
+  clsx: 2.0.0
   eslint: 8.57.0
   eslint-config-next: 14.2.6_4lxgoysztp3gakdxqfzw7vhg4u
   lucide-react: 0.436.0_react@18.2.0
@@ -1233,11 +1233,6 @@ packages:
 
   /client-only/0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
-    dev: false
-
-  /clsx/1.2.1:
-    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
-    engines: {node: '>=6'}
     dev: false
 
   /clsx/2.0.0:
