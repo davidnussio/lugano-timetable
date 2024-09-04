@@ -13,7 +13,7 @@ specifiers:
   eslint: 9.9.1
   eslint-config-next: 14.2.7
   execa: ^9.0.0
-  lucide-react: ^0.436.0
+  lucide-react: ^0.438.0
   next: 14.2.7
   postcss: ^8.4.21
   react: 18.3.1
@@ -36,7 +36,7 @@ dependencies:
   clsx: 2.1.1
   eslint: 9.9.1
   eslint-config-next: 14.2.7_4eqx2wzcxkzv7jqkyxnxhgzrfm
-  lucide-react: 0.436.0_react@18.3.1
+  lucide-react: 0.438.0_react@18.3.1
   next: 14.2.7_nnrd3gsncyragczmpvfhocinkq
   react: 18.3.1
   react-dom: 18.3.1_react@18.3.1
@@ -2622,8 +2622,8 @@ packages:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
     dev: false
 
-  /lucide-react/0.436.0_react@18.3.1:
-    resolution: {integrity: sha512-N292bIxoqm1aObAg0MzFtvhYwgQE6qnIOWx/GLj5ONgcTPH6N0fD9bVq/GfdeC9ZORBXozt/XeEKDpiB3x3vlQ==}
+  /lucide-react/0.438.0_react@18.3.1:
+    resolution: {integrity: sha512-uq6yCB+IzVfgIPMK8ibkecXSWTTSOMs9UjUgZigfrDCVqgdwkpIgYg1fSYnf0XXF2AoSyCJZhoZXQwzoai7VGw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
     dependencies:
