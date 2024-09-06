@@ -3,10 +3,10 @@
 import { ChevronRight, Eraser } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { Target } from "~/timetable/models";
-import { Button } from "~/ui/button";
-import { Input } from "~/ui/input";
-import { ScrollArea } from "~/ui/scroll-area";
 
 function bySearchValue(
   search: string
@@ -50,7 +50,7 @@ export function FiltrableListTargets({
         />
       </div>
       <ScrollArea className="min-h-max h-max border rounded-lg">
-        <ul role="list" className="divide-y divide-gray-200">
+        <ul className="divide-y divide-gray-200">
           {filteredTargets.map((target) => (
             <li
               key={target.Label + target.Identifiers.join(",")}

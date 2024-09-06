@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
+  experimental: {},
   images: {
     domains: ["bs.tplsa.ch"],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

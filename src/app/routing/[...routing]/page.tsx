@@ -2,8 +2,8 @@
 
 import useSWR from "swr";
 import Loading from "~/app/components/loading";
+import { cn } from "~/lib/utils";
 import { Routing, RoutingStatus, Target } from "~/timetable/models";
-import { cn } from "~/ui/utils/cn";
 import { fetcher } from "~/utils/fetcher";
 
 type RoutingPageProps = {
