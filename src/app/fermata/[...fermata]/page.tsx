@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
 import Loading from "~/app/components/loading";
-import type { Itineraries } from "~/timetable/models";
+import { InTimeStatus, type Itineraries } from "~/timetable/models";
 import { shimmer } from "~/ui/utils/shimmer";
 import { toBase64 } from "~/utils/base64";
 import { fetcher } from "~/utils/fetcher";
@@ -64,8 +64,16 @@ export default function FermatePage({ params }: FermatePageProps) {
                 />
               </div>
               <div className="flex flex-grow flex-col items-start">
-                {target.Dest}
-                <div className="text-xs font-light">{target.Time}</div>
+                <div className="flex w-full">
+                  {target.Dest}
+                  <div className="flex-grow" />
+                  {target.Pred === InTimeStatus.Delayed && (
+                    <span className="text-red-500 text-sm font-medium">
+                      Ritardo
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-light">{target.Time} </div>
               </div>
               <div>
                 <ChevronRight />

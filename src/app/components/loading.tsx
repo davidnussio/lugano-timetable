@@ -1,7 +1,7 @@
 export default function Loading({ rows = 10 }: { rows?: number }) {
   const loadingRows = Array.from({ length: rows }, (_, i) => i);
   return (
-    <ul role="list" className="divide-y divide-gray-200 border rounded-lg">
+    <ul className="divide-y divide-gray-200 border rounded-lg">
       {loadingRows.map((row) => (
         <li key={row} className="px-4 py-2">
           <div className="flex space-x-2 items-stretch justify-between">

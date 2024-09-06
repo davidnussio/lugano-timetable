@@ -1,5 +1,6 @@
 import { getTargets } from "~/timetable/api";
 import { FiltrableListTargets } from "./targets";
+import { TopBar } from "./components/topbar";
 
 // const useTargets = () => {
 //   const url = "/api/timetable/targets";
@@ -19,9 +20,7 @@ export default async function Home() {
 
   return (
     <main>
-      <h1 className="m-4 text-3xl font-bold tracking-tight text-center">
-        Fermate
-      </h1>
+      <TopBar title="Fermate" />
       <FiltrableListTargets targets={data} />
     </main>
   );

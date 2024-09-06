@@ -4,6 +4,11 @@ export enum RoutingStatus {
   PassedStation = 2,
 }
 
+export enum InTimeStatus {
+  OnTime = 1,
+  Delayed = 0,
+}
+
 // http://bs.tplsa.ch/RTPI/rtpi?data=%7Bsource%3A%221CD6A938DCC3352AFEE32F999EA75FCC%22%2Ctype%3AEXIT%7D&_=1677068700318
 export interface ApiResponse<T> {
   status: string;
@@ -30,7 +35,7 @@ export interface Itineraries {
   Routing: string;
   Dir: string;
   Stall: string;
-  Pred: number;
+  Pred: InTimeStatus;
   RouteCode: string;
   Img: string;
   Route: string;
@@ -49,7 +54,7 @@ export interface Routing {
   UID: string;
   Code: string;
   Time: string;
-  Pred: number; // What is this?
+  Pred: InTimeStatus;
 }
 
 export interface RoutingResponse extends ApiResponse<Routing> {
