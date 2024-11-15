@@ -1,4 +1,5 @@
-"use client";
+"use client";;
+import { use } from "react";
 
 import { SquareChartGantt } from "lucide-react";
 import useSWR from "swr";
@@ -14,9 +15,9 @@ import {
 import { fetcher } from "~/utils/fetcher";
 
 type RoutingPageProps = {
-  params: {
+  params: Promise<{
     routing: string[];
-  };
+  }>;
 };
 
 type RoutingWithTarget = Routing & Pick<Target, "Label" | "Name">;
@@ -60,7 +61,8 @@ const Circle = ({ color }: { color: number }) => (
     })}></div>
 );
 
-export default function RoutingPage({ params }: RoutingPageProps) {
+export default function RoutingPage(props: RoutingPageProps) {
+  const params = use(props.params);
   const { data, isLoading } = useRouting(params.routing);
   const route = params.routing[1];
   const dir = params.routing[2];

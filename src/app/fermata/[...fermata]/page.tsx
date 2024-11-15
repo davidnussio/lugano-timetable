@@ -1,4 +1,5 @@
-"use client";
+"use client";;
+import { use } from "react";
 
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
@@ -11,9 +12,9 @@ import { toBase64 } from "~/utils/base64";
 import { fetcher } from "~/utils/fetcher";
 
 type FermatePageProps = {
-  params: {
+  params: Promise<{
     fermata: string[];
-  };
+  }>;
 };
 
 function useItineraries(itineraries: string[]) {
@@ -34,7 +35,8 @@ function useItineraries(itineraries: string[]) {
 
 const colors = [{ from: "#300", via: "#333", to: "#300" }];
 
-export default function FermatePage({ params }: FermatePageProps) {
+export default function FermatePage(props: FermatePageProps) {
+  const params = use(props.params);
   const { data, isLoading } = useItineraries(params.fermata);
 
   if (isLoading) return <Loading />;
