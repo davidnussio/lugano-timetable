@@ -7,7 +7,7 @@ export function TopBar({ title }: { title: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <header className="flex items-center justify-between px-4 py-4 bg-background sticky top-0 z-10 border-b border-border">
+    <header className="flex items-center justify-between px-4 py-4 bg-background sticky top-0 z-10">
       <button
         className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
         aria-label="Go back"
