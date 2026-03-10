@@ -1,20 +1,22 @@
 export default function Loading({ rows = 10 }: { rows?: number }) {
   const loadingRows = Array.from({ length: rows }, (_, i) => i);
   return (
-    <ul className="divide-y divide-gray-200 border rounded-lg">
-      {loadingRows.map((row) => (
-        <li key={row} className="px-4 py-2">
-          <div className="flex space-x-2 items-stretch justify-between">
-            <div className="flex-shrink">
-              <div className="w-10 h-10 bg-gray-300 animate-pulse" />
+    <div className="px-4 pb-4">
+      <ul className="divide-y divide-border rounded-xl overflow-hidden bg-card border border-border">
+        {loadingRows.map((row) => (
+          <li key={row} className="px-4 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-11 h-11 bg-muted animate-pulse rounded-lg" />
+              </div>
+              <div className="flex flex-col flex-1 gap-2">
+                <div className="bg-muted animate-pulse w-3/4 h-5 rounded"></div>
+                <div className="bg-muted animate-pulse w-1/2 h-3 rounded"></div>
+              </div>
             </div>
-            <div className="flex flex-grow flex-col justify-between items-start">
-              <div className="bg-gray-300 animate-pulse w-full h-6"></div>
-              <div className="bg-gray-300 animate-pulse w-full h-3"></div>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
