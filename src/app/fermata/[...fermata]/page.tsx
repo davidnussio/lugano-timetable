@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { use } from "react";
 
 import { ChevronRight, Star } from "lucide-react";
 import Image from "next/image";
@@ -7,11 +7,10 @@ import Link from "next/link";
 import useSWR from "swr";
 import Loading from "~/app/components/loading";
 import { useFavorites } from "~/hooks/use-favorites";
-import { InTimeStatus, type Itineraries } from "~/timetable/models";
+import { InTimeStatus, type Itineraries, type Target } from "~/timetable/models";
 import { shimmer } from "~/ui/utils/shimmer";
 import { toBase64 } from "~/utils/base64";
 import { fetcher } from "~/utils/fetcher";
-import { getTargets } from "~/timetable/api";
 
 type FermatePageProps = {
   params: Promise<{
@@ -35,27 +34,26 @@ function useItineraries(itineraries: string[]) {
   };
 }
 
+function useStopInfo(fermata: string[]) {
+  const { data, isLoading } = useSWR<Target[]>("/api/timetable/targets", fetcher);
+  
+  const stopInfo = data?.find(
+    (t) => t.Identifiers.join(",") === fermata.join(",")
+  );
+  
+  return {
+    stopInfo: stopInfo ? { name: stopInfo.Name, label: stopInfo.Label } : null,
+    isLoading,
+  };
+}
+
 const colors = [{ from: "#1E3A3A", via: "#2A4A4A", to: "#1E3A3A" }];
 
 export default function FermatePage(props: FermatePageProps) {
   const params = use(props.params);
   const { data, isLoading } = useItineraries(params.fermata);
   const { isFavorite, toggleFavorite, isLoaded } = useFavorites();
-  const [stopInfo, setStopInfo] = useState<{ name: string; label: string } | null>(null);
-
-  // Load stop info for favorite functionality
-  useEffect(() => {
-    async function loadStopInfo() {
-      const targets = await getTargets();
-      const currentStop = targets.find(
-        (t) => t.Identifiers.join(",") === params.fermata.join(",")
-      );
-      if (currentStop) {
-        setStopInfo({ name: currentStop.Name, label: currentStop.Label });
-      }
-    }
-    loadStopInfo();
-  }, [params.fermata]);
+  const { stopInfo } = useStopInfo(params.fermata);
 
   if (isLoading) return <Loading />;
 
@@ -65,7 +63,7 @@ export default function FermatePage(props: FermatePageProps) {
     <div className="px-4 pb-4">
       {/* Favorite toggle button */}
       {stopInfo && (
-        <div className="flex items-center justify-between py-3 mb-3 border-b border-border">
+        <div className="flex items-center justify-between py-3 mb-4 bg-card rounded-xl px-4 border border-border">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground">{stopInfo.name}</span>
             <span className="text-xs text-muted-foreground">{stopInfo.label}</span>
