@@ -1,7 +1,6 @@
-"use client";;
+"use client";
 import { use } from "react";
 
-import { SquareChartGantt } from "lucide-react";
 import useSWR from "swr";
 import Loading from "~/app/components/loading";
 import { Timetable } from "~/app/components/timetable";
@@ -53,12 +52,17 @@ function useRouting(routing: string[]) {
   };
 }
 
-const Circle = ({ color }: { color: number }) => (
+const Circle = ({ status }: { status: number }) => (
   <div
-    className={cn("h-4 w-4 rounded bg-gray-400", {
-      "bg-amber-400 animate-pulse": color === RoutingStatus.CurrentStation,
-      "bg-green-400": color === RoutingStatus.PassedStation,
-    })}></div>
+    className={cn(
+      "h-3.5 w-3.5 rounded-full border-2 transition-all",
+      {
+        "border-muted-foreground bg-transparent": status === RoutingStatus.FeatureStation,
+        "border-accent bg-accent animate-pulse shadow-sm shadow-accent/50": status === RoutingStatus.CurrentStation,
+        "border-primary bg-primary": status === RoutingStatus.PassedStation,
+      }
+    )}
+  />
 );
 
 export default function RoutingPage(props: RoutingPageProps) {
@@ -70,43 +74,62 @@ export default function RoutingPage(props: RoutingPageProps) {
   if (isLoading) return <Loading />;
 
   return (
-    <ul className="divide-y divide-gray-200 border rounded-lg">
-      {data.map((target) => (
-        <li
-          key={target.UID}
-          className={cn("px-4 py-2", {
-            "bg-amber-50": target.Status === RoutingStatus.CurrentStation,
-            "bg-gray-50": target.Status === RoutingStatus.PassedStation,
-          })}>
-          <div className="flex space-x-2 items-center justify-between">
-            <div className="flex-shrink">
-              <Circle color={target.Status} />
-            </div>
-            <div className="flex flex-grow flex-col items-start">
-              <div className="flex w-full items-baseline">
-                {target.Name}
-                <span className="text-xs font-light pl-1">
-                  {target.Label.split(",")[0]}
-                </span>
+    <div className="px-4 pb-4">
+      <ul className="divide-y divide-border rounded-xl overflow-hidden bg-card border border-border">
+        {data.map((target, index) => (
+          <li
+            key={target.UID}
+            className={cn("transition-colors", {
+              "bg-accent/5": target.Status === RoutingStatus.CurrentStation,
+              "bg-muted/50": target.Status === RoutingStatus.PassedStation,
+            })}>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex flex-col items-center">
+                <Circle status={target.Status} />
+                {index < data.length - 1 && (
+                  <div
+                    className={cn(
+                      "w-0.5 h-3 mt-1",
+                      target.Status === RoutingStatus.PassedStation
+                        ? "bg-primary"
+                        : "bg-border"
+                    )}
+                  />
+                )}
               </div>
-            </div>
-            <div>
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className={cn(
+                      "font-medium truncate",
+                      target.Status === RoutingStatus.PassedStation
+                        ? "text-muted-foreground"
+                        : "text-foreground"
+                    )}>
+                    {target.Name}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {target.Label.split(",")[0]}
+                  </span>
+                </div>
+              </div>
               <Timetable url={timetableImageUrl(target.Code, route, dir)} />
-            </div>
-            <div>
               <div
                 className={cn(
-                  "text-xs",
+                  "text-sm font-mono min-w-[3.5rem] text-right",
                   target.Pred === InTimeStatus.Delayed &&
-                    target.Status === RoutingStatus.FeatureStation &&
-                    "text-red-500 "
+                    target.Status === RoutingStatus.FeatureStation
+                    ? "text-destructive font-medium"
+                    : target.Status === RoutingStatus.PassedStation
+                    ? "text-muted-foreground"
+                    : "text-foreground"
                 )}>
                 {target.Time}
               </div>
             </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
