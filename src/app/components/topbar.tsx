@@ -3,12 +3,7 @@
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface TopBarProps {
-  title: React.ReactNode;
-  rightAction?: React.ReactNode;
-}
-
-export function TopBar({ title, rightAction }: TopBarProps) {
+export function TopBar({ title }: { title: React.ReactNode }) {
   const router = useRouter();
 
   return (
@@ -20,9 +15,7 @@ export function TopBar({ title, rightAction }: TopBarProps) {
         <ChevronLeft className="h-5 w-5 text-primary" />
       </button>
       <h1 className="text-lg font-semibold text-primary tracking-tight">{title}</h1>
-      <div className="w-9 h-9 flex items-center justify-center">
-        {rightAction}
-      </div>
+      <div className="w-9 h-9"></div>
     </header>
   );
 }
