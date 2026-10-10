@@ -2,7 +2,6 @@ import { Effect } from "effect";
 import { connection } from "next/server";
 import { runtime } from "~/timetable/runtime";
 import { Timetable } from "~/timetable/timetable";
-import { TopBar } from "./components/topbar";
 import { FiltrableListTargets } from "./targets";
 
 export default async function Home() {
@@ -16,8 +15,7 @@ export default async function Home() {
   );
 
   return (
-    <main>
-      <TopBar title="Fermate" />
+    <main className="flex flex-1 flex-col">
       <FiltrableListTargets targets={targets} />
     </main>
   );

@@ -16,17 +16,17 @@ export function Timetable({ url }: { url: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-        >
-          <SquareChartGantt size={16} className="text-muted-foreground" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Orario della fermata"
+          className="size-8 shrink-0 rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground">
+          <SquareChartGantt className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-full max-h-full h-full flex flex-col bg-background">
         <DialogHeader>
-          <DialogTitle className="text-primary">Orario</DialogTitle>
+          <DialogTitle>Orario</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Consulta gli orari aggiornati per la fermata del bus.
           </DialogDescription>
@@ -42,7 +42,7 @@ export function Timetable({ url }: { url: string }) {
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Chiudi</Button>
+            <Button className="h-11 rounded-xl">Chiudi</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

@@ -1,29 +1,40 @@
 "use client";
 
-import { ChevronRight, Eraser, Star } from "lucide-react";
+import { ChevronRight, LocateFixed, Search, Star, X } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useFavorites } from "~/hooks/use-favorites";
+import { useGeolocation } from "~/hooks/use-geolocation";
+import { formatDistance, town } from "~/lib/format";
+import { cn } from "~/lib/utils";
+import { distanceMeters, type Position } from "~/timer/plan";
 import type { Target } from "~/timetable/models";
 
-function bySearchValue(
-  search: string
-): (target: Target) => boolean {
+function bySearchValue(search: string): (target: Target) => boolean {
   if (search === "") return () => true;
 
-  return (target) => {
-    const searchValue = search.toLowerCase();
-    return (
-      target.Name.toLowerCase().includes(searchValue) ||
-      target.Label.toLowerCase().includes(searchValue) ||
-      target.Identifiers.some((identifier) =>
-        identifier.toLowerCase().includes(searchValue)
-      )
+  const searchValue = search.toLowerCase();
+  return (target) =>
+    target.Name.toLowerCase().includes(searchValue) ||
+    target.Label.toLowerCase().includes(searchValue) ||
+    target.Identifiers.some((identifier) =>
+      identifier.toLowerCase().includes(searchValue)
     );
-  };
+}
+
+// Distance to the nearest platform of the stop
+function targetDistance(target: Target, position: Position): number | undefined {
+  let nearest: number | undefined;
+  for (const { Lat, Lon } of target.Coordinates) {
+    const meters = distanceMeters(position, { lat: Lat, lon: Lon });
+    if (nearest === undefined || meters < nearest) nearest = meters;
+  }
+  return nearest;
+}
+
+interface Row {
+  readonly target: Target;
+  readonly distance: number | undefined;
 }
 
 export interface FiltrableListTargetsProps {
@@ -34,80 +45,163 @@ export function FiltrableListTargets({
   targets,
 }: FiltrableListTargetsProps): React.JSX.Element {
   const [search, setSearch] = useState<string>("");
+  const [nearby, setNearby] = useState(false);
   const deferredSearch = useDeferredValue(search);
-  const { favorites, isLoaded, isFavorite } = useFavorites();
+  const { isLoaded, isFavorite } = useFavorites();
+  const { position, error } = useGeolocation(nearby);
 
-  const filteredTargets = useMemo(
-    () => targets.filter(bySearchValue(deferredSearch)),
-    [deferredSearch, targets]
-  );
+  const rows = useMemo((): ReadonlyArray<Row> => {
+    const filtered = targets
+      .filter(bySearchValue(deferredSearch))
+      .map((target) => ({
+        target,
+        distance: position && targetDistance(target, position),
+      }));
+    if (!position) return filtered;
+    return filtered.sort(
+      (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)
+    );
+  }, [deferredSearch, targets, position]);
 
-  // Sort favorites to the top
-  const sortedTargets = useMemo(() => {
-    if (!isLoaded) return filteredTargets;
-    
-    return [...filteredTargets].sort((a, b) => {
-      const aIsFav = isFavorite(a.Identifiers);
-      const bIsFav = isFavorite(b.Identifiers);
-      if (aIsFav && !bIsFav) return -1;
-      if (!aIsFav && bIsFav) return 1;
-      return 0;
-    });
-  }, [filteredTargets, isLoaded, isFavorite]);
+  const favorites = isLoaded
+    ? rows.filter((row) => isFavorite(row.target.Identifiers))
+    : [];
+  const others = isLoaded
+    ? rows.filter((row) => !isFavorite(row.target.Identifiers))
+    : rows;
+  const locating = nearby && !position && !error;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pb-4">
-      <div className="sticky top-[65px] z-10 bg-background pt-2 pb-3">
-        <Input
-          type="text"
-          value={search}
-          placeholder="Cerca fermata..."
-          className="h-12 text-base bg-card border-border focus:ring-accent focus:border-accent rounded-xl"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <ScrollArea className="min-h-max h-max">
-        <ul className="divide-y divide-border rounded-xl overflow-hidden bg-card border border-border">
-          {sortedTargets.map((target) => {
-            const isFav = isLoaded && isFavorite(target.Identifiers);
-            return (
-              <li
-                key={target.Label + target.Identifiers.join(",")}
-                className="transition-colors hover:bg-muted">
-                <Link
-                  className="flex items-center justify-between px-4 py-3.5 gap-3"
-                  href={`/fermata/${target.Identifiers.join("/")}`}>
-                  {isFav && (
-                    <Star className="h-4 w-4 shrink-0 fill-accent text-accent" />
-                  )}
-                  <div className="flex flex-col items-start flex-1 min-w-0">
-                    <span className="font-medium text-foreground truncate w-full">
-                      {target.Name}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate w-full">
-                      {target.Label}
-                    </span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                </Link>
-              </li>
-            );
-          })}
-          {sortedTargets.length === 0 && (
-            <li className="px-4 py-6">
-              <div className="text-center text-muted-foreground">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setSearch("")}
-                  className="text-accent hover:text-accent hover:bg-accent/10"
-                >
-                  <Eraser className="mr-2 h-4 w-4" /> Nessun risultato
-                </Button>
-              </div>
-            </li>
+    <div className="flex flex-col pb-6">
+      <header className="px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Lugano Bus
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Fermate</h1>
+      </header>
+
+      <div className="sticky top-0 z-20 space-y-2.5 bg-background/85 px-4 pb-3 pt-2 backdrop-blur-xl">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={search}
+            placeholder="Cerca una fermata"
+            className="h-12 w-full rounded-2xl border border-border bg-card pl-11 pr-11 text-base shadow-sm outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary/50 focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search !== "" && (
+            <button
+              type="button"
+              aria-label="Cancella ricerca"
+              className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              onClick={() => setSearch("")}>
+              <X className="size-4" />
+            </button>
           )}
-        </ul>
-      </ScrollArea>
+        </label>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={nearby}
+            onClick={() => setNearby((value) => !value)}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+              nearby
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-muted"
+            )}>
+            <LocateFixed className={cn("size-4", locating && "animate-pulse")} />
+            Vicino a me
+          </button>
+          {nearby && error && (
+            <span className="text-xs text-destructive">
+              {error === "denied"
+                ? "Posizione non autorizzata"
+                : "Posizione non disponibile"}
+            </span>
+          )}
+          {locating && (
+            <span className="text-xs text-muted-foreground">Localizzazione…</span>
+          )}
+        </div>
+      </div>
+
+      {favorites.length > 0 && (
+        <Section title="Preferiti">
+          {favorites.map((row) => (
+            <TargetRow key={rowKey(row)} row={row} favorite />
+          ))}
+        </Section>
+      )}
+
+      <Section
+        title={position ? "Più vicine" : favorites.length > 0 ? "Tutte le fermate" : undefined}>
+        {others.map((row) => (
+          <TargetRow key={rowKey(row)} row={row} />
+        ))}
+        {rows.length === 0 && (
+          <li className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nessuna fermata per “{search}”
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="text-sm font-medium text-primary">
+              Cancella ricerca
+            </button>
+          </li>
+        )}
+      </Section>
     </div>
+  );
+}
+
+const rowKey = ({ target }: Row) => target.Label + target.Identifiers.join(",");
+
+function Section({
+  title,
+  children,
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="px-4 pt-3">
+      {title && (
+        <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
+      )}
+      <ul className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
+        {children}
+      </ul>
+    </section>
+  );
+}
+
+function TargetRow({ row, favorite }: { row: Row; favorite?: boolean }) {
+  const { target, distance } = row;
+  return (
+    <li>
+      <Link
+        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60 active:bg-muted"
+        href={`/fermata/${target.Identifiers.join("/")}`}>
+        {favorite && <Star className="size-4 shrink-0 fill-favorite text-favorite" />}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate font-medium">{target.Name}</span>
+          <span className="truncate text-xs text-muted-foreground">
+            {town(target.Label)}
+          </span>
+        </div>
+        {distance !== undefined && (
+          <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+            {formatDistance(distance)}
+          </span>
+        )}
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+      </Link>
+    </li>
   );
 }

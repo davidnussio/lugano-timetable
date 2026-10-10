@@ -1,18 +1,14 @@
-import { Loader } from "lucide-react";
-import Loading from "./components/loading";
-import { TopBar } from "./components/topbar";
+import { SkeletonList } from "./components/skeleton-list";
 
 export default function LoadingPage() {
   return (
-    <>
-      <TopBar
-        title={
-          <div className="flex gap-2 items-end">
-            Caricamento <Loader className="animate-spin" />
-          </div>
-        }
-      />
-      <Loading rows={20} />
-    </>
+    <div className="pt-[max(1.25rem,env(safe-area-inset-top))]">
+      <div className="space-y-2 px-4 pb-3">
+        <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+        <div className="h-8 w-36 animate-pulse rounded-lg bg-muted" />
+        <div className="mt-4 h-12 animate-pulse rounded-2xl bg-muted" />
+      </div>
+      <SkeletonList rows={10} />
+    </div>
   );
 }
