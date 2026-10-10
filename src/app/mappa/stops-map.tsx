@@ -1,8 +1,7 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection, Point } from "geojson";
-import { type GeoJSONSource, setWorkerUrl } from "maplibre-gl";
+import type { GeoJSONSource } from "maplibre-gl";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,21 +21,12 @@ import {
 import { useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useTargets } from "~/hooks/use-targets";
 import { town } from "~/lib/format";
+import { MAP_COLORS, MAP_STYLE } from "~/lib/maplibre";
 import type { Target } from "~/timetable/models";
-
-// The bundler does not serve the worker next to MapLibre: it is copied to
-// public/ on install (see `postinstall`)
-setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
-
-// Light base map of swisstopo: vector tiles, free and without an API key
-const MAP_STYLE =
-  "https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json";
 
 const LUGANO = { latitude: 46.0037, longitude: 8.9511, zoom: 13 };
 
-// `--primary` and `--foreground` of the light theme: the base map is light
-const PRIMARY = "#1957d2";
-const FOREGROUND = "#131922";
+const { primary: PRIMARY, foreground: FOREGROUND } = MAP_COLORS;
 
 interface StopProperties {
   readonly name: string;

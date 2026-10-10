@@ -9,6 +9,7 @@ import {
   Smartphone,
   TimerOff,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AlertBanner } from "~/app/components/alert-banner";
 import { LineBadge } from "~/app/components/line-badge";
@@ -21,6 +22,12 @@ import { type Countdown, minutesLeft, type Pace } from "~/timer/plan";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneText } from "~/timer/tone";
+
+// MapLibre needs the browser (WebGL) and is large: load it only when shown
+const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkMap), {
+  ssr: false,
+  loading: () => <div className="size-full animate-pulse bg-muted" />,
+});
 
 const paces: ReadonlyArray<{ value: Pace; label: string }> = [
   { value: "slow", label: "Con calma" },
@@ -189,7 +196,7 @@ function ActiveTimerView({
       )}
 
       {/* Location */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-3 p-4">
           <LocateFixed className="size-5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
@@ -235,6 +242,11 @@ function ActiveTimerView({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+        {settings.useLocation && active.coordinates && !geolocation.error && (
+          <div className="h-56 border-t border-border">
+            <WalkMap stop={active.coordinates} position={geolocation.position} />
           </div>
         )}
       </section>
