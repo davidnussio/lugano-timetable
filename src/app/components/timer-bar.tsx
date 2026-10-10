@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { formatClock } from "~/lib/format";
+import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { timerHeadline, timerTone, toneBackground } from "~/timer/tone";
 import { useTimer } from "~/timer/timer-provider";
@@ -11,13 +11,17 @@ import { LineBadge } from "./line-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown } = useTimer();
+  const { timer, countdown, distance } = useTimer();
   const pathname = usePathname();
 
   if (!timer || !countdown || pathname === "/timer") return null;
 
   const tone = timerTone(countdown);
   const headline = timerHeadline(countdown);
+  const where =
+    distance === undefined
+      ? `da ${timer.stop.name}`
+      : `${formatDistance(distance)} da ${timer.stop.name}`;
 
   return (
     <>
@@ -33,7 +37,7 @@ export function TimerBar() {
             <p className="truncate text-sm font-semibold">{timer.destination}</p>
             <p className="flex items-center gap-1.5 truncate text-xs opacity-70">
               <span className={cn("size-1.5 shrink-0 rounded-full", toneBackground[tone])} />
-              {headline.label} · da {timer.stop.name}
+              {headline.label} · {where}
             </p>
           </div>
           <span className="font-mono text-xl font-semibold tabular-nums">
