@@ -118,8 +118,23 @@ describe("peakHold", () => {
     expect(peakHold(undefined, 300, 0)).toEqual({ value: 300, at: 0 });
   });
 
-  it("rises at once", () => {
-    expect(peakHold({ value: 300, at: 0 }, 310, 1000).value).toBe(310);
+  it("rises gradually with the attack time constant", () => {
+    const rising = (ms: number) =>
+      peakHold({ value: 300, at: 0 }, 310, ms, 1, 3).value;
+    expect(rising(0)).toBe(300);
+    expect(rising(3000)).toBeCloseTo(300 + 10 * (1 - Math.exp(-1)));
+    expect(rising(1000)).toBeLessThan(rising(2000));
+    expect(rising(60_000)).toBeCloseTo(310);
+  });
+
+  it("rises at once without an attack time", () => {
+    expect(peakHold({ value: 300, at: 0 }, 310, 1000, 1, 0).value).toBe(310);
+  });
+
+  it("follows the same curve whatever the readings in between", () => {
+    const once = peakHold({ value: 300, at: 0 }, 310, 4000);
+    const twice = peakHold(peakHold({ value: 300, at: 0 }, 310, 1500), 310, 4000);
+    expect(twice.value).toBeCloseTo(once.value);
   });
 
   it("falls by at most one second per second", () => {

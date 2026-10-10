@@ -10,7 +10,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { type GeolocationState, useGeolocation } from "~/hooks/use-geolocation";
+import {
+  type GeolocationState,
+  useGeolocation,
+  useGeolocationGranted,
+} from "~/hooks/use-geolocation";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import type { Coordinates, Departure } from "~/timetable/models";
@@ -45,11 +49,11 @@ import {
 // The timer is gone this long after the departure
 const EXPIRES_AFTER_MS = 10 * 60_000;
 
-const defaultSettings: TimerSettings = { useLocation: false, pace: "normal" };
+const defaultSettings: TimerSettings = { pace: "normal" };
 
 export interface TimerContextValue {
   readonly timer: ActiveTimer | null;
-  readonly settings: TimerSettings;
+  readonly settings: Required<TimerSettings>;
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
   readonly geolocation: GeolocationState;
@@ -108,7 +112,12 @@ function useSteadyDistance(
 // data, measures the walk to the stop and fires the alerts.
 export function TimerProvider({ children }: { children: React.ReactNode }) {
   const timer = timerStore.useValue();
-  const settings = settingsStore.useValue() ?? defaultSettings;
+  const stored = settingsStore.useValue() ?? defaultSettings;
+  const granted = useGeolocationGranted();
+  const settings: Required<TimerSettings> = {
+    ...stored,
+    useLocation: stored.useLocation ?? granted,
+  };
   const active = timer !== null && timer !== undefined;
   const now = useNow(active);
   const geolocation = useGeolocation(active && settings.useLocation);
@@ -217,7 +226,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       // Asked right away, while handling the click
       void requestNotifications().then(() => rerender());
     },
-    []
+    [rerender]
   );
 
   const cancel = useCallback(() => timerStore.set(null), []);
@@ -229,7 +238,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const enableNotifications = useCallback(async () => {
     await requestNotifications();
     rerender();
-  }, []);
+  }, [rerender]);
 
   const dismissAlert = useCallback(
     () => timerStore.set((t) => t && { ...t, lastAlert: undefined }),

@@ -52,19 +52,28 @@ export interface Envelope {
 
 // The distance to the stop follows the GPS, whose position jumps by a few
 // meters at every fix. Like the level meter of an amplifier, the estimate
-// rises at once (better to leave early) and falls by at most `release` per
-// second. With `walkingRelease` the walking time drops by at most one second
-// per second, so the time to leave never goes back up: noise only pauses the
-// countdown, and it stays still while walking to the stop.
+// rises quickly (better to leave early) and falls slowly:
+// - it rises towards a higher value with an `attack` time constant in
+//   seconds, so a jump speeds the countdown up for a few seconds instead of
+//   skipping it ahead (63% of the way after `attack`, 95% after 3 times it);
+// - it falls by at most `release` per second. With `walkingRelease` the
+//   walking time drops by at most one second per second, so the time to
+//   leave never goes back up: noise only pauses the countdown, and it stays
+//   still while walking to the stop.
 export function peakHold(
   previous: Envelope | undefined,
   value: number,
   at: number,
-  release = 1
+  release = 1,
+  attack = 3
 ): Envelope {
   if (previous === undefined) return { value, at };
-  const decayed = previous.value - (release * (at - previous.at)) / 1000;
-  return { value: Math.max(value, decayed), at };
+  const elapsed = (at - previous.at) / 1000;
+  if (value > previous.value) {
+    const rise = attack > 0 ? 1 - Math.exp(-elapsed / attack) : 1;
+    return { value: previous.value + (value - previous.value) * rise, at };
+  }
+  return { value: Math.max(value, previous.value - release * elapsed), at };
 }
 
 // Remaining minutes at which to alert, in descending order. Each alert comes

@@ -36,7 +36,9 @@ export interface ActiveTimer {
 }
 
 export interface TimerSettings {
-  readonly useLocation: boolean;
+  // Unset until the user flips the switch: on when the location permission
+  // has already been granted
+  readonly useLocation?: boolean;
   readonly pace: Pace;
 }
 
@@ -47,7 +49,7 @@ export const timerStore = createLocalStore<ActiveTimer | null>(
 
 export const settingsStore = createLocalStore<TimerSettings>(
   "lugano-timetable-timer-settings",
-  { useLocation: false, pace: "normal" }
+  { pace: "normal" }
 );
 
 export type ScheduledDeparture = Departure & { readonly DepartureAt: number };
