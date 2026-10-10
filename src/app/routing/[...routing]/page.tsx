@@ -1,25 +1,17 @@
 "use client";
 import { use } from "react";
 
-import useSWR from "swr";
 import Loading from "~/app/components/loading";
 import { Timetable } from "~/app/components/timetable";
 import { cn } from "~/lib/utils";
-import {
-  InTimeStatus,
-  Routing,
-  RoutingStatus,
-  Target,
-} from "~/timetable/models";
-import { fetcher } from "~/utils/fetcher";
+import { useMonitored } from "~/hooks/use-monitored";
+import { InTimeStatus, RoutingStatus, type RoutingStop } from "~/timetable/models";
 
 type RoutingPageProps = {
   params: Promise<{
     routing: string[];
   }>;
 };
-
-type RoutingWithTarget = Routing & Pick<Target, "Label" | "Name">;
 
 const RouteUIDToProgressive = [
   19, 20, 21, 22, 23, 32, 33, 24, 25, 26, 27, 28, 29, 0, 0, 30, 31,
@@ -37,28 +29,13 @@ function timetableImageUrl(code: string, route: string, dir: string) {
   }${code}.png`;
 }
 
-function useRouting(routing: string[]) {
-  const url = `/api/timetable/routing?${routing
-    .map((i) => `routing=${i}`)
-    .join("&")}`;
-  const { data, error, isLoading } = useSWR<RoutingWithTarget[]>(url, fetcher, {
-    refreshInterval: 10_000,
-  });
-
-  return {
-    data: data ?? [],
-    isLoading,
-    isError: error,
-  };
-}
-
 const Circle = ({ status }: { status: number }) => (
   <div
     className={cn(
       "h-3.5 w-3.5 rounded-full border-2 transition-all",
       {
         "border-muted-foreground bg-transparent": status === RoutingStatus.FeatureStation,
-        "border-accent bg-accent animate-pulse shadow-sm shadow-accent/50": status === RoutingStatus.CurrentStation,
+        "border-accent bg-accent animate-pulse shadow-xs shadow-accent/50": status === RoutingStatus.CurrentStation,
         "border-primary bg-primary": status === RoutingStatus.PassedStation,
       }
     )}
@@ -67,10 +44,20 @@ const Circle = ({ status }: { status: number }) => (
 
 export default function RoutingPage(props: RoutingPageProps) {
   const params = use(props.params);
-  const { data, isLoading } = useRouting(params.routing);
+  const { data, isLoading, isError } = useMonitored<RoutingStop>(
+    "/api/timetable/routing",
+    "routing",
+    params.routing
+  );
   const route = params.routing[1];
   const dir = params.routing[2];
 
+  if (isError && data.length === 0)
+    return (
+      <p className="px-4 py-8 text-center text-sm text-destructive">
+        Servizio non disponibile, nuovo tentativo in corso…
+      </p>
+    );
   if (isLoading) return <Loading />;
 
   return (

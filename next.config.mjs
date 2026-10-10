@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {},
   images: {
-    domains: ["bs.tplsa.ch"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "bs.tplsa.ch",
+      },
+    ],
   },
 };
 
