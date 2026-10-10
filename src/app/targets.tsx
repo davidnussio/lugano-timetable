@@ -9,6 +9,7 @@ import { formatDistance, town } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { distanceMeters, type Position } from "~/timer/plan";
 import type { Target } from "~/timetable/models";
+import { StopsHeader } from "./components/stops-header";
 
 function bySearchValue(search: string): (target: Target) => boolean {
   if (search === "") return () => true;
@@ -73,12 +74,7 @@ export function FiltrableListTargets({
 
   return (
     <div className="flex flex-col pb-6">
-      <header className="px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Lugano Bus
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight">Fermate</h1>
-      </header>
+      <StopsHeader title="Fermate" current="/" />
 
       <div className="sticky top-0 z-20 space-y-2.5 bg-background/85 px-4 pb-3 pt-2 backdrop-blur-xl">
         <label className="relative block">
