@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { type RefObject, useCallback, useRef, useState } from "react";
 import { AlertBanner } from "~/app/components/alert-banner";
 import { LineBadge } from "~/app/components/line-badge";
 import { PageHeader } from "~/app/components/page-header";
@@ -21,7 +22,7 @@ import { cn } from "~/lib/utils";
 import { type Countdown, minutesLeft, type Pace } from "~/timer/plan";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
-import { timerHeadline, timerTone, toneText } from "~/timer/tone";
+import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
 const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkMap), {
@@ -35,16 +36,45 @@ const paces: ReadonlyArray<{ value: Pace; label: string }> = [
   { value: "fast", label: "Di fretta" },
 ];
 
+// Share of the time left since the timer started: the ring, or the bar of the
+// compact countdown
+function timerProgress(active: ActiveTimer, countdown: Countdown): number {
+  if (timerTone(countdown) === "gone") return 0;
+  if (countdown.leaveMs < 0) return 1;
+  const total = active.departureAt - active.startedAt - (countdown.walkingMs ?? 0);
+  return Math.min(1, Math.max(0, total > 0 ? timerHeadline(countdown).ms / total : 0));
+}
+
+function marginLabel({ walkingMs, leaveMs }: Countdown): string {
+  if (walkingMs === undefined) return "—";
+  return leaveMs < 0
+    ? `−${minutesLeft(-leaveMs)} min`
+    : `+${Math.floor(leaveMs / 60_000)} min`;
+}
+
 export default function TimerPage() {
   const timer = useTimer();
   const { timer: active, countdown } = timer;
   useWakeLock(active !== null);
+  // Whether the ring has scrolled away under the header
+  const [compact, setCompact] = useState(false);
+  const header = useRef<HTMLDivElement>(null);
 
   return (
     <main className="flex flex-1 flex-col">
-      <PageHeader back="/" title="Timer" />
+      <div ref={header} className="sticky top-0 z-20">
+        <PageHeader back="/" title="Timer" />
+        {active && countdown && (
+          <CompactCountdown active={active} countdown={countdown} show={compact} />
+        )}
+      </div>
       {active && countdown ? (
-        <ActiveTimerView active={active} countdown={countdown} />
+        <ActiveTimerView
+          active={active}
+          countdown={countdown}
+          header={header}
+          onRingHidden={setCompact}
+        />
       ) : active ? null : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-24 text-center">
           <span className="grid size-16 place-items-center rounded-full bg-muted">
@@ -66,12 +96,97 @@ export default function TimerPage() {
   );
 }
 
-function ActiveTimerView({
+// The countdown once the ring has scrolled away: stays under the header, over
+// the page, so that the map and the settings can be seen with the time left
+function CompactCountdown({
   active,
   countdown,
+  show,
 }: {
   active: ActiveTimer;
   countdown: Countdown;
+  show: boolean;
+}) {
+  const tone = timerTone(countdown);
+  const headline = timerHeadline(countdown);
+  const walking = countdown.walkingMs !== undefined;
+
+  return (
+    <div
+      inert={!show}
+      className={cn(
+        "absolute inset-x-0 top-full border-b border-border/60 bg-background/85 backdrop-blur-xl transition-[opacity,translate] duration-200",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
+      )}>
+      <button
+        type="button"
+        aria-label="Torna al timer"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="flex w-full items-center gap-4 px-4 py-2 text-left">
+        <div className="flex min-w-0 flex-col">
+          <span className={cn("text-xs font-semibold", toneText[tone])}>
+            {headline.label}
+          </span>
+          <span className="font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums">
+            {formatClock(headline.ms)}
+          </span>
+        </div>
+        <dl className="ml-auto flex gap-4 text-right">
+          {walking ? (
+            <>
+              <CompactStat label="Bus tra" value={formatClock(Math.max(0, countdown.departureMs))} />
+              <CompactStat
+                label="Margine"
+                value={marginLabel(countdown)}
+                className={toneText[tone]}
+              />
+            </>
+          ) : (
+            <CompactStat label="Partenza" value={active.time} />
+          )}
+        </dl>
+      </button>
+      <div className="h-1 bg-muted">
+        <div
+          className={cn("h-full transition-[width] duration-1000 ease-linear", toneBackground[tone])}
+          style={{ width: `${timerProgress(active, countdown) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function CompactStat({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className="flex flex-col">
+      <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </dt>
+      <dd className={cn("font-mono text-base font-semibold tabular-nums", className)}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function ActiveTimerView({
+  active,
+  countdown,
+  header,
+  onRingHidden,
+}: {
+  active: ActiveTimer;
+  countdown: Countdown;
+  header: RefObject<HTMLDivElement | null>;
+  onRingHidden: (hidden: boolean) => void;
 }) {
   const {
     settings,
@@ -87,15 +202,29 @@ function ActiveTimerView({
   const headline = timerHeadline(countdown);
   const walking = countdown.walkingMs;
 
-  // Ring: share of the time left since the timer started
-  const total = active.departureAt - active.startedAt - (walking ?? 0);
-  const late = countdown.leaveMs < 0;
-  const progress =
-    tone === "gone"
-      ? 0
-      : late
-        ? 1
-        : Math.min(1, Math.max(0, total > 0 ? headline.ms / total : 0));
+  const progress = timerProgress(active, countdown);
+
+  // Switch to the compact countdown once a fifth of the ring is under the
+  // header, measured as it is (it is taller with the notch of the iPhone)
+  const observeRing = useCallback(
+    (ring: HTMLDivElement | null) => {
+      if (ring === null) return;
+      const update = () => {
+        const bottom = header.current?.getBoundingClientRect().bottom ?? 0;
+        const { top, height } = ring.getBoundingClientRect();
+        onRingHidden(bottom - top > height * 0.2);
+      };
+      update();
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+      return () => {
+        window.removeEventListener("scroll", update);
+        window.removeEventListener("resize", update);
+        onRingHidden(false);
+      };
+    },
+    [header, onRingHidden]
+  );
 
   const reference = countdown.leaveMs / 60_000;
   const nextAlert = active.thresholds.find(
@@ -126,7 +255,7 @@ function ActiveTimerView({
 
       {/* Countdown */}
       <section className="flex flex-col items-center rounded-3xl border border-border bg-card px-4 py-6 shadow-sm">
-        <div className="relative size-64">
+        <div ref={observeRing} className="relative size-64">
           <svg viewBox="0 0 100 100" className="size-full -rotate-90">
             <circle cx="50" cy="50" r="45" fill="none" strokeWidth="6" className="stroke-muted" />
             <circle
@@ -169,13 +298,7 @@ function ActiveTimerView({
           />
           <Stat
             label="Margine"
-            value={
-              walking === undefined
-                ? "—"
-                : late
-                  ? `−${minutesLeft(-countdown.leaveMs)} min`
-                  : `+${Math.floor(countdown.leaveMs / 60_000)} min`
-            }
+            value={marginLabel(countdown)}
             className={walking === undefined ? undefined : toneText[tone]}
           />
         </dl>
