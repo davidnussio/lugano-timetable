@@ -1,5 +1,6 @@
 import {
   Array as Arr,
+  Clock,
   Context,
   Effect,
   Exit,
@@ -9,7 +10,14 @@ import {
   Ref,
   Schedule,
 } from "effect";
-import type { Itinerary, Monitored, RoutingStop, Target } from "./models";
+import type {
+  Coordinates,
+  Departure,
+  Itinerary,
+  Monitored,
+  RoutingStop,
+  Target,
+} from "./models";
 import { type Monitor, RtpiClient, type RtpiError } from "./rtpi-client";
 import { SessionStore } from "./session-store";
 
@@ -19,6 +27,18 @@ const pollSchedule = Schedule.max([
   Schedule.spaced("500 millis"),
   Schedule.recurs(8),
 ]);
+
+const coordinates = (identifier: {
+  readonly Id: string;
+  readonly Lat?: string;
+  readonly Lon?: string;
+}): Option.Option<Coordinates> => {
+  const Lat = Number(identifier.Lat);
+  const Lon = Number(identifier.Lon);
+  return Number.isFinite(Lat) && Number.isFinite(Lon) && Lat !== 0 && Lon !== 0
+    ? Option.some({ Id: identifier.Id, Lat, Lon })
+    : Option.none();
+};
 
 const byName = Order.mapInput(Order.String, (target: Target) => target.Name);
 
@@ -34,7 +54,7 @@ export class Timetable extends Context.Service<
     readonly targets: Effect.Effect<ReadonlyArray<Target>, RtpiError>;
     itineraries(
       targets: ReadonlyArray<number>
-    ): Effect.Effect<Monitored<Itinerary>, RtpiError>;
+    ): Effect.Effect<Monitored<Departure>, RtpiError>;
     // parameters: [target, route, direction, routing?]
     routing(
       parameters: ReadonlyArray<number>
@@ -55,6 +75,7 @@ export class Timetable extends Context.Service<
               Name: target.Name,
               Label: target.Label,
               Identifiers: target.Identifiers.map((identifier) => identifier.Id),
+              Coordinates: Arr.getSomes(target.Identifiers.map(coordinates)),
             })
           )
         ),
@@ -96,7 +117,14 @@ export class Timetable extends Context.Service<
             `rtpi:session:GETITINERARIES:${stops.join(",")}`,
             (source) => rtpi.itineraries(source, stops)
           );
-          return { ...result, data: Arr.sort(result.data, byRouteCode) };
+          const now = yield* Clock.currentTimeMillis;
+          const data = Arr.sort(result.data, byRouteCode).map(
+            (itinerary): Departure =>
+              itinerary.Wait === undefined
+                ? itinerary
+                : { ...itinerary, DepartureAt: now + itinerary.Wait * 1000 }
+          );
+          return { ...result, data };
         }),
         routing: Effect.fn("Timetable.routing")(function* (parameters) {
           return yield* monitored(

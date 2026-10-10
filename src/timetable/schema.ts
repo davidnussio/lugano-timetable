@@ -4,10 +4,19 @@ import { InTimeStatus, RoutingStatus } from "./models";
 // Only the fields used by the app are declared: everything else returned by
 // the RTPI server is dropped while decoding.
 
+export const Coordinates = Schema.Struct({
+  Id: Schema.String,
+  Lat: Schema.Number,
+  Lon: Schema.Number,
+});
+export type Coordinates = typeof Coordinates.Type;
+
 export const Target = Schema.Struct({
   Name: Schema.String,
   Label: Schema.String,
   Identifiers: Schema.Array(Schema.String),
+  // Position of every platform of the stop that has one
+  Coordinates: Schema.Array(Coordinates),
 });
 export type Target = typeof Target.Type;
 
@@ -19,6 +28,9 @@ export const FullTarget = Schema.Struct({
     Schema.Struct({
       Id: Schema.String,
       Code: Schema.String,
+      // WGS84 degrees as strings, "0.0" when unknown
+      Lat: Schema.optionalKey(Schema.String),
+      Lon: Schema.optionalKey(Schema.String),
     })
   ),
 });
@@ -34,6 +46,10 @@ export const Itinerary = Schema.Struct({
   Img: Schema.String,
   Time: Schema.String,
   Pred: Schema.Enum(InTimeStatus),
+  // Seconds until the departure, relative to the response
+  Wait: Schema.optionalKey(Schema.Number),
+  // Trip identifier, stable while the bus approaches the stop
+  Uid: Schema.optionalKey(Schema.Number),
 });
 export type Itinerary = typeof Itinerary.Type;
 

@@ -46,13 +46,15 @@ const scriptedRtpi = (
           {
             Name: "Al Bosco",
             Label: "Albonago, al Bosco",
-            Identifiers: [{ Id: "631", Code: "425101" }],
+            Identifiers: [
+              { Id: "631", Code: "425101", Lat: "46.0281", Lon: "8.9624" },
+            ],
           },
           {
             Name: "Ai Frati",
             Label: "Lugano, ai Frati",
             Identifiers: [
-              { Id: "486", Code: "402801" },
+              { Id: "486", Code: "402801", Lat: "0.0", Lon: "0.0" },
               { Id: "487", Code: "402802" },
             ],
           },
@@ -124,6 +126,33 @@ describe("Timetable", () => {
     );
   });
 
+  it.effect("computes the departure time from the wait", () => {
+    const calls = makeCalls();
+
+    return Effect.gen(function* () {
+      yield* TestClock.setTime(1_000_000);
+      const result = yield* Timetable.use((t) => t.itineraries([486]));
+
+      assert.deepStrictEqual(
+        result.data.map((i) => i.DepartureAt),
+        [1_000_000 + 465_000, undefined]
+      );
+    }).pipe(
+      Effect.provide(
+        timetable(
+          [
+            {
+              source: "S1",
+              ready: true,
+              data: [{ ...itinerary("2"), Wait: 465 }, itinerary("4")],
+            },
+          ],
+          calls
+        )
+      )
+    );
+  });
+
   it.effect("reports not ready when the server keeps answering KO", () => {
     const calls = makeCalls();
 
@@ -152,11 +181,13 @@ describe("Timetable", () => {
           Name: "Ai Frati",
           Label: "Lugano, ai Frati",
           Identifiers: ["486", "487"],
+          Coordinates: [],
         },
         {
           Name: "Al Bosco",
           Label: "Albonago, al Bosco",
           Identifiers: ["631"],
+          Coordinates: [{ Id: "631", Lat: 46.0281, Lon: 8.9624 }],
         },
       ]);
       assert.strictEqual(calls.fullTargets, 1);
