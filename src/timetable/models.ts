@@ -1,3 +1,7 @@
+// Types shared with the client components. Schema types are re-exported as
+// types only, so that Effect is not pulled into the browser bundle.
+export type { Itinerary, RoutingStop, Target } from "./schema";
+
 export enum RoutingStatus {
   FeatureStation = 0,
   CurrentStation = 1,
@@ -9,60 +13,9 @@ export enum InTimeStatus {
   Delayed = 0,
 }
 
-// http://bs.tplsa.ch/RTPI/rtpi?data=%7Bsource%3A%221CD6A938DCC3352AFEE32F999EA75FCC%22%2Ctype%3AEXIT%7D&_=1677068700318
-export interface ApiResponse<T> {
-  status: string;
-  type: string;
-  source: string;
-  data: T[];
-  sessionId: string;
+// Result of a monitored request: `ready` is false while the RTPI server is
+// still preparing the data for the session.
+export interface Monitored<A> {
+  readonly ready: boolean;
+  readonly data: ReadonlyArray<A>;
 }
-
-export interface Target {
-  Name: string;
-  Identifiers: string[];
-  Codes: string[];
-  Label: string;
-}
-
-export interface TargetResponse extends ApiResponse<Target> {}
-
-// Fermata
-// http://bs.tplsa.ch/RTPI/rtpi?data=%7Bsource%3A%22223117F924B0195F08858D21059372D5%22%2Cdestination%3A0%2Ctype%3AGET_ITINERARIES%2Cdata%3A%7Bparameters%3A%5B475%2C476%5D%7D%7D&_=1677066372095
-
-export interface Itineraries {
-  Dest: string;
-  Routing: string;
-  Dir: string;
-  Stall: string;
-  Pred: InTimeStatus;
-  RouteCode: string;
-  Img: string;
-  Route: string;
-  Time: string;
-  Target: string;
-  FromTarget: number;
-  ToTarget: number;
-}
-export interface ItinerariesResponse extends ApiResponse<Itineraries> {
-  validity: string;
-}
-
-// data: {source:"DB18A712A667797BB3AFF2F537532542",destination:0,type:GETROUTING,data:{parameters:[478,23,2,183]}}
-export interface Routing {
-  Status: RoutingStatus;
-  UID: string;
-  Code: string;
-  Time: string;
-  Pred: InTimeStatus;
-}
-
-export interface RoutingResponse extends ApiResponse<Routing> {
-  validity: string;
-  lastcom: string;
-  vehicle: string;
-  delay: string;
-  itinerary: string;
-}
-
-// IdentifierMap = {id: Target}

@@ -7,11 +7,11 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useFavorites } from "~/hooks/use-favorites";
-import { Target } from "~/timetable/models";
+import type { Target } from "~/timetable/models";
 
 function bySearchValue(
   search: string
-): (value: Target, index: number, array: Target[]) => boolean {
+): (target: Target) => boolean {
   if (search === "") return () => true;
 
   return (target) => {
@@ -27,12 +27,12 @@ function bySearchValue(
 }
 
 export interface FiltrableListTargetsProps {
-  targets: Target[];
+  targets: ReadonlyArray<Target>;
 }
 
 export function FiltrableListTargets({
   targets,
-}: FiltrableListTargetsProps): JSX.Element {
+}: FiltrableListTargetsProps): React.JSX.Element {
   const [search, setSearch] = useState<string>("");
   const deferredSearch = useDeferredValue(search);
   const { favorites, isLoaded, isFavorite } = useFavorites();
@@ -78,7 +78,7 @@ export function FiltrableListTargets({
                   className="flex items-center justify-between px-4 py-3.5 gap-3"
                   href={`/fermata/${target.Identifiers.join("/")}`}>
                   {isFav && (
-                    <Star className="h-4 w-4 flex-shrink-0 fill-accent text-accent" />
+                    <Star className="h-4 w-4 shrink-0 fill-accent text-accent" />
                   )}
                   <div className="flex flex-col items-start flex-1 min-w-0">
                     <span className="font-medium text-foreground truncate w-full">
@@ -88,7 +88,7 @@ export function FiltrableListTargets({
                       {target.Label}
                     </span>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 </Link>
               </li>
             );

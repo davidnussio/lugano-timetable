@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import { SquareChartGantt } from "lucide-react";
 import Image from "next/image";
 import { Button } from "~/components/ui/button";
@@ -32,7 +31,7 @@ export function Timetable({ url }: { url: string }) {
             Consulta gli orari aggiornati per la fermata del bus.
           </DialogDescription>
         </DialogHeader>
-        <div className="m-auto h-full w-full relative flex-grow justify-end">
+        <div className="m-auto h-full w-full relative grow justify-end">
           <Image
             alt="Timetable"
             title="Image"

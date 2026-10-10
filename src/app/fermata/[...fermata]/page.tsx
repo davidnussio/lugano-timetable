@@ -7,7 +7,8 @@ import Link from "next/link";
 import useSWR from "swr";
 import Loading from "~/app/components/loading";
 import { useFavorites } from "~/hooks/use-favorites";
-import { InTimeStatus, type Itineraries, type Target } from "~/timetable/models";
+import { useMonitored } from "~/hooks/use-monitored";
+import { InTimeStatus, type Itinerary, type Target } from "~/timetable/models";
 import { shimmer } from "~/ui/utils/shimmer";
 import { toBase64 } from "~/utils/base64";
 import { fetcher } from "~/utils/fetcher";
@@ -18,24 +19,8 @@ type FermatePageProps = {
   }>;
 };
 
-function useItineraries(itineraries: string[]) {
-  const url = `/api/timetable/itineraries?${itineraries
-    .map((i) => `itineraries=${i}`)
-    .join("&")}`;
-
-  const { data, error, isLoading } = useSWR<Itineraries[]>(url, fetcher, {
-    refreshInterval: 10_000,
-  });
-
-  return {
-    data: data ?? [],
-    isLoading,
-    isError: error,
-  };
-}
-
 function useStopInfo(fermata: string[]) {
-  const { data, isLoading } = useSWR<Target[]>("/api/timetable/targets", fetcher);
+  const { data, isLoading } = useSWR<ReadonlyArray<Target>>("/api/timetable/targets", fetcher);
   
   const stopInfo = data?.find(
     (t) => t.Identifiers.join(",") === fermata.join(",")
@@ -51,10 +36,20 @@ const colors = [{ from: "#1E3A3A", via: "#2A4A4A", to: "#1E3A3A" }];
 
 export default function FermatePage(props: FermatePageProps) {
   const params = use(props.params);
-  const { data, isLoading } = useItineraries(params.fermata);
+  const { data, isLoading, isError } = useMonitored<Itinerary>(
+    "/api/timetable/itineraries",
+    "itineraries",
+    params.fermata
+  );
   const { isFavorite, toggleFavorite, isLoaded } = useFavorites();
   const { stopInfo } = useStopInfo(params.fermata);
 
+  if (isError && data.length === 0)
+    return (
+      <p className="px-4 py-8 text-center text-sm text-destructive">
+        Servizio non disponibile, nuovo tentativo in corso…
+      </p>
+    );
   if (isLoading) return <Loading />;
 
   const currentIsFavorite = isLoaded && isFavorite(params.fermata);
@@ -93,7 +88,7 @@ export default function FermatePage(props: FermatePageProps) {
             <Link
               className="flex items-center gap-3 px-4 py-3.5"
               href={`/routing/${target.Target}/${target.Route}/${target.Dir}/${target.Routing}`}>
-              <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+              <div className="shrink-0 rounded-lg overflow-hidden bg-muted">
                 <Image
                   src={`http://bs.tplsa.ch/images/routes/${target.Img.replace(
                     ".jpg",
@@ -112,14 +107,14 @@ export default function FermatePage(props: FermatePageProps) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-foreground truncate">{target.Dest}</span>
                   {target.Pred === InTimeStatus.Delayed && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive flex-shrink-0">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive shrink-0">
                       Ritardo
                     </span>
                   )}
                 </div>
                 <span className="text-sm font-mono text-muted-foreground">{target.Time}</span>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
             </Link>
           </li>
         ))}
