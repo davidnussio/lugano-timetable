@@ -8,7 +8,14 @@ export function SiteFooter() {
         essere imprecisi: verifica sempre alla fermata.
       </p>
       <p>
-        Creato da <span className="font-medium text-foreground">dambox</span>
+        Creato da{" "}
+        <a
+          href="https://dambox.ch/projects"
+          target="_blank"
+          rel="noopener"
+          className="font-medium text-foreground underline-offset-2 hover:underline">
+          dambox
+        </a>
       </p>
     </footer>
   );
