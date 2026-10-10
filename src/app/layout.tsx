@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cn } from "~/lib/utils";
 import { TimerProvider } from "~/timer/timer-provider";
+import { SiteFooter } from "./components/site-footer";
 import { TimerBar } from "./components/timer-bar";
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
         <TimerProvider>
           <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
             {children}
+            <SiteFooter />
             <TimerBar />
           </div>
         </TimerProvider>
