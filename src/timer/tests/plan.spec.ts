@@ -6,6 +6,8 @@ import {
   distanceMeters,
   dueAlert,
   minutesLeft,
+  peakHold,
+  walkingRelease,
   walkingSeconds,
 } from "../plan";
 
@@ -107,6 +109,34 @@ describe("alertMessage", () => {
     expect(alertMessage("2", "Castagnola", countdown(240_000, 0, undefined))).toEqual({
       title: "Il bus parte tra 4 min",
       body: "Linea 2 per Castagnola",
+    });
+  });
+});
+
+describe("peakHold", () => {
+  it("starts from the first value", () => {
+    expect(peakHold(undefined, 300, 0)).toEqual({ value: 300, at: 0 });
+  });
+
+  it("rises at once", () => {
+    expect(peakHold({ value: 300, at: 0 }, 310, 1000).value).toBe(310);
+  });
+
+  it("falls by at most one second per second", () => {
+    expect(peakHold({ value: 300, at: 0 }, 290, 2000).value).toBe(298);
+    expect(peakHold({ value: 300, at: 0 }, 290, 20_000).value).toBe(290);
+  });
+
+  it("keeps the time to leave from going back up with a noisy GPS", () => {
+    const readings = [300, 304, 296, 299, 307, 291, 288, 295];
+    const release = walkingRelease("normal");
+    let envelope = peakHold(undefined, readings[0], 0, release);
+    let previousLeave = Infinity;
+    readings.forEach((meters, second) => {
+      envelope = peakHold(envelope, meters, second * 1000, release);
+      const leave = 600 - second - walkingSeconds(envelope.value);
+      expect(leave).toBeLessThanOrEqual(previousLeave + 1e-9);
+      previousLeave = leave;
     });
   });
 });

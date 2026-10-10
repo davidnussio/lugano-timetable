@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
   useSyncExternalStore,
 } from "react";
 import { type GeolocationState, useGeolocation } from "~/hooks/use-geolocation";
@@ -26,6 +27,9 @@ import {
   countdown,
   distanceMeters,
   dueAlert,
+  type Envelope,
+  peakHold,
+  walkingRelease,
   walkingSeconds,
 } from "./plan";
 import {
@@ -72,6 +76,33 @@ export function useTimer(): TimerContextValue {
 }
 
 const noop = () => () => {};
+
+interface DistanceSample {
+  readonly raw: number;
+  readonly envelope: Envelope;
+  readonly timer: number | undefined;
+}
+
+// The distance smoothed with `peakHold`. The envelope is anchored at the
+// latest GPS reading and decays from there on every tick of the clock.
+function useSteadyDistance(
+  raw: number | undefined,
+  now: number,
+  timer: number | undefined,
+  release: number
+): number | undefined {
+  const [sample, setSample] = useState<DistanceSample>();
+  if (raw === undefined || now === 0) {
+    if (sample !== undefined) setSample(undefined);
+    return raw;
+  }
+  const previous = sample?.timer === timer ? sample?.envelope : undefined;
+  const envelope = peakHold(previous, raw, now, release);
+  if (sample?.raw !== raw || sample.timer !== timer) {
+    setSample({ raw, envelope, timer });
+  }
+  return envelope.value;
+}
 
 // Runs the active timer on every page: follows the bus with the real-time
 // data, measures the walk to the stop and fires the alerts.
@@ -120,10 +151,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     );
   }, [found]);
 
-  const distance =
+  const distance = useSteadyDistance(
     timer?.coordinates && geolocation.position
       ? distanceMeters(geolocation.position, timer.coordinates)
-      : undefined;
+      : undefined,
+    now,
+    timer?.startedAt,
+    walkingRelease(settings.pace)
+  );
   const walk =
     distance === undefined ? undefined : walkingSeconds(distance, settings.pace);
   const current =

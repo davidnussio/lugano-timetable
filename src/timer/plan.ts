@@ -38,6 +38,35 @@ export function walkingSeconds(meters: number, pace: Pace = "normal"): number {
   return (meters * DETOUR_FACTOR) / PACE_SPEED[pace];
 }
 
+// Meters per second by which the distance shrinks when the walking time drops
+// by one second per second: the release of `peakHold` for the distance
+export function walkingRelease(pace: Pace = "normal"): number {
+  return PACE_SPEED[pace] / DETOUR_FACTOR;
+}
+
+export interface Envelope {
+  readonly value: number;
+  // When `value` was measured, in milliseconds
+  readonly at: number;
+}
+
+// The distance to the stop follows the GPS, whose position jumps by a few
+// meters at every fix. Like the level meter of an amplifier, the estimate
+// rises at once (better to leave early) and falls by at most `release` per
+// second. With `walkingRelease` the walking time drops by at most one second
+// per second, so the time to leave never goes back up: noise only pauses the
+// countdown, and it stays still while walking to the stop.
+export function peakHold(
+  previous: Envelope | undefined,
+  value: number,
+  at: number,
+  release = 1
+): Envelope {
+  if (previous === undefined) return { value, at };
+  const decayed = previous.value - (release * (at - previous.at)) / 1000;
+  return { value: Math.max(value, decayed), at };
+}
+
 // Remaining minutes at which to alert, in descending order. Each alert comes
 // after 40% of the remaining time has elapsed, so a 20 minute wait gives
 // 12, 7, 4, 3, 2, 1, 0 instead of an alert every minute. 0 is "leave now".
