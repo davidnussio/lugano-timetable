@@ -11,17 +11,20 @@ import { LineBadge } from "./line-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance } = useTimer();
+  const { timer, countdown, distance, geolocation } = useTimer();
   const pathname = usePathname();
 
   if (!timer || !countdown || pathname === "/timer") return null;
 
   const tone = timerTone(countdown);
   const headline = timerHeadline(countdown);
+  const accuracy = geolocation.position?.accuracy;
   const where =
     distance === undefined
       ? `da ${timer.stop.name}`
-      : `${formatDistance(distance)} da ${timer.stop.name}`;
+      : accuracy === undefined
+        ? `${formatDistance(distance)} da ${timer.stop.name}`
+        : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
 
   return (
     <>
