@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -25,6 +26,7 @@ export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
   const tap = useRef({ start: { x: 0, y: 0 }, moved: false, last: 0 });
   const viewRef = useRef(IDENTITY);
   const [view, setView] = useState(IDENTITY);
+  const [failed, setFailed] = useState(false);
 
   const update = useCallback((next: View) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -153,6 +155,15 @@ export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
     }
   };
 
+  if (failed) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
+        <ImageOff className="size-8" />
+        <p className="text-sm">Orario non disponibile</p>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
@@ -173,6 +184,7 @@ export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
           fill
           sizes="200vw"
           draggable={false}
+          onError={() => setFailed(true)}
           className="pointer-events-none object-contain"
         />
       </div>
