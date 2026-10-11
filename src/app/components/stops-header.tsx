@@ -1,15 +1,17 @@
-import { List, MapIcon } from "lucide-react";
+import { List, MapIcon, Route } from "lucide-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 
 const views = [
   { href: "/", label: "Lista", Icon: List },
   { href: "/mappa", label: "Mappa", Icon: MapIcon },
+  { href: "/tragitto", label: "Tragitto", Icon: Route },
 ] as const;
 
 type View = (typeof views)[number]["href"];
 
-// Title of the stop list and of the map, with the switch between the two
+// Title of the stop list, the map and the journey planner, with the switch
+// between them. Only the current view shows its label on narrow screens.
 export function StopsHeader({ title, current }: { title: string; current: View }) {
   return (
     <header className="flex items-end justify-between gap-3 px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -32,7 +34,9 @@ export function StopsHeader({ title, current }: { title: string; current: View }
                 : "text-muted-foreground hover:text-foreground"
             )}>
             <Icon className="size-4" />
-            {label}
+            <span className={cn(href !== current && "sr-only min-[420px]:not-sr-only")}>
+              {label}
+            </span>
           </Link>
         ))}
       </nav>

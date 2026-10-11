@@ -20,6 +20,13 @@ export function formatClock(ms: number): string {
     : `${sign}${pad(minutes)}:${pad(seconds)}`;
 }
 
+// "45 min", "1 h 06"
+export function formatDuration(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60_000));
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h ${(minutes % 60).toString().padStart(2, "0")}`;
+}
+
 export function formatDistance(meters: number): string {
   return meters < 1000
     ? `${Math.round(meters / 10) * 10} m`
