@@ -6,7 +6,8 @@ import { TransportBadge } from "~/app/components/transport-badge";
 import { formatDuration } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import type { Connection, PlannedLeg } from "~/journey/models";
-import { delayMs, expected, feasible, formatTime, type Timing } from "~/timer/journey";
+import { expected, feasible, formatTime } from "~/timer/journey";
+import { Time } from "~/app/components/leg-time";
 
 export function connectionStart({ legs }: Connection): number {
   return expected(legs[0].departure) - (legs[0].walkBeforeMs ?? 0);
@@ -22,25 +23,6 @@ export function sameStart(a: PlannedLeg, b: PlannedLeg): boolean {
 }
 
 const walkMinutes = (ms: number) => Math.max(1, Math.round(ms / 60_000));
-
-// The expected time, with the delay when there is one
-export function Time({ timing, className }: { timing: Timing; className?: string }) {
-  const delay = Math.round(delayMs(timing) / 60_000);
-  return (
-    <span className={cn("inline-flex items-baseline gap-1 font-mono tabular-nums", className)}>
-      {formatTime(expected(timing))}
-      {delay !== 0 && (
-        <span
-          className={cn(
-            "font-sans text-[11px] font-semibold",
-            delay > 0 ? "text-destructive" : "text-success"
-          )}>
-          {delay > 0 ? `+${delay}` : delay}
-        </span>
-      )}
-    </span>
-  );
-}
 
 function Walk({ ms }: { ms: number }) {
   return (

@@ -267,3 +267,22 @@ export function transferMessage(
     }
   }
 }
+
+// What comes next once on board: getting off for a transfer, or the arrival.
+// Undefined before the first departure, when the timer counts down to it.
+export function journeyHeadline(
+  legs: ReadonlyArray<Leg>,
+  now: number
+): { readonly label: string; readonly ms: number } | undefined {
+  if (legs.length === 0 || expected(legs[0].departure) > now) return undefined;
+  const index = legs.findIndex((leg) => expected(leg.arrival) > now);
+  if (index === -1) return { label: "Arrivato", ms: 0 };
+  const leg = legs[index];
+  // Between two legs: waiting for the next bus
+  if (expected(leg.departure) > now) {
+    return { label: `Linea ${leg.line} tra`, ms: expected(leg.departure) - now };
+  }
+  const ms = expected(leg.arrival) - now;
+  if (index === legs.length - 1) return { label: "Arrivo tra", ms };
+  return { label: `Scendi a ${leg.to.name} tra`, ms };
+}

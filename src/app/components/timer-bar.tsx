@@ -2,25 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNow } from "~/hooks/use-now";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
+import { journeyHeadline } from "~/timer/journey";
 import { timerHeadline, timerTone, toneBackground } from "~/timer/tone";
 import { useTimer } from "~/timer/timer-provider";
 import { AlertBanner } from "./alert-banner";
-import { LineBadge } from "./line-badge";
+import { TimerBadge } from "./timer-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, geolocation } = useTimer();
+  const { timer, countdown, distance, geolocation, legs } = useTimer();
   const pathname = usePathname();
+  const now = useNow(timer !== null);
 
   if (!timer || !countdown || pathname === "/timer") return null;
 
   const tone = timerTone(countdown);
-  const headline = timerHeadline(countdown);
+  // Once on board of a journey: the next transfer or the arrival
+  const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
+  const headline = travel ?? timerHeadline(countdown);
   const accuracy = geolocation.position?.accuracy;
-  const where =
-    distance === undefined
+  const where = travel
+    ? `verso ${timer.journey?.to.name ?? timer.destination}`
+    : distance === undefined
       ? `da ${timer.stop.name}`
       : accuracy === undefined
         ? `${formatDistance(distance)} da ${timer.stop.name}`
@@ -35,11 +41,18 @@ export function TimerBar() {
         <Link
           href="/timer"
           className="flex items-center gap-3 rounded-2xl bg-foreground p-2.5 pr-4 text-background shadow-xl shadow-black/20 transition-transform active:scale-[0.98]">
-          <LineBadge img={timer.img} route={timer.route} line={timer.line} size={40} />
+          <TimerBadge timer={timer} size={40} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{timer.destination}</p>
+            <p className="truncate text-sm font-semibold">
+              {timer.journey?.to.name ?? timer.destination}
+            </p>
             <p className="flex items-center gap-1.5 truncate text-xs opacity-70">
-              <span className={cn("size-1.5 shrink-0 rounded-full", toneBackground[tone])} />
+              <span
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  travel ? "bg-primary" : toneBackground[tone]
+                )}
+              />
               {headline.label} · {where}
             </p>
           </div>

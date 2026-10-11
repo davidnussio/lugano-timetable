@@ -6,6 +6,7 @@ import {
   fallbackPlan,
   feasible,
   formatTime,
+  journeyHeadline,
   journeyState,
   laterPlan,
   type Leg,
@@ -246,5 +247,23 @@ describe("transferMessage", () => {
   it("formats times in Lugano", () => {
     // 2026-10-11 06:14 UTC is 08:14 in summer time
     expect(formatTime(Date.UTC(2026, 9, 11, 6, 14))).toBe("08:14");
+  });
+});
+
+describe("journeyHeadline", () => {
+  const legs = [leg("2", 0, 10), toParadiso(15, 25)];
+
+  it("leaves the countdown to the timer before the first bus", () => {
+    expect(journeyHeadline(legs, -MIN)).toBeUndefined();
+  });
+
+  it("tells when to get off, wait and arrive", () => {
+    expect(journeyHeadline(legs, 4 * MIN)).toEqual({
+      label: "Scendi a Lugano, Centro tra",
+      ms: 6 * MIN,
+    });
+    expect(journeyHeadline(legs, 12 * MIN)).toEqual({ label: "Linea 5 tra", ms: 3 * MIN });
+    expect(journeyHeadline(legs, 20 * MIN)).toEqual({ label: "Arrivo tra", ms: 5 * MIN });
+    expect(journeyHeadline(legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0 });
   });
 });
