@@ -47,7 +47,13 @@ const scriptedRtpi = (
             Name: "Al Bosco",
             Label: "Albonago, al Bosco",
             Identifiers: [
-              { Id: "631", Code: "425101", Lat: "46.0281", Lon: "8.9624" },
+              {
+                Id: "631",
+                Code: "425101",
+                CodeNat: "8591578",
+                Lat: "46.0281",
+                Lon: "8.9624",
+              },
             ],
           },
           {
@@ -188,6 +194,7 @@ describe("Timetable", () => {
           Label: "Albonago, al Bosco",
           Identifiers: ["631"],
           Coordinates: [{ Id: "631", Lat: 46.0281, Lon: 8.9624 }],
+          CodeNat: "8591578",
         },
       ]);
       assert.strictEqual(calls.fullTargets, 1);

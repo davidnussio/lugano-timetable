@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect";
 import type { NextRequest } from "next/server";
 import { Identifier } from "~/timetable/schema";
 import { Timetable } from "~/timetable/timetable";
-import { respond } from "../respond";
+import { respond } from "../../respond";
 
 const Query = Schema.Struct({
   itineraries: Schema.NonEmptyArray(Identifier),

@@ -13,16 +13,19 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { type RefObject, useCallback, useRef, useState } from "react";
 import { AlertBanner } from "~/app/components/alert-banner";
-import { LineBadge } from "~/app/components/line-badge";
 import { PageHeader } from "~/app/components/page-header";
+import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
+import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
+import { journeyHeadline } from "~/timer/journey";
 import { type Countdown, minutesLeft, type Pace } from "~/timer/plan";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
+import { JourneySection, LaterSuggestion } from "./journey-view";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
 const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkMap), {
@@ -43,6 +46,14 @@ function timerProgress(active: ActiveTimer, countdown: Countdown): number {
   if (countdown.leaveMs < 0) return 1;
   const total = active.departureAt - active.startedAt - (countdown.walkingMs ?? 0);
   return Math.min(1, Math.max(0, total > 0 ? timerHeadline(countdown).ms / total : 0));
+}
+
+// The countdown to leave, or what comes next once on board of a journey
+function useHeadline(countdown: Countdown) {
+  const { legs } = useTimer();
+  const now = useNow();
+  const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
+  return { headline: travel ?? timerHeadline(countdown), travel: travel !== undefined, now };
 }
 
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
@@ -108,7 +119,7 @@ function CompactCountdown({
   show: boolean;
 }) {
   const tone = timerTone(countdown);
-  const headline = timerHeadline(countdown);
+  const { headline, travel } = useHeadline(countdown);
   const walking = countdown.walkingMs !== undefined;
 
   return (
@@ -124,7 +135,7 @@ function CompactCountdown({
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="flex w-full items-center gap-4 px-4 py-2 text-left">
         <div className="flex min-w-0 flex-col">
-          <span className={cn("text-xs font-semibold", toneText[tone])}>
+          <span className={cn("truncate text-xs font-semibold", travel ? "text-primary" : toneText[tone])}>
             {headline.label}
           </span>
           <span className="font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums">
@@ -132,7 +143,7 @@ function CompactCountdown({
           </span>
         </div>
         <dl className="ml-auto flex gap-4 text-right">
-          {walking ? (
+          {travel ? null : walking ? (
             <>
               <CompactStat label="Bus tra" value={formatClock(Math.max(0, countdown.departureMs))} />
               <CompactStat
@@ -199,7 +210,7 @@ function ActiveTimerView({
     enableNotifications,
   } = useTimer();
   const tone = timerTone(countdown);
-  const headline = timerHeadline(countdown);
+  const { headline, travel, now } = useHeadline(countdown);
   const walking = countdown.walkingMs;
 
   const progress = timerProgress(active, countdown);
@@ -236,7 +247,7 @@ function ActiveTimerView({
       <AlertBanner />
       {/* The bus */}
       <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
-        <LineBadge img={active.img} route={active.route} line={active.line} />
+        <TimerBadge timer={active} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{active.destination}</p>
           <p className="truncate text-xs text-muted-foreground">
@@ -271,14 +282,20 @@ function ActiveTimerView({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={cn("text-sm font-semibold", toneText[tone])}>
+            <span
+              className={cn(
+                "max-w-52 truncate text-center text-sm font-semibold",
+                travel ? "text-primary" : toneText[tone]
+              )}>
               {headline.label}
             </span>
             <span className="font-mono text-6xl font-semibold tracking-tight tabular-nums">
               {formatClock(headline.ms)}
             </span>
             <span className="mt-1 text-xs text-muted-foreground">
-              {tone === "gone"
+              {travel
+                ? `In viaggio verso ${active.journey?.to.name ?? active.destination}`
+                : tone === "gone"
                 ? "Il bus è partito"
                 : countdown.departureMs <= 0
                   ? "Il bus sta arrivando"
@@ -316,6 +333,13 @@ function ActiveTimerView({
               : ", quando devi uscire"
             : `, a ${nextAlert} min ${walking === undefined ? "dalla partenza" : "dall'uscita"}`}
         </p>
+      )}
+
+      {active.journey && (
+        <>
+          <LaterSuggestion leaving={countdown.leaveMs <= 0} />
+          <JourneySection now={now} />
+        </>
       )}
 
       {/* Location */}
@@ -410,13 +434,15 @@ function ActiveTimerView({
         puntuali.
       </p>
 
-      <div className="grid grid-cols-2 gap-2 pt-1">
+      <div className={cn("grid gap-2 pt-1", active.routing !== "" && "grid-cols-2")}>
+        {active.routing !== "" && (
         <Link
           href={`/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
           <Bus className="size-4" />
           Dov&apos;è il bus?
         </Link>
+        )}
         <button
           type="button"
           onClick={cancel}
