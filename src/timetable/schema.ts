@@ -17,6 +17,9 @@ export const Target = Schema.Struct({
   Identifiers: Schema.Array(Schema.String),
   // Position of every platform of the stop that has one
   Coordinates: Schema.Array(Coordinates),
+  // National stop code shared by the platforms: the station id of
+  // transport.opendata.ch
+  CodeNat: Schema.optionalKey(Schema.String),
 });
 export type Target = typeof Target.Type;
 
@@ -28,6 +31,7 @@ export const FullTarget = Schema.Struct({
     Schema.Struct({
       Id: Schema.String,
       Code: Schema.String,
+      CodeNat: Schema.optionalKey(Schema.String),
       // WGS84 degrees as strings, "0.0" when unknown
       Lat: Schema.optionalKey(Schema.String),
       Lon: Schema.optionalKey(Schema.String),

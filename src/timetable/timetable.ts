@@ -70,14 +70,18 @@ export class Timetable extends Context.Service<
       // The stop list rarely changes: keep successful results for an hour
       const targets = yield* rtpi.fullTargets.pipe(
         Effect.map(
-          Arr.map(
-            (target): Target => ({
+          Arr.map((target): Target => {
+            const code = target.Identifiers.find(
+              (identifier) => identifier.CodeNat
+            )?.CodeNat;
+            return {
               Name: target.Name,
               Label: target.Label,
               Identifiers: target.Identifiers.map((identifier) => identifier.Id),
               Coordinates: Arr.getSomes(target.Identifiers.map(coordinates)),
-            })
-          )
+              ...(code ? { CodeNat: code } : {}),
+            };
+          })
         ),
         Effect.map(Arr.sort(byName)),
         Effect.cachedWithTTL((exit) => (Exit.isSuccess(exit) ? "1 hour" : 0))
