@@ -8,6 +8,7 @@ import {
   countdown,
   distanceMeters,
   minutesLeft,
+  PACE_SPEED,
   type Pace,
   type Position,
   walkingSeconds,
@@ -32,6 +33,8 @@ export interface Leg {
   readonly to: JourneyStop;
   readonly departure: Timing;
   readonly arrival: Timing;
+  // Walk before boarding as planned by the timetable, at a normal pace
+  readonly walkBeforeMs?: number;
 }
 
 export type ConnectionStatus = "ok" | "tight" | "missed";
@@ -96,7 +99,10 @@ export function transfer(
     tightMs = TIGHT_TRANSFER_MS,
   }: TransferOptions = {}
 ): Transfer {
-  const walkingMs = transferWalkingMs(arriving.to, departing.from, pace);
+  const walkingMs =
+    departing.walkBeforeMs === undefined
+      ? transferWalkingMs(arriving.to, departing.from, pace)
+      : (departing.walkBeforeMs * PACE_SPEED.normal) / PACE_SPEED[pace];
   const slackMs =
     expected(departing.departure) -
     (expected(arriving.arrival) + walkingMs + minimumMs);
@@ -147,43 +153,59 @@ export function journeyState(
   };
 }
 
-// The latest of the `candidates` (e.g. the next buses of the first line)
-// that still makes the connection with `departing`: when the next bus is
-// delayed, an earlier one may be caught later and still be in time.
-export function latestConnecting(
-  candidates: ReadonlyArray<Leg>,
-  departing: Leg,
+// A way to the destination: the journey followed, or one of the plans of
+// the timetable
+export interface Plan {
+  readonly legs: ReadonlyArray<Leg>;
+}
+
+const planDeparture = (plan: Plan) => expected(plan.legs[0].departure);
+const planArrival = (plan: Plan) => expected(plan.legs[plan.legs.length - 1].arrival);
+
+// Whether all the transfers of a plan can still be made
+export function feasible(plan: Plan, options?: TransferOptions): boolean {
+  return plan.legs.every(
+    (leg, index) =>
+      index === 0 ||
+      transfer(plan.legs[index - 1], leg, options).status !== "missed"
+  );
+}
+
+// The plan to fall back on when a connection is lost: the first one leaving
+// once the user can be at its stop
+export function fallbackPlan<P extends Plan>(
+  plans: ReadonlyArray<P>,
+  readyAt: number,
   options?: TransferOptions
-): Leg | undefined {
-  let best: Leg | undefined;
-  for (const candidate of candidates) {
-    if (transfer(candidate, departing, options).status === "missed") continue;
-    if (
-      best === undefined ||
-      expected(candidate.departure) > expected(best.departure)
-    ) {
-      best = candidate;
+): P | undefined {
+  let best: P | undefined;
+  for (const plan of plans) {
+    if (plan.legs.length === 0 || planDeparture(plan) < readyAt) continue;
+    if (!feasible(plan, options)) continue;
+    if (best === undefined || planArrival(plan) < planArrival(best)) {
+      best = plan;
     }
   }
   return best;
 }
 
-// The first of the `candidates` (e.g. the next buses of the line to change
-// to) that can be caught after `arriving`: the fallback for a lost
-// connection.
-export function earliestConnecting(
-  arriving: Leg,
-  candidates: ReadonlyArray<Leg>,
+// A plan leaving later than `current` without arriving later: when a bus of
+// the journey is delayed, an earlier one may be caught later and still be in
+// time. The latest of them, to stay home as long as possible.
+export function laterPlan<P extends Plan>(
+  plans: ReadonlyArray<P>,
+  current: Plan,
   options?: TransferOptions
-): Leg | undefined {
-  let best: Leg | undefined;
-  for (const candidate of candidates) {
-    if (transfer(arriving, candidate, options).status === "missed") continue;
-    if (
-      best === undefined ||
-      expected(candidate.departure) < expected(best.departure)
-    ) {
-      best = candidate;
+): P | undefined {
+  const departure = planDeparture(current);
+  const arrival = planArrival(current);
+  let best: P | undefined;
+  for (const plan of plans) {
+    if (plan.legs.length === 0) continue;
+    if (planDeparture(plan) <= departure || planArrival(plan) > arrival) continue;
+    if (!feasible(plan, options)) continue;
+    if (best === undefined || planDeparture(plan) > planDeparture(best)) {
+      best = plan;
     }
   }
   return best;
@@ -200,12 +222,19 @@ export function formatTime(ms: number): string {
   return clock.format(ms);
 }
 
+export interface Alternative {
+  // The first leg of the plan to fall back on
+  readonly leg: Leg;
+  // How much later it arrives than the journey
+  readonly laterMs: number;
+}
+
 // What to tell the user about the connection with `departing`. Nothing while
-// it is fine; `alternative` is the bus to fall back on when it is lost.
+// it is fine; `alternative` is the way to fall back on when it is lost.
 export function transferMessage(
   departing: Leg,
   { at, slackMs, status }: Transfer,
-  alternative?: Leg
+  alternative?: Alternative
 ): AlertMessage | undefined {
   const bus = `Linea ${departing.line} per ${departing.destination}`;
   switch (status) {
@@ -229,12 +258,11 @@ export function transferMessage(
           body: `${bus} · in ritardo di ${minutesLeft(-slackMs)} min`,
         };
       }
-      const later = minutesLeft(
-        expected(alternative.arrival) - expected(departing.arrival)
-      );
+      const { leg, laterMs } = alternative;
+      const later = minutesLeft(laterMs);
       return {
         title,
-        body: `Prossima linea ${alternative.line} alle ${formatTime(expected(alternative.departure))}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
+        body: `Prossima linea ${leg.line} alle ${formatTime(expected(leg.departure))}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
       };
     }
   }

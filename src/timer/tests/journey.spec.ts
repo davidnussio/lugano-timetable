@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   connectionStatus,
   delayMs,
-  earliestConnecting,
   expected,
+  fallbackPlan,
+  feasible,
   formatTime,
   journeyState,
-  latestConnecting,
+  laterPlan,
   type Leg,
   transfer,
   transferMessage,
@@ -114,6 +115,15 @@ describe("transfer", () => {
     expect(change.status).toBe("tight");
   });
 
+  it("prefers the walk planned by the timetable", () => {
+    const departing = { ...toParadiso(15, 25), walkBeforeMs: 2 * MIN };
+    expect(transfer(leg("2", 0, 10), departing).walkingMs).toBe(2 * MIN);
+    expect(transfer(leg("2", 0, 10), departing).status).toBe("ok");
+    expect(transfer(leg("2", 0, 10), departing, { pace: "slow" }).walkingMs).toBeCloseTo(
+      2.6 * MIN
+    );
+  });
+
   it("takes custom margins", () => {
     const change = transfer(leg("2", 0, 10), toParadiso(15, 25), {
       minimumMs: 0,
@@ -158,31 +168,43 @@ describe("journeyState", () => {
   });
 });
 
-describe("latestConnecting", () => {
-  const departing = toParadiso(30, 40);
+describe("plans", () => {
+  // Bus 2 to Centro, then bus 5 to Paradiso
+  const plan = (first: Leg, second: Leg) => ({ legs: [first, second] });
 
-  it("catches the latest bus that is still in time", () => {
-    const candidates = [leg("2", 5, 15), leg("2", 12, 22), leg("2", 20, 30)];
-    expect(latestConnecting(candidates, departing)).toBe(candidates[1]);
+  it("checks that every transfer can be made", () => {
+    expect(feasible(plan(leg("2", 0, 10), toParadiso(15, 25)))).toBe(true);
+    expect(feasible(plan(leg("2", 0, 10, { arrival: 5 }), toParadiso(15, 25)))).toBe(false);
+    expect(feasible({ legs: [leg("2", 0, 10)] })).toBe(true);
   });
 
-  it("follows the delays of both buses", () => {
-    const candidates = [leg("2", 5, 15), leg("2", 12, 22, { arrival: 8 })];
-    expect(latestConnecting(candidates, departing)).toBe(candidates[0]);
-    expect(latestConnecting(candidates, toParadiso(30, 40, 3))).toBe(candidates[1]);
+  it("falls back on the first plan that can be caught", () => {
+    const plans = [
+      plan(leg("2", 5, 15), toParadiso(20, 30)),
+      plan(leg("2", 12, 22), toParadiso(30, 40)),
+      plan(leg("2", 14, 24, { arrival: 8 }), toParadiso(30, 38)),
+      plan(leg("2", 20, 30), toParadiso(40, 50)),
+    ];
+    expect(fallbackPlan(plans, 10 * MIN)).toBe(plans[1]);
+    expect(fallbackPlan(plans, 0)).toBe(plans[0]);
+    expect(fallbackPlan(plans, 30 * MIN)).toBeUndefined();
   });
 
-  it("finds nothing when every bus is too late", () => {
-    expect(latestConnecting([leg("2", 25, 35)], departing)).toBeUndefined();
-  });
-});
-
-describe("earliestConnecting", () => {
-  it("falls back on the next bus that can be caught", () => {
-    const arriving = leg("2", 0, 10, { arrival: 6 });
-    const candidates = [toParadiso(30, 40), toParadiso(15, 25), toParadiso(22, 32)];
-    expect(earliestConnecting(arriving, candidates)).toBe(candidates[2]);
-    expect(earliestConnecting(leg("2", 0, 40), candidates)).toBeUndefined();
+  it("suggests leaving later when the arrival does not change", () => {
+    const current = plan(leg("2", 5, 15), toParadiso(30, 40));
+    const plans = [
+      current,
+      plan(leg("2", 12, 22), toParadiso(30, 40)),
+      plan(leg("2", 20, 30), toParadiso(30, 40)),
+      plan(leg("2", 22, 32), toParadiso(45, 55)),
+    ];
+    expect(laterPlan(plans, current)).toBe(plans[1]);
+    // The bus 5 is late: the next bus 2 still makes it
+    const delayed = plans.slice(0, 3).map((p) => plan(p.legs[0], toParadiso(30, 40, 3)));
+    expect(laterPlan(delayed, plan(current.legs[0], toParadiso(30, 40, 3)))).toBe(
+      delayed[2]
+    );
+    expect(laterPlan([current], current)).toBeUndefined();
   });
 });
 
@@ -212,9 +234,9 @@ describe("transferMessage", () => {
   });
 
   it("suggests the next bus", () => {
-    const next = toParadiso(25, 35);
+    const alternative = { leg: toParadiso(25, 35), laterMs: 10 * MIN };
     expect(
-      transferMessage(departing, transfer(arriving(7), departing), next)
+      transferMessage(departing, transfer(arriving(7), departing), alternative)
     ).toEqual({
       title: "Coincidenza a rischio a Lugano, Centro",
       body: `Prossima linea 5 alle ${formatTime(25 * MIN)}, arrivo +10 min`,

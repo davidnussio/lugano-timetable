@@ -21,9 +21,6 @@ export interface PlannedLeg extends Leg {
   // "B" (bus), "S", "RE", "IR", "EC"…
   readonly category: string;
   readonly operator?: string;
-  // Walk before boarding, from the previous leg or from the start, as
-  // planned by the timetable
-  readonly walkBeforeMs?: number;
 }
 
 export interface Connection {
