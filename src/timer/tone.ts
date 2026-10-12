@@ -1,11 +1,17 @@
-import type { Countdown } from "./plan";
+import type { Countdown, Stage } from "./plan";
 
 export type Tone = "ok" | "soon" | "late" | "gone";
 
 // How urgent the timer is: based on the time to leave when the walk is known,
-// on the departure otherwise
-export function timerTone({ departureMs, leaveMs, walkingMs }: Countdown): Tone {
+// on the departure otherwise. At the stop the user can only wait.
+export function timerTone(
+  { departureMs, leaveMs, walkingMs }: Countdown,
+  stage: Stage = "away"
+): Tone {
   if (departureMs < -60_000) return "gone";
+  if (stage === "arrived" && walkingMs !== undefined) {
+    return departureMs > 60_000 ? "ok" : "soon";
+  }
   if (walkingMs === undefined) {
     return departureMs > 5 * 60_000 ? "ok" : departureMs > 60_000 ? "soon" : "late";
   }
@@ -26,16 +32,23 @@ export const toneBackground: Record<Tone, string> = {
   gone: "bg-muted-foreground",
 };
 
-// Main line of the timer: what to do and in how long
-export function timerHeadline(countdown: Countdown): {
+// Main line of the timer: what to do and in how long. Once on the way, the
+// time to leave would stand still while walking: show the walk left instead.
+export function timerHeadline(
+  countdown: Countdown,
+  stage: Stage = "away"
+): {
   readonly label: string;
   readonly ms: number;
 } {
   if (countdown.departureMs < -60_000) return { label: "Bus partito", ms: 0 };
-  if (countdown.walkingMs === undefined) {
+  if (countdown.walkingMs === undefined || stage === "arrived") {
     return countdown.departureMs > 0
-      ? { label: "Parte tra", ms: countdown.departureMs }
+      ? { label: stage === "arrived" ? "Bus tra" : "Parte tra", ms: countdown.departureMs }
       : { label: "In arrivo", ms: 0 };
+  }
+  if (stage === "walking") {
+    return { label: "Alla fermata tra", ms: countdown.walkingMs };
   }
   return countdown.leaveMs >= 0
     ? { label: "Esci tra", ms: countdown.leaveMs }

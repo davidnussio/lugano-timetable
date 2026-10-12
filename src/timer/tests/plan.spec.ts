@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   alertMessage,
   alertThresholds,
+  approach,
   countdown,
   distanceMeters,
   dueAlert,
@@ -153,5 +154,57 @@ describe("peakHold", () => {
       expect(leave).toBeLessThanOrEqual(previousLeave + 1e-9);
       previousLeave = leave;
     });
+  });
+});
+
+describe("approach", () => {
+  it("starts away from the stop", () => {
+    expect(approach(undefined, 300, 10)).toEqual({
+      stage: "away",
+      farthest: { meters: 300, accuracy: 10 },
+    });
+  });
+
+  it("stays away while the GPS jitters", () => {
+    let state = approach(undefined, 300, 10);
+    for (const meters of [290, 305, 285, 310, 292]) {
+      state = approach(state, meters, 10);
+    }
+    expect(state.stage).toBe("away");
+  });
+
+  it("keeps the same state when nothing changes", () => {
+    const state = approach(undefined, 300, 10);
+    expect(approach(state, 290, 10)).toBe(state);
+  });
+
+  it("is on the way once closer than the error of both fixes", () => {
+    const state = approach(undefined, 300, 10);
+    expect(approach(state, 280, 10).stage).toBe("away");
+    expect(approach(state, 270, 10).stage).toBe("walking");
+    expect(approach(state, 260, 30).stage).toBe("away");
+    expect(approach(state, 230, 30).stage).toBe("walking");
+  });
+
+  it("measures the progress from the farthest fix", () => {
+    const farther = approach(approach(undefined, 300, 10), 320, 10);
+    expect(approach(farther, 290, 10).stage).toBe("walking");
+  });
+
+  it("ignores imprecise fixes", () => {
+    const state = approach(undefined, 300, 10);
+    expect(approach(state, 100, 80)).toBe(state);
+    expect(approach(undefined, 20, 80)).toEqual({ stage: "away" });
+  });
+
+  it("arrives near the stop and stays there", () => {
+    const arrived = approach(approach(undefined, 90, 5), 20, 5);
+    expect(arrived).toEqual({ stage: "arrived" });
+    expect(approach(arrived, 60, 5)).toBe(arrived);
+  });
+
+  it("never goes back home once on the way", () => {
+    const walking = approach(approach(undefined, 300, 10), 250, 10);
+    expect(approach(walking, 320, 10).stage).toBe("walking");
   });
 });

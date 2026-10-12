@@ -13,24 +13,26 @@ import { TimerBadge } from "./timer-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, geolocation, legs } = useTimer();
+  const { timer, countdown, distance, geolocation, legs, stage } = useTimer();
   const pathname = usePathname();
   const now = useNow(timer !== null);
 
   if (!timer || !countdown || pathname === "/timer") return null;
 
-  const tone = timerTone(countdown);
+  const tone = timerTone(countdown, stage);
   // Once on board of a journey: the next transfer or the arrival
   const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
-  const headline = travel ?? timerHeadline(countdown);
+  const headline = travel ?? timerHeadline(countdown, stage);
   const accuracy = geolocation.position?.accuracy;
   const where = travel
     ? `verso ${timer.journey?.to.name ?? timer.destination}`
-    : distance === undefined
-      ? `da ${timer.stop.name}`
-      : accuracy === undefined
-        ? `${formatDistance(distance)} da ${timer.stop.name}`
-        : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
+    : stage === "arrived"
+      ? `alla fermata ${timer.stop.name}`
+      : distance === undefined
+        ? `da ${timer.stop.name}`
+        : accuracy === undefined
+          ? `${formatDistance(distance)} da ${timer.stop.name}`
+          : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
 
   return (
     <>

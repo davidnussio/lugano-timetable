@@ -11,7 +11,7 @@ import {
   type Timing,
   type Transfer,
 } from "./journey";
-import { type AlertMessage, alertThresholds, type Pace } from "./plan";
+import { type AlertMessage, type Approach, alertThresholds, type Pace } from "./plan";
 
 // A journey with transfers planned with transport.opendata.ch. The timer
 // counts down to its first leg.
@@ -56,6 +56,8 @@ export interface ActiveTimer {
   // Latest alert, shown in the app until dismissed
   readonly lastAlert?: AlertMessage & { readonly at: number };
   readonly journey?: ActiveJourney;
+  // How far the user is on the way to the stop, followed with the GPS
+  readonly approach?: Approach;
 }
 
 export interface TimerSettings {

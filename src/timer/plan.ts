@@ -76,6 +76,53 @@ export function peakHold(
   return { value: Math.max(value, previous.value - release * elapsed), at };
 }
 
+// Where the user is on the way to the stop:
+// - "away": not left yet, the countdown is the time to leave;
+// - "walking": on the way, the countdown is the walk left;
+// - "arrived": at the stop, the countdown is the bus.
+// It only moves forward, so that the GPS noise never sends the user back home.
+export type Stage = "away" | "walking" | "arrived";
+
+export interface Approach {
+  readonly stage: Stage;
+  // The farthest reliable distance from the stop seen so far
+  readonly farthest?: { readonly meters: number; readonly accuracy: number };
+}
+
+// Fixes less precise than this (indoors, cell towers) are ignored
+const MAX_ACCURACY_METERS = 50;
+// The user counts as on the way after getting this much closer to the stop,
+// or more when the fixes are not precise enough to tell
+const MIN_PROGRESS_METERS = 25;
+const ARRIVED_METERS = 30;
+
+// Moves the stage forward with a GPS fix: `meters` from the stop, measured
+// within `accuracy` meters. Returns `previous` itself when nothing changes.
+export function approach(
+  previous: Approach | undefined,
+  meters: number,
+  accuracy: number
+): Approach {
+  const stage = previous?.stage ?? "away";
+  if (stage === "arrived" || accuracy > MAX_ACCURACY_METERS) {
+    return previous ?? { stage };
+  }
+  if (meters <= ARRIVED_METERS) return { stage: "arrived" };
+
+  const farthest =
+    previous?.farthest && previous.farthest.meters >= meters
+      ? previous.farthest
+      : { meters, accuracy };
+  // Closer than the two fixes can be wrong together
+  const closer =
+    farthest.meters - meters >
+    Math.max(MIN_PROGRESS_METERS, farthest.accuracy + accuracy);
+  const next = closer ? "walking" : stage;
+  return previous && next === stage && farthest === previous.farthest
+    ? previous
+    : { stage: next, farthest };
+}
+
 // Remaining minutes at which to alert, in descending order. Each alert comes
 // after 40% of the remaining time has elapsed, so a 20 minute wait gives
 // 12, 7, 4, 3, 2, 1, 0 instead of an alert every minute. 0 is "leave now".

@@ -21,7 +21,7 @@ import { useWakeLock } from "~/hooks/use-wake-lock";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
-import { type Countdown, minutesLeft, type Pace } from "~/timer/plan";
+import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
@@ -40,20 +40,28 @@ const paces: ReadonlyArray<{ value: Pace; label: string }> = [
 ];
 
 // Share of the time left since the timer started: the ring, or the bar of the
-// compact countdown
-function timerProgress(active: ActiveTimer, countdown: Countdown): number {
-  if (timerTone(countdown) === "gone") return 0;
+// compact countdown. Until leaving it counts down to leave, then to the bus.
+function timerProgress(active: ActiveTimer, countdown: Countdown, stage: Stage): number {
+  if (timerTone(countdown, stage) === "gone") return 0;
+  const total = active.departureAt - active.startedAt;
+  if (stage !== "away") {
+    return Math.min(1, Math.max(0, total > 0 ? countdown.departureMs / total : 0));
+  }
   if (countdown.leaveMs < 0) return 1;
-  const total = active.departureAt - active.startedAt - (countdown.walkingMs ?? 0);
-  return Math.min(1, Math.max(0, total > 0 ? timerHeadline(countdown).ms / total : 0));
+  const leaveTotal = total - (countdown.walkingMs ?? 0);
+  return Math.min(1, Math.max(0, leaveTotal > 0 ? timerHeadline(countdown).ms / leaveTotal : 0));
 }
 
 // The countdown to leave, or what comes next once on board of a journey
 function useHeadline(countdown: Countdown) {
-  const { legs } = useTimer();
+  const { legs, stage } = useTimer();
   const now = useNow();
   const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
-  return { headline: travel ?? timerHeadline(countdown), travel: travel !== undefined, now };
+  return {
+    headline: travel ?? timerHeadline(countdown, stage),
+    travel: travel !== undefined,
+    now,
+  };
 }
 
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
@@ -118,9 +126,11 @@ function CompactCountdown({
   countdown: Countdown;
   show: boolean;
 }) {
-  const tone = timerTone(countdown);
+  const { stage } = useTimer();
+  const tone = timerTone(countdown, stage);
   const { headline, travel } = useHeadline(countdown);
-  const walking = countdown.walkingMs !== undefined;
+  // At the stop the headline is already the bus
+  const walking = countdown.walkingMs !== undefined && stage !== "arrived";
 
   return (
     <div
@@ -160,7 +170,7 @@ function CompactCountdown({
       <div className="h-1 bg-muted">
         <div
           className={cn("h-full transition-[width] duration-1000 ease-linear", toneBackground[tone])}
-          style={{ width: `${timerProgress(active, countdown) * 100}%` }}
+          style={{ width: `${timerProgress(active, countdown, stage) * 100}%` }}
         />
       </div>
     </div>
@@ -203,17 +213,18 @@ function ActiveTimerView({
     settings,
     distance,
     geolocation,
+    stage,
     live,
     notifications,
     cancel,
     updateSettings,
     enableNotifications,
   } = useTimer();
-  const tone = timerTone(countdown);
+  const tone = timerTone(countdown, stage);
   const { headline, travel, now } = useHeadline(countdown);
   const walking = countdown.walkingMs;
 
-  const progress = timerProgress(active, countdown);
+  const progress = timerProgress(active, countdown, stage);
 
   // Switch to the compact countdown once a fifth of the ring is under the
   // header, measured as it is (it is taller with the notch of the iPhone)
@@ -299,9 +310,11 @@ function ActiveTimerView({
                 ? "Il bus è partito"
                 : countdown.departureMs <= 0
                   ? "Il bus sta arrivando"
-                  : walking === undefined
-                    ? `alla fermata ${active.stop.name}`
-                    : `Bus tra ${formatClock(countdown.departureMs)}`}
+                  : stage === "arrived"
+                    ? `Sei alla fermata ${active.stop.name}`
+                    : walking === undefined
+                      ? `alla fermata ${active.stop.name}`
+                      : `Bus tra ${formatClock(countdown.departureMs)}`}
             </span>
           </div>
         </div>
@@ -310,8 +323,14 @@ function ActiveTimerView({
           <Stat label="Partenza" value={active.time} mono />
           <Stat
             label="A piedi"
-            value={walking === undefined ? "—" : `${Math.max(1, Math.round(walking / 60_000))} min`}
-            hint={distance === undefined ? undefined : formatDistance(distance)}
+            value={
+              stage === "arrived"
+                ? "Arrivato"
+                : walking === undefined
+                  ? "—"
+                  : `${Math.max(1, Math.round(walking / 60_000))} min`
+            }
+            hint={distance === undefined || stage === "arrived" ? undefined : formatDistance(distance)}
           />
           <Stat
             label="Margine"
@@ -321,7 +340,7 @@ function ActiveTimerView({
         </dl>
       </section>
 
-      {nextAlert !== undefined && tone !== "gone" && (
+      {nextAlert !== undefined && tone !== "gone" && stage === "away" && (
         <p className="px-1 text-center text-xs text-muted-foreground">
           Prossimo avviso tra{" "}
           <span className="font-medium text-foreground">
@@ -337,7 +356,7 @@ function ActiveTimerView({
 
       {active.journey && (
         <>
-          <LaterSuggestion leaving={countdown.leaveMs <= 0} />
+          <LaterSuggestion leaving={countdown.leaveMs <= 0 || stage !== "away"} />
           <JourneySection now={now} />
         </>
       )}

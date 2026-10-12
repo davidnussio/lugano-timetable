@@ -39,6 +39,7 @@ import {
 import {
   alertMessage,
   alertThresholds,
+  approach,
   type Countdown,
   countdown,
   distanceMeters,
@@ -46,6 +47,7 @@ import {
   type Envelope,
   PACE_SPEED,
   peakHold,
+  type Stage,
   walkingRelease,
   walkingSeconds,
 } from "./plan";
@@ -78,6 +80,8 @@ export interface TimerContextValue {
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
   readonly geolocation: GeolocationState;
+  // Whether the user has left for the stop or is already there
+  readonly stage: Stage;
   // Whether the bus is in the latest real-time data
   readonly live: boolean;
   readonly notifications: NotificationPermission | "unsupported";
@@ -235,22 +239,39 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     });
   }, [legUpdates, legsKey]);
 
-  const distance = useSteadyDistance(
+  const rawDistance =
     timer?.coordinates && geolocation.position
       ? distanceMeters(geolocation.position, timer.coordinates)
-      : undefined,
+      : undefined;
+  const accuracy = geolocation.position?.accuracy;
+  useEffect(() => {
+    if (rawDistance === undefined || accuracy === undefined) return;
+    timerStore.set((current) => {
+      if (!current) return current;
+      const next = approach(current.approach, rawDistance, accuracy);
+      return next === current.approach ? current : { ...current, approach: next };
+    });
+  }, [rawDistance, accuracy]);
+  const stage = timer?.approach?.stage ?? "away";
+
+  const distance = useSteadyDistance(
+    rawDistance,
     now,
     timer?.startedAt,
-    walkingRelease(settings.pace)
+    // On the way the distance really shrinks: follow it, faster than any
+    // pace, instead of holding it back as GPS noise
+    walkingRelease(settings.pace) * (stage === "walking" ? 3 : 1)
   );
   // Without a position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
   const walk =
-    distance !== undefined
-      ? walkingSeconds(distance, settings.pace)
-      : plannedWalk === undefined
-        ? undefined
-        : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
+    stage === "arrived"
+      ? 0
+      : distance !== undefined
+        ? walkingSeconds(distance, settings.pace)
+        : plannedWalk === undefined
+          ? undefined
+          : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
   const current =
     timer && now > 0 ? countdown(timer.departureAt, now, walk) : undefined;
 
@@ -306,8 +327,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
         plannedWithWalk: true,
       };
     }
+    // Telling to leave is pointless once on the way
     const due =
-      current.departureMs < -60_000
+      current.departureMs < -60_000 || stage !== "away"
         ? undefined
         : dueAlert(next.thresholds, next.fired, current.leaveMs / 60_000);
     const message =
@@ -324,7 +346,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walk, legs]);
+  }, [current, walk, legs, stage]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -423,6 +445,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     countdown: current,
     distance,
     geolocation,
+    stage,
     live:
       found !== undefined ||
       (timer?.routing === "" && legs?.[0].departure.estimated !== undefined),
