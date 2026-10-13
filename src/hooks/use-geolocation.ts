@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import type { Position } from "~/timer/plan";
+import type { Fix } from "~/timer/plan";
 
 export interface GeolocationState {
-  readonly position?: Position & { readonly accuracy: number };
+  // The latest fix, possibly from an earlier watch: check its time
+  readonly position?: Fix;
   readonly error?: "denied" | "unavailable" | "unsupported";
 }
 
@@ -28,12 +29,13 @@ function subscribe(listener: () => void) {
       emit({ error: "unsupported" });
     } else {
       watchId = navigator.geolocation.watchPosition(
-        ({ coords }) =>
+        ({ coords, timestamp }) =>
           emit({
             position: {
               lat: coords.latitude,
               lon: coords.longitude,
               accuracy: coords.accuracy,
+              at: timestamp,
             },
           }),
         (error) =>

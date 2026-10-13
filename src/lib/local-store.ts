@@ -4,7 +4,13 @@ import { useSyncExternalStore } from "react";
 
 // A JSON value persisted in localStorage, shared by every component using it
 // and synced across tabs. `null` on the server and during hydration.
-export function createLocalStore<A>(key: string, initial: A) {
+// `isValid` drops a stored value of another shape (an older version of the
+// app, a corrupted entry), which would otherwise break every render.
+export function createLocalStore<A>(
+  key: string,
+  initial: A,
+  isValid: (value: unknown) => value is A = (value): value is A => value !== undefined
+) {
   const listeners = new Set<() => void>();
   let cachedRaw: string | null | undefined;
   let cached: A = initial;
@@ -29,7 +35,8 @@ export function createLocalStore<A>(key: string, initial: A) {
     if (raw !== cachedRaw) {
       cachedRaw = raw;
       try {
-        cached = raw === null ? initial : (JSON.parse(raw) as A);
+        const value: unknown = raw === null ? initial : JSON.parse(raw);
+        cached = isValid(value) ? value : initial;
       } catch {
         cached = initial;
       }

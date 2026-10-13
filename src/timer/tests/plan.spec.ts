@@ -6,8 +6,10 @@ import {
   countdown,
   distanceMeters,
   dueAlert,
+  isFar,
   minutesLeft,
   peakHold,
+  reliableFix,
   walkingRelease,
   walkingSeconds,
 } from "../plan";
@@ -157,6 +159,29 @@ describe("peakHold", () => {
   });
 });
 
+describe("reliableFix", () => {
+  const startedAt = 10 * 60_000;
+
+  it("needs a precise fix", () => {
+    expect(reliableFix({ accuracy: 15, at: startedAt }, startedAt)).toBe(true);
+    expect(reliableFix({ accuracy: 100, at: startedAt }, startedAt)).toBe(true);
+    expect(reliableFix({ accuracy: 800, at: startedAt }, startedAt)).toBe(false);
+  });
+
+  it("ignores fixes from before the timer", () => {
+    expect(reliableFix({ accuracy: 15, at: startedAt - 30_000 }, startedAt)).toBe(true);
+    expect(reliableFix({ accuracy: 15, at: startedAt - 5 * 60_000 }, startedAt)).toBe(false);
+  });
+});
+
+describe("isFar", () => {
+  it("is beyond walking distance", () => {
+    expect(isFar(800)).toBe(false);
+    expect(isFar(2_500)).toBe(false);
+    expect(isFar(19_000)).toBe(true);
+  });
+});
+
 describe("approach", () => {
   it("starts away from the stop", () => {
     expect(approach(undefined, 300, 10)).toEqual({
@@ -189,6 +214,19 @@ describe("approach", () => {
   it("measures the progress from the farthest fix", () => {
     const farther = approach(approach(undefined, 300, 10), 320, 10);
     expect(approach(farther, 290, 10).stage).toBe("walking");
+  });
+
+  it("does not count riding towards the stop as walking", () => {
+    // On a train from Bellinzona
+    let state = approach(undefined, 19_000, 10);
+    for (const meters of [15_000, 9_000, 4_000]) {
+      state = approach(state, meters, 10);
+    }
+    expect(state).toEqual({ stage: "away" });
+    expect(approach(state, 2_000, 10)).toEqual({
+      stage: "away",
+      farthest: { meters: 2_000, accuracy: 10 },
+    });
   });
 
   it("ignores imprecise fixes", () => {

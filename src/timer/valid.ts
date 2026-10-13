@@ -1,0 +1,77 @@
+// Checks of the timer read back from localStorage: a value saved by an older
+// version of the app, or corrupted, must not reach the components.
+import type { ActiveTimer } from "./store";
+
+type Shape = Record<string, unknown>;
+
+const isObject = (value: unknown): value is Shape =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const isString = (value: unknown): value is string => typeof value === "string";
+const isNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+const isArrayOf = <A>(value: unknown, item: (value: unknown) => value is A): value is A[] =>
+  Array.isArray(value) && value.every(item);
+const isOptional = <A>(value: unknown, check: (value: unknown) => value is A) =>
+  value === undefined || check(value);
+
+const isPosition = (value: unknown): value is Shape =>
+  isObject(value) && isNumber(value.lat) && isNumber(value.lon);
+
+const isTiming = (value: unknown): value is Shape =>
+  isObject(value) && isNumber(value.scheduled) && isOptional(value.estimated, isNumber);
+
+const isNamed = (value: unknown): value is Shape =>
+  isObject(value) && isString(value.name) && isOptional(value.position, isPosition);
+
+const isLeg = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isString(value.trip) &&
+  isString(value.line) &&
+  isString(value.destination) &&
+  isNamed(value.from) &&
+  isNamed(value.to) &&
+  isTiming(value.departure) &&
+  isTiming(value.arrival) &&
+  isOptional(value.walkBeforeMs, isNumber);
+
+const isJourney = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isNamed(value.from) &&
+  isNamed(value.to) &&
+  isArrayOf(value.legs, isLeg) &&
+  value.legs.length > 0 &&
+  isOptional(value.walkAfterMs, isNumber) &&
+  isArrayOf(value.alerted, isString);
+
+const isStop = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isString(value.name) &&
+  isString(value.label) &&
+  isArrayOf(value.identifiers, isString);
+
+export function isActiveTimer(value: unknown): value is ActiveTimer {
+  return (
+    isObject(value) &&
+    isStop(value.stop) &&
+    isString(value.target) &&
+    isOptional(value.coordinates, isPosition) &&
+    isString(value.line) &&
+    isString(value.route) &&
+    isString(value.dir) &&
+    isString(value.routing) &&
+    isString(value.img) &&
+    isString(value.destination) &&
+    isOptional(value.uid, isNumber) &&
+    isString(value.time) &&
+    isNumber(value.departureAt) &&
+    isNumber(value.startedAt) &&
+    isArrayOf(value.thresholds, isNumber) &&
+    isArrayOf(value.fired, isNumber) &&
+    typeof value.plannedWithWalk === "boolean" &&
+    isOptional(value.journey, isJourney) &&
+    isOptional(value.approach, isObject)
+  );
+}
+
+export const isStoredTimer = (value: unknown): value is ActiveTimer | null =>
+  value === null || isActiveTimer(value);

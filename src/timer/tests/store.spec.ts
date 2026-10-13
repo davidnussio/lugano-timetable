@@ -10,6 +10,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  planAlerts,
   timerEndsAt,
 } from "../store";
 
@@ -114,12 +115,66 @@ describe("createJourneyTimer", () => {
 describe("findTimerDeparture", () => {
   it("finds a planned bus by line and time", () => {
     const departures = [departure("3", 4, 1), departure("3", 11, 2), departure("5", 10, 3)];
-    expect(findTimerDeparture(timer(), departures)?.Uid).toBe(2);
+    expect(findTimerDeparture(timer(), departures, false)?.Uid).toBe(2);
   });
 
   it("then follows it by trip id", () => {
     const departures = [departure("3", 4, 1), departure("3", 11, 2)];
-    expect(findTimerDeparture(timer({ uid: 1, routing: "700" }), departures)?.Uid).toBe(1);
+    expect(findTimerDeparture(timer({ uid: 1, routing: "700" }), departures, false)?.Uid).toBe(1);
+  });
+});
+
+describe("findTimerDeparture of a followed bus", () => {
+  const followed = (patch: Partial<ActiveTimer> = {}) =>
+    timer({ target: "13", routing: "700", departureAt: 10 * MIN, ...patch });
+
+  it("only takes the same trip once known", () => {
+    const next = departure("3", 20, 2);
+    expect(findTimerDeparture(followed({ uid: 1 }), [next], false)).toBeUndefined();
+    expect(findTimerDeparture(followed({ uid: 1 }), [{ ...next, Uid: undefined }], false)).toBeUndefined();
+  });
+
+  it("takes the closest run of the line without trip id", () => {
+    const departures = [departure("3", 4, 1), departure("3", 12, 2)];
+    expect(findTimerDeparture(followed(), departures, false)?.Uid).toBe(2);
+  });
+
+  it("does not jump to another run", () => {
+    expect(findTimerDeparture(followed(), [departure("3", 25, 2)], false)).toBeUndefined();
+  });
+
+  it("does not move a departed bus later", () => {
+    const later = [departure("3", 13, 2)];
+    expect(findTimerDeparture(followed(), later, false)?.Uid).toBe(2);
+    expect(findTimerDeparture(followed(), later, true)).toBeUndefined();
+    expect(findTimerDeparture(followed(), [departure("3", 10, 1)], true)?.Uid).toBe(1);
+  });
+});
+
+describe("planAlerts", () => {
+  const planned = timer({ thresholds: [6, 4, 2, 1, 0] });
+
+  it("keeps the thresholds without a walk", () => {
+    expect(planAlerts(planned, undefined, 5 * MIN)).toBe(planned);
+  });
+
+  it("plans on the walk of the timetable, then on the GPS", () => {
+    const timetable = planAlerts(planned, "timetable", 20 * MIN);
+    expect(timetable).toMatchObject({
+      thresholds: [12, 7, 4, 3, 2, 1, 0],
+      plannedWithWalk: true,
+      plannedWithGps: false,
+    });
+    expect(planAlerts(timetable, "timetable", 10 * MIN)).toBe(timetable);
+    const gps = planAlerts(timetable, "gps", 10 * MIN);
+    expect(gps).toMatchObject({ thresholds: [6, 4, 2, 1, 0], plannedWithGps: true });
+    expect(planAlerts(gps, "gps", 30 * MIN)).toBe(gps);
+    expect(planAlerts(gps, "timetable", 30 * MIN)).toBe(gps);
+  });
+
+  it("keeps the thresholds once an alert was shown", () => {
+    const fired = { ...planned, fired: [6] };
+    expect(planAlerts(fired, "gps", 20 * MIN)).toBe(fired);
   });
 });
 
@@ -198,12 +253,12 @@ describe("dueTransferAlert", () => {
   });
 
   it("alerts once per status", () => {
-    expect(dueTransferAlert(transfers(4), late(4), [], 0)).toEqual({
+    expect(dueTransferAlert(transfers(5), late(5), [], 0)).toEqual({
       index: 0,
       status: "tight",
       key: "0:tight",
     });
-    expect(dueTransferAlert(transfers(4), late(4), ["0:tight"], 0)).toBeUndefined();
+    expect(dueTransferAlert(transfers(5), late(5), ["0:tight"], 0)).toBeUndefined();
     expect(dueTransferAlert(transfers(8), late(8), ["0:tight"], 0)?.key).toBe("0:missed");
   });
 

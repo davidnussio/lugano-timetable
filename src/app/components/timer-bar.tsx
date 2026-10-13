@@ -13,7 +13,7 @@ import { TimerBadge } from "./timer-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, geolocation, legs, stage } = useTimer();
+  const { timer, countdown, distance, far, geolocation, legs, stage } = useTimer();
   const pathname = usePathname();
   const now = useNow(timer !== null);
 
@@ -28,11 +28,13 @@ export function TimerBar() {
     ? `verso ${timer.journey?.to.name ?? timer.destination}`
     : stage === "arrived"
       ? `alla fermata ${timer.stop.name}`
-      : distance === undefined
-        ? `da ${timer.stop.name}`
-        : accuracy === undefined
-          ? `${formatDistance(distance)} da ${timer.stop.name}`
-          : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
+      : far !== undefined
+        ? `a ${formatDistance(far)} da ${timer.stop.name}`
+        : distance === undefined
+          ? `da ${timer.stop.name}`
+          : accuracy === undefined
+            ? `${formatDistance(distance)} da ${timer.stop.name}`
+            : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
 
   return (
     <>

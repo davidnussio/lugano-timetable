@@ -44,6 +44,36 @@ export function walkingRelease(pace: Pace = "normal"): number {
   return PACE_SPEED[pace] / DETOUR_FACTOR;
 }
 
+export interface Fix extends Position {
+  // Radius in meters within which the position is likely to be
+  readonly accuracy: number;
+  // When the position was measured, in milliseconds
+  readonly at: number;
+}
+
+// Fixes less precise than this (cell towers, Wi-Fi) are too rough for the
+// walk to the stop: the last precise one is kept instead
+const RELIABLE_ACCURACY_METERS = 100;
+// A fix cached by the browser can be a little older than the timer
+const FIX_GRACE_MS = 60_000;
+
+// Whether a fix can tell the walk of a timer started at `since`: precise
+// enough, and not left over from before the timer (e.g. from the morning)
+export function reliableFix(
+  { accuracy, at }: Pick<Fix, "accuracy" | "at">,
+  since: number
+): boolean {
+  return accuracy <= RELIABLE_ACCURACY_METERS && at >= since - FIX_GRACE_MS;
+}
+
+// Farther than this from the stop (about 45 minutes on foot) the user is not
+// walking there: on another bus, a train or in another town
+const FAR_METERS = 2_500;
+
+export function isFar(meters: number): boolean {
+  return meters > FAR_METERS;
+}
+
 export interface Envelope {
   readonly value: number;
   // When `value` was measured, in milliseconds
@@ -98,13 +128,14 @@ const ARRIVED_METERS = 30;
 
 // Moves the stage forward with a GPS fix: `meters` from the stop, measured
 // within `accuracy` meters. Returns `previous` itself when nothing changes.
+// Far from the stop, getting closer is riding towards it, not walking.
 export function approach(
   previous: Approach | undefined,
   meters: number,
   accuracy: number
 ): Approach {
   const stage = previous?.stage ?? "away";
-  if (stage === "arrived" || accuracy > MAX_ACCURACY_METERS) {
+  if (stage === "arrived" || accuracy > MAX_ACCURACY_METERS || isFar(meters)) {
     return previous ?? { stage };
   }
   if (meters <= ARRIVED_METERS) return { stage: "arrived" };
@@ -122,6 +153,10 @@ export function approach(
     ? previous
     : { stage: next, farthest };
 }
+
+// How the walk to the stop is known: from the timetable of a journey, or
+// measured with the GPS (better)
+export type WalkSource = "timetable" | "gps";
 
 // Remaining minutes at which to alert, in descending order. Each alert comes
 // after 40% of the remaining time has elapsed, so a 20 minute wait gives

@@ -11,7 +11,14 @@ import {
   type Timing,
   type Transfer,
 } from "./journey";
-import { type AlertMessage, type Approach, alertThresholds, type Pace } from "./plan";
+import {
+  type AlertMessage,
+  type Approach,
+  alertThresholds,
+  type Pace,
+  type WalkSource,
+} from "./plan";
+import { isStoredTimer } from "./valid";
 
 // A journey with transfers planned with transport.opendata.ch. The timer
 // counts down to its first leg.
@@ -51,8 +58,10 @@ export interface ActiveTimer {
   // Remaining minutes at which to alert, and the ones already shown
   readonly thresholds: ReadonlyArray<number>;
   readonly fired: ReadonlyArray<number>;
-  // Whether the thresholds were planned knowing the walking time
+  // Whether the thresholds were planned knowing the walking time, and
+  // measured with the GPS rather than taken from the timetable
   readonly plannedWithWalk: boolean;
+  readonly plannedWithGps?: boolean;
   // Latest alert, shown in the app until dismissed
   readonly lastAlert?: AlertMessage & { readonly at: number };
   readonly journey?: ActiveJourney;
@@ -69,7 +78,8 @@ export interface TimerSettings {
 
 export const timerStore = createLocalStore<ActiveTimer | null>(
   "lugano-timetable-timer",
-  null
+  null,
+  isStoredTimer
 );
 
 export const settingsStore = createLocalStore<TimerSettings>(
@@ -160,11 +170,17 @@ export function createJourneyTimer(
   };
 }
 
+// Without a trip id, a bus counts as the one of the timer only this close to
+// its last known time: farther away it is another run of the line
+const FOLLOW_TOLERANCE_MS = 10 * 60_000;
+
 // The bus of the timer in the real-time list: by trip id, or the departure
-// of the same line closest to the last known time.
+// of the same line closest to the last known time. Once the bus has left
+// (`departed`) it drops out of the list: a later run is the next bus.
 export function findTimerDeparture(
   timer: ActiveTimer,
-  departures: ReadonlyArray<Departure>
+  departures: ReadonlyArray<Departure>,
+  departed: boolean
 ): ScheduledDeparture | undefined {
   // A planned bus not found yet: by line and time
   if (timer.routing === "" && timer.uid === undefined) {
@@ -174,22 +190,49 @@ export function findTimerDeparture(
       estimated: timer.departureAt,
     });
   }
+  const scheduled = departures.filter(isScheduled);
+  if (timer.uid !== undefined) {
+    return scheduled.find((departure) => departure.Uid === timer.uid);
+  }
   let best: ScheduledDeparture | undefined;
-  for (const departure of departures) {
-    if (!isScheduled(departure)) continue;
-    if (timer.uid !== undefined && departure.Uid !== undefined) {
-      if (departure.Uid === timer.uid) return departure;
-    } else if (
-      departure.Target === timer.target &&
-      departure.Routing === timer.routing &&
-      (best === undefined ||
-        Math.abs(departure.DepartureAt - timer.departureAt) <
-          Math.abs(best.DepartureAt - timer.departureAt))
+  for (const departure of scheduled) {
+    const offset = Math.abs(departure.DepartureAt - timer.departureAt);
+    if (
+      departure.Target !== timer.target ||
+      departure.Routing !== timer.routing ||
+      offset > FOLLOW_TOLERANCE_MS ||
+      (departed && departure.DepartureAt > timer.departureAt)
     ) {
+      continue;
+    }
+    if (best === undefined || offset < Math.abs(best.DepartureAt - timer.departureAt)) {
       best = departure;
     }
   }
   return best;
+}
+
+// The thresholds planned again once the walk is better known, until the
+// first alert: on the walk of the timetable, then on the one of the GPS
+export function planAlerts(
+  timer: ActiveTimer,
+  walk: WalkSource | undefined,
+  leaveMs: number
+): ActiveTimer {
+  if (
+    walk === undefined ||
+    timer.fired.length > 0 ||
+    timer.plannedWithGps === true ||
+    (walk === "timetable" && timer.plannedWithWalk)
+  ) {
+    return timer;
+  }
+  return {
+    ...timer,
+    thresholds: alertThresholds(leaveMs / 60_000),
+    plannedWithWalk: true,
+    plannedWithGps: walk === "gps",
+  };
 }
 
 // Query of /api/journey/legs: stable while the journey runs

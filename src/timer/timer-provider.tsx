@@ -18,6 +18,7 @@ import {
 import useSWR from "swr";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
+import { useWakeLock } from "~/hooks/use-wake-lock";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import type { Coordinates, Departure, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
@@ -38,16 +39,19 @@ import {
 } from "./journey";
 import {
   alertMessage,
-  alertThresholds,
   approach,
   type Countdown,
   countdown,
   distanceMeters,
   dueAlert,
   type Envelope,
+  type Fix,
+  isFar,
   PACE_SPEED,
   peakHold,
+  reliableFix,
   type Stage,
+  type WalkSource,
   walkingRelease,
   walkingSeconds,
 } from "./plan";
@@ -60,6 +64,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  planAlerts,
   type ScheduledDeparture,
   settingsStore,
   type TimerSettings,
@@ -79,6 +84,9 @@ export interface TimerContextValue {
   readonly settings: Required<TimerSettings>;
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
+  // Meters from the stop when too far to walk there: the countdown is then
+  // the bus, without a time to leave
+  readonly far: number | undefined;
   readonly geolocation: GeolocationState;
   // Whether the user has left for the stop or is already there
   readonly stage: Stage;
@@ -147,6 +155,28 @@ function useSteadyDistance(
   return envelope.value;
 }
 
+interface KeptFix {
+  readonly fix: Fix;
+  readonly timer: number;
+}
+
+// The fix to measure the walk of the timer started at `timer` with: the
+// latest one when reliable, otherwise the last reliable one of this timer
+function useReliableFix(
+  position: Fix | undefined,
+  timer: number | undefined
+): Fix | undefined {
+  const [kept, setKept] = useState<KeptFix>();
+  if (position === undefined || timer === undefined) return undefined;
+  if (reliableFix(position, timer)) {
+    if (kept?.fix !== position || kept.timer !== timer) {
+      setKept({ fix: position, timer });
+    }
+    return position;
+  }
+  return kept?.timer === timer ? kept.fix : undefined;
+}
+
 // Runs the active timer on every page: follows the bus with the real-time
 // data, measures the walk to the stop and fires the alerts.
 export function TimerProvider({ children }: { children: React.ReactNode }) {
@@ -160,6 +190,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const active = timer !== null && timer !== undefined;
   const now = useNow(active);
   const geolocation = useGeolocation(active && settings.useLocation);
+  // Alerts can only fire while the page runs, whichever page it is
+  useWakeLock(active);
 
   // The permission is read on every render: re-render after asking for it
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -179,9 +211,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     "itineraries",
     timer && timer.stop.identifiers.length > 0 ? timer.stop.identifiers : null
   );
+  // Whether the bus should have left by now: changes once, not every second
+  const departed = !!timer && now >= timer.departureAt;
   const found = useMemo(
-    () => (timer ? findTimerDeparture(timer, departures) : undefined),
-    [timer, departures]
+    () => (timer ? findTimerDeparture(timer, departures, departed) : undefined),
+    [timer, departures, departed]
   );
   useEffect(() => {
     if (found === undefined) return;
@@ -239,11 +273,10 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     });
   }, [legUpdates, legsKey]);
 
+  const fix = useReliableFix(geolocation.position, timer?.startedAt);
   const rawDistance =
-    timer?.coordinates && geolocation.position
-      ? distanceMeters(geolocation.position, timer.coordinates)
-      : undefined;
-  const accuracy = geolocation.position?.accuracy;
+    timer?.coordinates && fix ? distanceMeters(fix, timer.coordinates) : undefined;
+  const accuracy = fix?.accuracy;
   useEffect(() => {
     if (rawDistance === undefined || accuracy === undefined) return;
     timerStore.set((current) => {
@@ -253,17 +286,29 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     });
   }, [rawDistance, accuracy]);
   const stage = timer?.approach?.stage ?? "away";
+  // Too far to walk to the stop (on another bus, in another town): the walk
+  // of the GPS would make the user hours late
+  const far =
+    rawDistance !== undefined && stage !== "arrived" && isFar(rawDistance)
+      ? rawDistance
+      : undefined;
 
   const distance = useSteadyDistance(
-    rawDistance,
+    far === undefined ? rawDistance : undefined,
     now,
     timer?.startedAt,
     // On the way the distance really shrinks: follow it, faster than any
     // pace, instead of holding it back as GPS noise
     walkingRelease(settings.pace) * (stage === "walking" ? 3 : 1)
   );
-  // Without a position, a journey counts on the walk of the timetable
+  // Without a usable position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
+  const walkSource: WalkSource | undefined =
+    stage === "arrived" || distance !== undefined
+      ? "gps"
+      : plannedWalk === undefined
+        ? undefined
+        : "timetable";
   const walk =
     stage === "arrived"
       ? 0
@@ -272,8 +317,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
         : plannedWalk === undefined
           ? undefined
           : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
+  // Far away there is no time to leave yet: count down to the bus
   const current =
-    timer && now > 0 ? countdown(timer.departureAt, now, walk) : undefined;
+    timer && now > 0
+      ? countdown(timer.departureAt, now, far === undefined ? walk : undefined)
+      : undefined;
 
   const legs = useMemo(
     () => (timer && now > 0 ? liveLegs(timer, now) : undefined),
@@ -303,10 +351,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     { refreshInterval: JOURNEY_REFRESH_MS * 2 }
   );
   const fallback = useMemo(() => {
-    if (lostIndex === undefined || readyAt === undefined || !plans) return undefined;
-    const plan = fallbackPlan(plans, readyAt, { pace: settings.pace });
+    if (lostIndex === undefined || !legs || !plans) return undefined;
+    const plan = fallbackPlan(plans, legs[lostIndex], legs[lostIndex + 1], {
+      pace: settings.pace,
+    });
     return plan && { index: lostIndex, plan };
-  }, [lostIndex, readyAt, plans, settings.pace]);
+  }, [lostIndex, legs, plans, settings.pace]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
@@ -318,18 +368,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let next = stored;
-    // Once the walking time is known, plan the alerts on the time to leave
-    if (walk !== undefined && !next.plannedWithWalk && next.fired.length === 0) {
-      next = {
-        ...next,
-        thresholds: alertThresholds(current.leaveMs / 60_000),
-        plannedWithWalk: true,
-      };
-    }
+    // Far from the stop the alerts wait for the user to be within walking
+    // distance, then they are planned on the walk
+    let next = far === undefined ? planAlerts(stored, walkSource, current.leaveMs) : stored;
     // Telling to leave is pointless once on the way
     const due =
-      current.departureMs < -60_000 || stage !== "away"
+      far !== undefined || current.departureMs < -60_000 || stage !== "away"
         ? undefined
         : dueAlert(next.thresholds, next.fired, current.leaveMs / 60_000);
     const message =
@@ -346,7 +390,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walk, legs, stage]);
+  }, [current, walkSource, far, legs, stage]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -444,6 +488,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     settings,
     countdown: current,
     distance,
+    far,
     geolocation,
     stage,
     live:

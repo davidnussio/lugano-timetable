@@ -11,13 +11,13 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { type RefObject, useCallback, useRef, useState } from "react";
+import { type ComponentProps, type RefObject, useCallback, useRef, useState } from "react";
 import { AlertBanner } from "~/app/components/alert-banner";
 import { PageHeader } from "~/app/components/page-header";
 import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
+import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
-import { useWakeLock } from "~/hooks/use-wake-lock";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
@@ -32,6 +32,17 @@ const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkM
   ssr: false,
   loading: () => <div className="size-full animate-pulse bg-muted" />,
 });
+
+// The map sits at the bottom of the page: load MapLibre and its tiles only
+// when the user scrolls near it
+function LazyWalkMap(props: ComponentProps<typeof WalkMap>) {
+  const [ref, inView] = useInView<HTMLDivElement>();
+  return (
+    <div ref={ref} className="h-56 border-t border-border">
+      {inView ? <WalkMap {...props} /> : <div className="size-full bg-muted" />}
+    </div>
+  );
+}
 
 const paces: ReadonlyArray<{ value: Pace; label: string }> = [
   { value: "slow", label: "Con calma" },
@@ -74,7 +85,6 @@ function marginLabel({ walkingMs, leaveMs }: Countdown): string {
 export default function TimerPage() {
   const timer = useTimer();
   const { timer: active, countdown } = timer;
-  useWakeLock(active !== null);
   // Whether the ring has scrolled away under the header
   const [compact, setCompact] = useState(false);
   const header = useRef<HTMLDivElement>(null);
@@ -212,6 +222,7 @@ function ActiveTimerView({
   const {
     settings,
     distance,
+    far,
     geolocation,
     stage,
     live,
@@ -224,6 +235,8 @@ function ActiveTimerView({
   const { headline, travel, now } = useHeadline(countdown);
   const clock = formatClock(headline.ms);
   const walking = countdown.walkingMs;
+  // From the stop, also when too far to count the walk
+  const meters = distance ?? far;
 
   const progress = timerProgress(active, countdown, stage);
 
@@ -316,11 +329,13 @@ function ActiveTimerView({
                 ? "Il bus è partito"
                 : countdown.departureMs <= 0
                   ? "Il bus sta arrivando"
-                  : stage === "arrived"
-                    ? `Sei alla fermata ${active.stop.name}`
-                    : walking === undefined
-                      ? `alla fermata ${active.stop.name}`
-                      : `Bus tra ${formatClock(countdown.departureMs)}`}
+                  : far !== undefined
+                    ? `Sei a ${formatDistance(far)} dalla fermata`
+                    : stage === "arrived"
+                      ? `Sei alla fermata ${active.stop.name}`
+                      : walking === undefined
+                        ? `alla fermata ${active.stop.name}`
+                        : `Bus tra ${formatClock(countdown.departureMs)}`}
             </span>
           </div>
         </div>
@@ -336,7 +351,7 @@ function ActiveTimerView({
                   ? "—"
                   : `${Math.max(1, Math.round(walking / 60_000))} min`
             }
-            hint={distance === undefined || stage === "arrived" ? undefined : formatDistance(distance)}
+            hint={stage === "arrived" || meters === undefined ? undefined : formatDistance(meters)}
           />
           <Stat
             label="Margine"
@@ -346,7 +361,7 @@ function ActiveTimerView({
         </dl>
       </section>
 
-      {nextAlert !== undefined && tone !== "gone" && stage === "away" && (
+      {nextAlert !== undefined && tone !== "gone" && stage === "away" && far === undefined && (
         <p className="px-1 text-center text-xs text-muted-foreground">
           Prossimo avviso tra{" "}
           <span className="font-medium text-foreground">
@@ -417,9 +432,7 @@ function ActiveTimerView({
           </div>
         )}
         {settings.useLocation && active.coordinates && !geolocation.error && (
-          <div className="h-56 border-t border-border">
-            <WalkMap stop={active.coordinates} position={geolocation.position} />
-          </div>
+          <LazyWalkMap stop={active.coordinates} position={geolocation.position} />
         )}
       </section>
 
@@ -455,7 +468,7 @@ function ActiveTimerView({
       </section>
 
       <p className="px-2 text-center text-xs text-muted-foreground">
-        Tieni aperta questa pagina: lo schermo resta acceso e gli avvisi arrivano
+        Tieni aperta l&apos;app: lo schermo resta acceso e gli avvisi arrivano
         puntuali.
       </p>
 
