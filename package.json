@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest",
     "coverate": "vitest --coverage",
-    "postinstall": "mkdir -p public/maplibre && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/"
+    "postinstall": "node scripts/copy-maplibre.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.0",

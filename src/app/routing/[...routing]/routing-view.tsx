@@ -1,7 +1,7 @@
 "use client";
 
 import { Bus, ChevronUp, MapPin } from "lucide-react";
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LineBadge } from "~/app/components/line-badge";
 import { LiveStatus } from "~/app/components/live-status";
 import { PageHeader } from "~/app/components/page-header";
@@ -16,11 +16,6 @@ import { cn } from "~/lib/utils";
 import { minutesLeft } from "~/timer/plan";
 import { InTimeStatus, RoutingStatus, type RoutingStop } from "~/timetable/models";
 
-type RoutingPageProps = {
-  params: Promise<{
-    routing: string[];
-  }>;
-};
 
 const RouteUIDToProgressive = [
   19, 20, 21, 22, 23, 32, 33, 24, 25, 26, 27, 28, 29, 0, 0, 30, 31,
@@ -41,14 +36,14 @@ function timetableImageUrl(code: string, route: string, dir: string) {
 // Passed stops kept visible above the bus when the rest are collapsed
 const PASSED_VISIBLE = 1;
 
-export default function RoutingPage(props: RoutingPageProps) {
-  const params = use(props.params);
+// Target, route, direction and routing of the trip, as in the URL
+export function RoutingView({ routing }: { routing: string[] }) {
   const { data, isLoading, isError } = useMonitored<RoutingStop>(
     "/api/timetable/routing",
     "routing",
-    params.routing
+    routing
   );
-  const [target, route, dir] = params.routing;
+  const [target, route, dir] = routing;
   const [showPassed, setShowPassed] = useState(false);
   const now = useNow();
   const color = lineColor(route);

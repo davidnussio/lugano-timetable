@@ -11,9 +11,11 @@ const fontSans = Geist({
   variable: "--font-geist",
 });
 
+// Only for the clocks: not worth delaying the first render of every page
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+  preload: false,
 });
 
 export const metadata: Metadata = {

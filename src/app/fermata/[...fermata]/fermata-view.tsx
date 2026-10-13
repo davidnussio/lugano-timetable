@@ -3,7 +3,7 @@
 import { Bell, BellRing, Footprints, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { useMemo } from "react";
 import { LineBadge } from "~/app/components/line-badge";
 import { LiveStatus } from "~/app/components/live-status";
 import { PageHeader } from "~/app/components/page-header";
@@ -20,11 +20,6 @@ import { isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
 
-type FermatePageProps = {
-  params: Promise<{
-    fermata: string[];
-  }>;
-};
 
 // Soonest first; departures without a real-time wait by clock time
 function byDeparture(a: Departure, b: Departure): number {
@@ -34,16 +29,16 @@ function byDeparture(a: Departure, b: Departure): number {
   return a.Time.localeCompare(b.Time);
 }
 
-export default function FermatePage(props: FermatePageProps) {
-  const params = use(props.params);
+// The platforms of the stop, as in the URL
+export function FermataView({ fermata }: { fermata: string[] }) {
   const router = useRouter();
   const { data, isLoading, isError } = useMonitored<Departure>(
     "/api/timetable/itineraries",
     "itineraries",
-    params.fermata
+    fermata
   );
   const { isFavorite, toggleFavorite, isLoaded } = useFavorites();
-  const stop = findTarget(useTargets(), params.fermata);
+  const stop = findTarget(useTargets(), fermata);
   const now = useNow();
   const timer = useTimer();
 
@@ -52,7 +47,7 @@ export default function FermatePage(props: FermatePageProps) {
   const { position } = useGeolocation(granted);
 
   const departures = useMemo(() => [...data].sort(byDeparture), [data]);
-  const currentIsFavorite = isLoaded && isFavorite(params.fermata);
+  const currentIsFavorite = isLoaded && isFavorite(fermata);
 
   const platform = (departure: Departure) =>
     stop?.Coordinates.find((c) => c.Id === departure.Target) ??
@@ -63,7 +58,7 @@ export default function FermatePage(props: FermatePageProps) {
     if (!stop || !isScheduled(departure)) return;
     timer.start(
       departure,
-      { name: stop.Name, label: stop.Label, identifiers: params.fermata },
+      { name: stop.Name, label: stop.Label, identifiers: fermata },
       platform(departure)
     );
     router.push("/timer");
@@ -83,7 +78,7 @@ export default function FermatePage(props: FermatePageProps) {
                 toggleFavorite({
                   name: stop.Name,
                   label: stop.Label,
-                  identifiers: params.fermata,
+                  identifiers: fermata,
                 })
               }
               className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
