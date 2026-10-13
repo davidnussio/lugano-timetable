@@ -1,4 +1,4 @@
-import { RoutingStatus } from "~/timetable/models";
+import { type Departure, RoutingStatus } from "~/timetable/models";
 
 export type BusPosition =
   // Still at (or before) the first stop
@@ -54,4 +54,34 @@ export function busIndex(position: BusPosition, length: number): number {
     case "arrived":
       return length;
   }
+}
+
+// The departure of the trip from the stop of the user: the run passing at
+// `time` (the stop's time in the routing), else the soonest of the line
+export function tripDeparture(
+  departures: ReadonlyArray<Departure>,
+  trip: {
+    readonly target: string;
+    readonly route: string;
+    readonly dir: string;
+    readonly routing: string;
+  },
+  time: string | undefined
+): Departure | undefined {
+  const runs = departures.filter(
+    (d) =>
+      d.Target === trip.target &&
+      d.Route === trip.route &&
+      d.Dir === trip.dir &&
+      d.Routing === trip.routing
+  );
+  const soonest = runs.reduce<Departure | undefined>(
+    (best, d) =>
+      best === undefined ||
+      (d.DepartureAt ?? Infinity) < (best.DepartureAt ?? Infinity)
+        ? d
+        : best,
+    undefined
+  );
+  return runs.find((d) => d.Time === time) ?? soonest;
 }

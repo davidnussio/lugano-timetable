@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { busIndex, busPosition, stopState } from "../trip";
-import { RoutingStatus } from "../../timetable/models";
+import { busIndex, busPosition, stopState, tripDeparture } from "../trip";
+import { InTimeStatus, RoutingStatus } from "../../timetable/models";
 
 const stops = (...statuses: RoutingStatus[]) =>
   statuses.map((Status) => ({ Status }));
@@ -34,5 +34,41 @@ describe("busPosition", () => {
   it("knows when the bus has not left or has arrived", () => {
     expect(busPosition(stops(F, F, F))).toEqual({ kind: "origin" });
     expect(busPosition(stops(O, P, P))).toEqual({ kind: "arrived" });
+  });
+});
+
+describe("tripDeparture", () => {
+  const trip = { target: "101", route: "4", dir: "1", routing: "7" };
+  const departure = (Time: string, DepartureAt: number, extra = {}) => ({
+    Target: "101",
+    Route: "4",
+    RouteCode: "4",
+    Dir: "1",
+    Routing: "7",
+    Dest: "Canobbio",
+    Img: "4",
+    Time,
+    Pred: InTimeStatus.OnTime,
+    DepartureAt,
+    ...extra,
+  });
+
+  it("finds the run passing at the time of the stop", () => {
+    const runs = [departure("18:19", 1), departure("18:34", 2)];
+    expect(tripDeparture(runs, trip, "18:34")).toBe(runs[1]);
+  });
+
+  it("falls back on the soonest run of the line", () => {
+    const runs = [departure("18:34", 2), departure("18:19", 1)];
+    expect(tripDeparture(runs, trip, "18:20")).toBe(runs[1]);
+  });
+
+  it("ignores the other lines and platforms", () => {
+    const runs = [
+      departure("18:19", 1, { Routing: "8" }),
+      departure("18:19", 1, { Target: "102" }),
+      departure("18:19", 1, { Dir: "2" }),
+    ];
+    expect(tripDeparture(runs, trip, "18:19")).toBeUndefined();
   });
 });

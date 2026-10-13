@@ -1,6 +1,7 @@
 "use client";
 
-import { Bus, ChevronUp, MapPin } from "lucide-react";
+import { Bell, BellRing, Bus, ChevronUp, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LineBadge } from "~/app/components/line-badge";
 import { LiveStatus } from "~/app/components/live-status";
@@ -9,12 +10,26 @@ import { SkeletonList } from "~/app/components/skeleton-list";
 import { Timetable } from "~/app/components/timetable";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
+import { useTargets } from "~/hooks/use-targets";
 import { minutesUntilClock, town } from "~/lib/format";
 import { lineColor } from "~/lib/lines";
-import { type BusPosition, busIndex, busPosition, stopState } from "~/lib/trip";
+import {
+  type BusPosition,
+  busIndex,
+  busPosition,
+  stopState,
+  tripDeparture,
+} from "~/lib/trip";
 import { cn } from "~/lib/utils";
 import { minutesLeft } from "~/timer/plan";
-import { InTimeStatus, RoutingStatus, type RoutingStop } from "~/timetable/models";
+import { isScheduled } from "~/timer/store";
+import { useTimer } from "~/timer/timer-provider";
+import {
+  type Departure,
+  InTimeStatus,
+  RoutingStatus,
+  type RoutingStop,
+} from "~/timetable/models";
 
 
 const RouteUIDToProgressive = [
@@ -43,14 +58,54 @@ export function RoutingView({ routing }: { routing: string[] }) {
     "routing",
     routing
   );
-  const [target, route, dir] = routing;
+  const [target, route, dir, routingId] = routing;
   const [showPassed, setShowPassed] = useState(false);
   const now = useNow();
   const color = lineColor(route);
+  const router = useRouter();
+  const timer = useTimer();
 
   const position = busPosition(data);
   const bus = busIndex(position, data.length);
   const mine = data.findIndex((stop) => stop.UID === target);
+
+  // The departure of this bus from the stop of the user, in the real-time
+  // list of the stop: same polling (and SWR cache) as the stop page
+  const stop = useTargets()?.find((t) => t.Identifiers.includes(target));
+  const { data: departures } = useMonitored<Departure>(
+    "/api/timetable/itineraries",
+    "itineraries",
+    stop && mine !== -1 && bus <= mine ? stop.Identifiers : null
+  );
+  const departure =
+    stop && mine !== -1 && bus <= mine
+      ? tripDeparture(
+          departures,
+          { target, route, dir, routing: routingId },
+          data[mine].Time
+        )
+      : undefined;
+  const timed =
+    timer.timer !== null &&
+    departure !== undefined &&
+    (departure.Uid !== undefined
+      ? timer.timer.uid === departure.Uid
+      : timer.timer.target === departure.Target &&
+        timer.timer.routing === departure.Routing &&
+        timer.timer.time === departure.Time);
+
+  const startTimer = () => {
+    if (!stop || !departure || !isScheduled(departure)) return;
+    if (!timed) {
+      timer.start(
+        departure,
+        { name: stop.Name, label: stop.Label, identifiers: stop.Identifiers },
+        stop.Coordinates.find((c) => c.Id === departure.Target) ??
+          stop.Coordinates[0]
+      );
+    }
+    router.push("/timer");
+  };
   // Stops hidden above the bus until the user asks for them
   const hidden = showPassed ? 0 : Math.max(0, bus - PASSED_VISIBLE);
 
@@ -74,6 +129,25 @@ export function RoutingView({ routing }: { routing: string[] }) {
             <LineBadge img={route} route={route} size={26} className="rounded-md" />
             <span className="truncate">{destination?.Name ?? "Percorso"}</span>
           </span>
+        }
+        actions={
+          departure &&
+          isScheduled(departure) && (
+            <button
+              type="button"
+              onClick={startTimer}
+              className={cn(
+                "grid size-10 place-items-center rounded-full transition-colors hover:bg-muted",
+                timed ? "text-primary" : "text-muted-foreground"
+              )}
+              aria-label={
+                timed
+                  ? "Apri il timer"
+                  : `Avvia timer per la linea ${departure.RouteCode} delle ${departure.Time}`
+              }>
+              {timed ? <BellRing className="size-5" /> : <Bell className="size-5" />}
+            </button>
+          )
         }
       />
 
