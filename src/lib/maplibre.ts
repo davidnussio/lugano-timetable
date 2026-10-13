@@ -1,12 +1,12 @@
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getVersion, setWorkerUrl } from "maplibre-gl";
+import { setWorkerUrl } from "maplibre-gl";
 
 // Shared setup of the maps. Import it only from components loaded with
 // `next/dynamic` and `ssr: false`: MapLibre needs the browser (WebGL).
 
 // The bundler does not serve the worker next to MapLibre: it is copied to
-// public/ on install, under the version (see `postinstall`)
-setWorkerUrl(`/maplibre/${getVersion()}/maplibre-gl-worker.mjs`);
+// public/ on install (see `postinstall`)
+setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 // Light base map of swisstopo: vector tiles, free and without an API key
 export const MAP_STYLE =

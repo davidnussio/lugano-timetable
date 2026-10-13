@@ -16,7 +16,7 @@ const development = ["localhost", "127.0.0.1"].includes(self.location.hostname);
 const isStatic = (url) =>
   !development &&
   url.origin === self.location.origin &&
-  (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/maplibre/"));
+  url.pathname.startsWith("/_next/static/");
 
 async function trim(cache) {
   const keys = await cache.keys();
