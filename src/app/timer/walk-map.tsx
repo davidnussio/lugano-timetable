@@ -2,7 +2,7 @@
 
 import type { Feature, LineString, Polygon } from "geojson";
 import { Bus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AttributionControl,
   Layer,
@@ -12,12 +12,20 @@ import {
   Source,
 } from "react-map-gl/maplibre";
 import { MAP_COLORS, MAP_STYLE } from "~/lib/maplibre";
-import type { Position } from "~/timer/plan";
+import { distanceMeters, type Position } from "~/timer/plan";
 
 // Blue of the "you are here" dot, as on the phone maps
 const USER = "#0ea5e9";
 
 const METERS_PER_DEGREE = 111_320;
+
+// GPS fixes jitter by a few meters: move the user on the map only when the
+// fix (or its accuracy) changes by this much, so that the map sources are
+// updated only when the user really moves
+const REDRAW_METERS = 5;
+
+// Refit the map when the user moves this far from where it was last fitted
+const REFIT_METERS = 15;
 
 // The GPS accuracy as a polygon: good enough for a few hundred meters
 function circle({ lat, lon }: Position, meters: number, steps = 48): Feature<Polygon> {
@@ -48,27 +56,67 @@ function line(from: Position, to: Position): Feature<LineString> {
   };
 }
 
+type Fix = Position & { readonly accuracy: number };
+
 interface WalkMapProps {
   readonly stop: Position;
-  readonly position: (Position & { readonly accuracy: number }) | undefined;
+  readonly position: Fix | undefined;
 }
+
+const moved = (from: Fix | undefined, to: Fix | undefined) =>
+  from === undefined || to === undefined
+    ? from !== to
+    : distanceMeters(from, to) >= REDRAW_METERS ||
+      Math.abs(from.accuracy - to.accuracy) >= REDRAW_METERS;
 
 // Where the user is compared to the stop of the timer. Not interactive: it is
 // a glance, and it does not get in the way when scrolling the page.
 export function WalkMap({ stop, position }: WalkMapProps) {
   const map = useRef<MapRef>(null);
   const [loaded, setLoaded] = useState(false);
-  const userLat = position?.lat;
-  const userLon = position?.lon;
+  // Where the map was last fitted, with the stop it was fitted for
+  const fitted = useRef<{ user: Position; stop: Position } | undefined>(undefined);
+  // The fix drawn on the map, updated during render when the user moves
+  const [shown, setShown] = useState(position);
+  if (position !== shown && moved(shown, position)) setShown(position);
+  const userLat = shown?.lat;
+  const userLon = shown?.lon;
+  const accuracy = shown?.accuracy;
 
-  // Keep both the user and the stop in view as the user moves
+  // New GeoJSON only when the user moves: the page re-renders every second,
+  // and a new object makes the source set its data again
+  const shapes = useMemo(() => {
+    if (userLat === undefined || userLon === undefined || accuracy === undefined) {
+      return undefined;
+    }
+    const user = { lat: userLat, lon: userLon };
+    const target = { lat: stop.lat, lon: stop.lon };
+    return { accuracy: circle(user, accuracy), walk: line(user, target) };
+  }, [userLat, userLon, accuracy, stop.lat, stop.lon]);
+
+  // Keep both the user and the stop in view as the user moves, without
+  // animating the map at every GPS fix
   useEffect(() => {
-    if (!loaded) return;
+    const view = map.current;
+    if (!loaded || view === null) return;
     if (userLat === undefined || userLon === undefined) {
-      map.current?.easeTo({ center: [stop.lon, stop.lat], zoom: 16 });
+      fitted.current = undefined;
+      view.easeTo({ center: [stop.lon, stop.lat], zoom: 16 });
       return;
     }
-    map.current?.fitBounds(
+    const user = { lat: userLat, lon: userLon };
+    const last = fitted.current;
+    if (
+      last !== undefined &&
+      last.stop.lat === stop.lat &&
+      last.stop.lon === stop.lon &&
+      distanceMeters(last.user, user) < REFIT_METERS &&
+      view.getBounds().contains([userLon, userLat])
+    ) {
+      return;
+    }
+    fitted.current = { user, stop: { lat: stop.lat, lon: stop.lon } };
+    view.fitBounds(
       [
         [Math.min(userLon, stop.lon), Math.min(userLat, stop.lat)],
         [Math.max(userLon, stop.lon), Math.max(userLat, stop.lat)],
@@ -88,16 +136,16 @@ export function WalkMap({ stop, position }: WalkMapProps) {
       attributionControl={false}
       onLoad={() => setLoaded(true)}>
       <AttributionControl position="bottom-right" compact />
-      {position && (
+      {shapes && userLat !== undefined && userLon !== undefined && (
         <>
-          <Source id="accuracy" type="geojson" data={circle(position, position.accuracy)}>
+          <Source id="accuracy" type="geojson" data={shapes.accuracy}>
             <Layer
               id="accuracy"
               type="fill"
               paint={{ "fill-color": USER, "fill-opacity": 0.15 }}
             />
           </Source>
-          <Source id="walk" type="geojson" data={line(position, stop)}>
+          <Source id="walk" type="geojson" data={shapes.walk}>
             <Layer
               id="walk"
               type="line"
@@ -110,7 +158,7 @@ export function WalkMap({ stop, position }: WalkMapProps) {
               }}
             />
           </Source>
-          <Marker longitude={position.lon} latitude={position.lat}>
+          <Marker longitude={userLon} latitude={userLat}>
             <span
               className="block size-4 rounded-full border-2 border-white shadow-md"
               style={{ backgroundColor: USER }}

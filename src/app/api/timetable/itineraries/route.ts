@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { Identifier } from "~/timetable/schema";
 import { Timetable } from "~/timetable/timetable";
 import { respond } from "../../respond";
+import { monitoredCacheControl } from "../monitored-cache";
 
 const Query = Schema.Struct({
   itineraries: Schema.NonEmptyArray(Identifier),
@@ -18,6 +19,7 @@ export function GET(request: NextRequest) {
       });
       const timetable = yield* Timetable;
       return yield* timetable.itineraries(itineraries);
-    })
+    }),
+    monitoredCacheControl
   );
 }

@@ -132,6 +132,48 @@ describe("Timetable", () => {
     );
   });
 
+  it.effect("stores the session only when the server opens a new one", () => {
+    const calls = makeCalls();
+    const writes: Array<string> = [];
+    const countingStore = Layer.effect(
+      SessionStore,
+      Effect.map(SessionStore, (store) =>
+        SessionStore.of({
+          get: store.get,
+          set: (key, source) =>
+            Effect.andThen(
+              Effect.sync(() => writes.push(source)),
+              store.set(key, source)
+            ),
+        })
+      )
+    ).pipe(Layer.provide(SessionStore.layerMemory));
+
+    return Effect.gen(function* () {
+      const fiber = yield* Effect.forkChild(
+        Timetable.use((t) => t.itineraries([486]))
+      );
+      yield* TestClock.adjust("1 second");
+      yield* Fiber.join(fiber);
+      yield* Timetable.use((t) => t.itineraries([486]));
+
+      assert.deepStrictEqual(calls.sources, ["", "S1", "S1", "S1"]);
+      assert.deepStrictEqual(writes, ["S1"]);
+    }).pipe(
+      Effect.provide(
+        Timetable.layerNoDeps.pipe(
+          Layer.provide(countingStore),
+          Layer.provide(
+            scriptedRtpi(
+              [notReady("S1"), notReady("S1"), { source: "S1", ready: true, data: [] }],
+              calls
+            )
+          )
+        )
+      )
+    );
+  });
+
   it.effect("computes the departure time from the wait", () => {
     const calls = makeCalls();
 
@@ -203,13 +245,15 @@ describe("Timetable", () => {
 });
 
 describe("SessionStore.layerMemory", () => {
-  it.effect("expires sessions after five minutes", () =>
+  it.effect("expires sessions five minutes after their last use", () =>
     Effect.gen(function* () {
       const store = yield* SessionStore;
       yield* store.set("key", "S1");
       yield* TestClock.adjust("4 minutes");
       assert.deepStrictEqual(yield* store.get("key"), Option.some("S1"));
-      yield* TestClock.adjust("1 minute");
+      yield* TestClock.adjust("4 minutes");
+      assert.deepStrictEqual(yield* store.get("key"), Option.some("S1"));
+      yield* TestClock.adjust("5 minutes");
       assert.deepStrictEqual(yield* store.get("key"), Option.none());
     }).pipe(Effect.provide(SessionStore.layerMemory))
   );

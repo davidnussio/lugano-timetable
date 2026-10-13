@@ -1,6 +1,7 @@
 "use client";
 
 import { Bus, LocateFixed, MapPin, Ship, Star, TrainFront } from "lucide-react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useGeolocation } from "~/hooks/use-geolocation";
 import { formatDistance } from "~/lib/format";
@@ -8,6 +9,18 @@ import type { Station } from "~/journey/models";
 import { fetcher } from "~/utils/fetcher";
 
 const MIN_QUERY = 2;
+
+// Search when the user pauses typing, not at every character
+const SEARCH_DELAY_MS = 250;
+
+function useDebounced<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timeout);
+  }, [value, delay]);
+  return debounced;
+}
 
 function StationIcon({ icon }: { icon: string | undefined }) {
   const className = "size-4 shrink-0 text-muted-foreground";
@@ -30,10 +43,16 @@ export function StationPicker({
   favorites: ReadonlyArray<Station>;
   onPick: (station: Station) => void;
 }) {
-  const searching = query.trim().length >= MIN_QUERY;
+  const trimmed = query.trim();
+  const searching = trimmed.length >= MIN_QUERY;
+  const search = useDebounced(trimmed, SEARCH_DELAY_MS);
+  // Still typing: the request for the current text has not started yet
+  const typing = searching && search !== trimmed;
   const { position, error } = useGeolocation(nearby && !searching);
   const key = searching
-    ? `/api/journey/stations?${new URLSearchParams({ query: query.trim() })}`
+    ? search.length >= MIN_QUERY
+      ? `/api/journey/stations?${new URLSearchParams({ query: search })}`
+      : null
     : nearby && position
       ? // Rounded: nearby stops do not change every few meters
         `/api/journey/stations?lat=${position.lat.toFixed(4)}&lon=${position.lon.toFixed(4)}`
@@ -44,7 +63,7 @@ export function StationPicker({
     { keepPreviousData: true, revalidateOnFocus: false }
   );
 
-  const stations = key === null ? favorites : (data ?? []);
+  const stations = key === null ? (searching ? [] : favorites) : (data ?? []);
   const title = searching
     ? undefined
     : nearby
@@ -61,7 +80,7 @@ export function StationPicker({
         ? "Ricerca non disponibile, riprova tra poco"
         : nearby && !searching && !position
           ? "Localizzazione…"
-          : isLoading && stations.length === 0
+          : (typing || isLoading) && stations.length === 0
             ? "Ricerca…"
             : key !== null && stations.length === 0
               ? "Nessuna fermata trovata"

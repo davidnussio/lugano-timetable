@@ -97,15 +97,18 @@ export class Timetable extends Context.Service<
           const stored = yield* sessions.get(key);
           const source = yield* Ref.make(Option.getOrElse(stored, () => ""));
 
-          const poll = Ref.get(source).pipe(
-            Effect.flatMap(request),
-            Effect.tap((response) =>
-              Effect.andThen(
-                Ref.set(source, response.source),
-                sessions.set(key, response.source)
-              )
-            )
-          );
+          // Store the session only when the server opens a new one: polling
+          // the same session would write the same value to Redis every time
+          // (reading it already extends its expiry)
+          const poll = Effect.gen(function* () {
+            const current = yield* Ref.get(source);
+            const response = yield* request(current);
+            if (response.source !== current) {
+              yield* Ref.set(source, response.source);
+              yield* sessions.set(key, response.source);
+            }
+            return response;
+          });
 
           const { ready, data } = yield* Effect.repeat(poll, {
             schedule: pollSchedule,

@@ -14,8 +14,10 @@ const SESSION_TTL = Duration.minutes(5);
 
 // Stores RTPI session ids so that every request (and every serverless
 // instance, when Redis is configured) reuses the same warm session for the
-// same query. Storage failures are logged and treated as a missing session:
-// the worst case is opening a new one.
+// same query. A session expires five minutes after its last use: reading it
+// extends it, so that it is written only when the server opens a new one.
+// Storage failures are logged and treated as a missing session: the worst
+// case is opening a new one.
 export class SessionStore extends Context.Service<
   SessionStore,
   {
@@ -34,6 +36,7 @@ export class SessionStore extends Context.Service<
             entries.delete(key);
             return Option.none();
           }
+          entry.expiresAt = now + Duration.toMillis(SESSION_TTL);
           return Option.some(entry.source);
         }),
       set: (key, source) =>
@@ -51,7 +54,9 @@ export class SessionStore extends Context.Service<
       SessionStore,
       SessionStore.of({
         get: (key) =>
-          Effect.tryPromise(() => redis.get<string>(key)).pipe(
+          Effect.tryPromise(() =>
+            redis.getex<string>(key, { ex: Duration.toSeconds(SESSION_TTL) })
+          ).pipe(
             Effect.map(Option.fromNullishOr),
             Effect.catch((error) =>
               Effect.as(

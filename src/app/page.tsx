@@ -1,12 +1,14 @@
 import { Effect } from "effect";
-import { connection } from "next/server";
 import { runtime } from "~/timetable/runtime";
 import { Timetable } from "~/timetable/timetable";
 import { FiltrableListTargets } from "./targets";
 
+// The stop list rarely changes: render it once and refresh it in the
+// background at most once an hour. If the RTPI server is down, the last list
+// keeps being served.
+export const revalidate = 3600;
+
 export default async function Home() {
-  // Render on request: the stop list comes from the live RTPI server
-  await connection();
   const targets = await runtime.runPromise(
     Effect.gen(function* () {
       const timetable = yield* Timetable;
