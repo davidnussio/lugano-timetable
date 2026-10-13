@@ -50,7 +50,8 @@ export interface Transfer {
 
 export interface TransferOptions {
   readonly pace?: Pace;
-  // Getting off, finding the platform: added to every transfer
+  // Getting off, finding the platform: added to every transfer without a
+  // walk planned by the timetable
   readonly minimumMs?: number;
   // Below this slack the connection is tight
   readonly tightMs?: number;
@@ -82,12 +83,19 @@ export function transferWalkingMs(
   );
 }
 
+// `plannedSlackMs`: the slack on schedule. A connection planned with less
+// than `tightMs` to spare is only tight once delays eat into it.
+// `toleranceMs`: how far below zero the slack may go before it is lost.
 export function connectionStatus(
   slackMs: number,
-  tightMs = TIGHT_TRANSFER_MS
+  tightMs = TIGHT_TRANSFER_MS,
+  plannedSlackMs = Number.POSITIVE_INFINITY,
+  toleranceMs = 0
 ): ConnectionStatus {
-  if (slackMs < 0) return "missed";
-  return slackMs < tightMs ? "tight" : "ok";
+  if (slackMs < -toleranceMs) return "missed";
+  return slackMs < Math.min(tightMs, Math.max(plannedSlackMs, 0))
+    ? "tight"
+    : "ok";
 }
 
 export function transfer(
@@ -99,18 +107,25 @@ export function transfer(
     tightMs = TIGHT_TRANSFER_MS,
   }: TransferOptions = {}
 ): Transfer {
+  const planned = departing.walkBeforeMs;
+  // The walk of the timetable is already its minimum transfer time: no
+  // margin on top, and a slower pace leaves no slack but does not make the
+  // connection impossible
   const walkingMs =
-    departing.walkBeforeMs === undefined
+    planned === undefined
       ? transferWalkingMs(arriving.to, departing.from, pace)
-      : (departing.walkBeforeMs * PACE_SPEED.normal) / PACE_SPEED[pace];
+      : (planned * PACE_SPEED.normal) / PACE_SPEED[pace];
+  const neededMs = walkingMs + (planned === undefined ? minimumMs : 0);
+  const toleranceMs = planned === undefined ? 0 : Math.max(walkingMs - planned, 0);
   const slackMs =
-    expected(departing.departure) -
-    (expected(arriving.arrival) + walkingMs + minimumMs);
+    expected(departing.departure) - expected(arriving.arrival) - neededMs;
+  const plannedSlackMs =
+    departing.departure.scheduled - arriving.arrival.scheduled - neededMs;
   return {
     at: arriving.to,
     walkingMs,
     slackMs,
-    status: connectionStatus(slackMs, tightMs),
+    status: connectionStatus(slackMs, tightMs, plannedSlackMs, toleranceMs),
   };
 }
 
@@ -171,16 +186,26 @@ export function feasible(plan: Plan, options?: TransferOptions): boolean {
   );
 }
 
-// The plan to fall back on when a connection is lost: the first one leaving
-// once the user can be at its stop
+// The same bus at the same stop and time
+const sameDeparture = (a: Leg, b: Leg) =>
+  a.line === b.line &&
+  a.from.name === b.from.name &&
+  a.departure.scheduled === b.departure.scheduled;
+
+// The plan to fall back on when the connection from `arriving` to
+// `departing` is lost: the one arriving first among those that can be
+// caught once off `arriving`, never `departing` itself
 export function fallbackPlan<P extends Plan>(
   plans: ReadonlyArray<P>,
-  readyAt: number,
+  arriving: Leg,
+  departing: Leg,
   options?: TransferOptions
 ): P | undefined {
   let best: P | undefined;
   for (const plan of plans) {
-    if (plan.legs.length === 0 || planDeparture(plan) < readyAt) continue;
+    const [first] = plan.legs;
+    if (first === undefined || sameDeparture(first, departing)) continue;
+    if (transfer(arriving, first, options).status === "missed") continue;
     if (!feasible(plan, options)) continue;
     if (best === undefined || planArrival(plan) < planArrival(best)) {
       best = plan;

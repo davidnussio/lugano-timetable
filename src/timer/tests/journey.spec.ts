@@ -85,6 +85,18 @@ describe("connectionStatus", () => {
     expect(connectionStatus(0)).toBe("tight");
     expect(connectionStatus(-1)).toBe("missed");
   });
+
+  it("is tight only once delays eat into the planned slack", () => {
+    expect(connectionStatus(0, undefined, 0)).toBe("ok");
+    expect(connectionStatus(MIN, undefined, MIN)).toBe("ok");
+    expect(connectionStatus(30_000, undefined, MIN)).toBe("tight");
+    expect(connectionStatus(-1, undefined, 0)).toBe("missed");
+  });
+
+  it("tolerates a slack below zero", () => {
+    expect(connectionStatus(-MIN, undefined, -MIN, MIN)).toBe("tight");
+    expect(connectionStatus(-2 * MIN, undefined, -MIN, MIN)).toBe("missed");
+  });
 });
 
 describe("transfer", () => {
@@ -109,11 +121,15 @@ describe("transfer", () => {
   });
 
   it("includes the walk to another platform", () => {
-    const arriving = leg("2", 0, 10, undefined, { from: cornaredo, to: bellavista });
-    const change = transfer(arriving, toParadiso(18, 28));
+    const stops = { from: cornaredo, to: bellavista };
+    const change = transfer(leg("2", 0, 10, undefined, stops), toParadiso(18, 28));
     expect(change.at).toBe(bellavista);
     expect(change.walkingMs).toBeGreaterThan(5 * MIN);
-    expect(change.status).toBe("tight");
+    expect(change.slackMs).toBeLessThan(2 * MIN);
+    // Planned that tight: tight only once late
+    expect(change.status).toBe("ok");
+    const late = transfer(leg("2", 0, 10, { arrival: 1 }, stops), toParadiso(18, 28));
+    expect(late.status).toBe("tight");
   });
 
   it("prefers the walk planned by the timetable", () => {
@@ -125,12 +141,50 @@ describe("transfer", () => {
     );
   });
 
+  // S10 arriving in Lugano, then a 4 min walk to the bus 6, as planned by SBB
+  describe("with the walk of the timetable", () => {
+    const departing = { ...toParadiso(14, 25), walkBeforeMs: 4 * MIN };
+
+    it("makes an exact connection on schedule", () => {
+      const change = transfer(leg("S10", 0, 10), departing);
+      expect(change).toEqual({ at: centro, walkingMs: 4 * MIN, slackMs: 0, status: "ok" });
+      expect(feasible({ legs: [leg("S10", 0, 10), departing] })).toBe(true);
+    });
+
+    it("loses it when the train is late", () => {
+      const change = transfer(leg("S10", 0, 10, { arrival: 1 }), departing);
+      expect(change.slackMs).toBe(-MIN);
+      expect(change.status).toBe("missed");
+    });
+
+    it("gets tight when delays eat into the planned slack", () => {
+      const roomy = { ...toParadiso(16, 25), walkBeforeMs: 4 * MIN };
+      expect(transfer(leg("S10", 0, 10), roomy).status).toBe("ok");
+      expect(transfer(leg("S10", 0, 10, { arrival: 1 }), roomy).status).toBe("tight");
+      expect(transfer(leg("S10", 0, 10, { arrival: 3 }), roomy).status).toBe("missed");
+    });
+
+    it("follows the pace of the user", () => {
+      const slow = transfer(leg("S10", 0, 10), departing, { pace: "slow" });
+      expect(slow.slackMs).toBeCloseTo(-1.2 * MIN);
+      expect(slow.status).toBe("tight");
+      const slowLate = transfer(leg("S10", 0, 10, { arrival: 1 }), departing, {
+        pace: "slow",
+      });
+      expect(slowLate.status).toBe("missed");
+      const fast = transfer(leg("S10", 0, 10, { arrival: 0.5 }), departing, {
+        pace: "fast",
+      });
+      expect(fast.status).toBe("tight");
+    });
+  });
+
   it("takes custom margins", () => {
-    const change = transfer(leg("2", 0, 10), toParadiso(15, 25), {
+    const change = transfer(leg("2", 0, 10, { arrival: 1 }), toParadiso(15, 25), {
       minimumMs: 0,
       tightMs: 6 * MIN,
     });
-    expect(change.slackMs).toBe(5 * MIN);
+    expect(change.slackMs).toBe(4 * MIN);
     expect(change.status).toBe("tight");
   });
 });
@@ -180,15 +234,32 @@ describe("plans", () => {
   });
 
   it("falls back on the first plan that can be caught", () => {
+    // Bus 1 to Centro, late: the bus 2 at 12 is lost
+    const arriving = (late: number) =>
+      leg("1", 0, 10, { arrival: late }, { from: paradiso, to: centro });
+    const lost = leg("2", 12, 22, undefined, { from: centro, to: cornaredo });
     const plans = [
-      plan(leg("2", 5, 15), toParadiso(20, 30)),
-      plan(leg("2", 12, 22), toParadiso(30, 40)),
+      plan(leg("2", 5, 15, undefined, { from: centro, to: cornaredo }), toParadiso(20, 30)),
+      plan(lost, toParadiso(30, 40)),
       plan(leg("2", 14, 24, { arrival: 8 }), toParadiso(30, 38)),
-      plan(leg("2", 20, 30), toParadiso(40, 50)),
+      plan(leg("2", 20, 30, undefined, { from: centro, to: cornaredo }), toParadiso(40, 50)),
     ];
-    expect(fallbackPlan(plans, 10 * MIN)).toBe(plans[1]);
-    expect(fallbackPlan(plans, 0)).toBe(plans[0]);
-    expect(fallbackPlan(plans, 30 * MIN)).toBeUndefined();
+    expect(fallbackPlan(plans, arriving(5), lost)).toBe(plans[3]);
+    expect(fallbackPlan(plans, arriving(20), lost)).toBeUndefined();
+  });
+
+  it("never falls back on the bus just lost", () => {
+    // S10 in Lugano 10 min late: the bus 6 at 14, 4 min away, is lost even
+    // when the plans of the timetable still show it on time
+    const train = leg("S10", 0, 10, { arrival: 10 });
+    const bus = (departure: number) => ({ ...toParadiso(departure, departure + 10), walkBeforeMs: 4 * MIN });
+    const lost = bus(14);
+    expect(transfer(train, lost).status).toBe("missed");
+    const plans = [{ legs: [lost] }, { legs: [bus(22)] }, { legs: [bus(26)] }];
+    expect(fallbackPlan(plans, train, lost)).toBe(plans[2]);
+    // Late too: still the bus just lost
+    const lateLost = { ...lost, departure: { scheduled: 14 * MIN, estimated: 25 * MIN } };
+    expect(fallbackPlan([{ legs: [lateLost] }], train, lost)).toBeUndefined();
   });
 
   it("suggests leaving later when the arrival does not change", () => {
