@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownUp, ArrowRight, History, LocateFixed, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, History, LocateFixed, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -20,6 +20,9 @@ type Field = "from" | "to";
 
 const LABELS: Record<Field, string> = { from: "Da", to: "A" };
 
+const navButton =
+  "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40";
+
 export default function JourneyPage() {
   const router = useRouter();
   const timer = useTimer();
@@ -30,8 +33,10 @@ export default function JourneyPage() {
   const [query, setQuery] = useState("");
   const [nearby, setNearby] = useState(false);
   const deferredQuery = useDeferredValue(query);
-  // Departures from this time, now when undefined
-  const [at, setAt] = useState<number>();
+  // The start of every page of departures browsed after the first one, the
+  // current page last: back to the previous page, the first one from now
+  const [pages, setPages] = useState<ReadonlyArray<number>>([]);
+  const at = pages.at(-1);
   const input = useRef<HTMLInputElement>(null);
 
   // The favorite TPL stops, as stops of the timetable
@@ -77,7 +82,7 @@ export default function JourneyPage() {
     if (editing === null) return;
     const next = { ...journeySearchStore.get(), [editing]: station };
     journeySearchStore.set(next);
-    setAt(undefined);
+    setPages([]);
     const other: Field = editing === "from" ? "to" : "from";
     if (next[other] === undefined) edit(other);
     else setEditing(null);
@@ -85,7 +90,7 @@ export default function JourneyPage() {
 
   const swap = () => {
     journeySearchStore.set((s) => ({ ...s, from: s.to, to: s.from }));
-    setAt(undefined);
+    setPages([]);
   };
 
   const start = (connection: Connection) => {
@@ -207,27 +212,33 @@ export default function JourneyPage() {
               ))}
             </ul>
           )}
-          {data && (
-            <div className="flex justify-center gap-2 pt-1">
-              {at !== undefined && (
-                <button
-                  type="button"
-                  onClick={() => setAt(undefined)}
-                  className="h-10 rounded-xl border border-border bg-card px-4 text-sm font-semibold shadow-sm hover:bg-muted">
-                  Adesso
-                </button>
-              )}
-              {last && (
-                <button
-                  type="button"
-                  onClick={() => setAt(last.legs[0].departure.scheduled + 60_000)}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold shadow-sm hover:bg-muted">
-                  Più tardi
-                  <ArrowRight className="size-4" />
-                </button>
-              )}
-            </div>
-          )}
+          <nav aria-label="Pagine dei collegamenti" className="grid grid-cols-3 gap-2 pt-1">
+            <button
+              type="button"
+              disabled={pages.length === 0}
+              onClick={() => setPages((value) => value.slice(0, -1))}
+              className={navButton}>
+              <ArrowLeft className="size-4" />
+              Prima
+            </button>
+            <button
+              type="button"
+              disabled={pages.length === 0}
+              onClick={() => setPages([])}
+              className={navButton}>
+              Adesso
+            </button>
+            <button
+              type="button"
+              disabled={!last}
+              onClick={() =>
+                last && setPages((value) => [...value, last.legs[0].departure.scheduled + 60_000])
+              }
+              className={navButton}>
+              Più tardi
+              <ArrowRight className="size-4" />
+            </button>
+          </nav>
           <p className="px-2 text-center text-xs text-muted-foreground">
             Orari e ritardi da transport.opendata.ch. Tocca la campanella per
             seguire il tragitto con il timer.

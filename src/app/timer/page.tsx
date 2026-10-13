@@ -222,6 +222,7 @@ function ActiveTimerView({
   } = useTimer();
   const tone = timerTone(countdown, stage);
   const { headline, travel, now } = useHeadline(countdown);
+  const clock = formatClock(headline.ms);
   const walking = countdown.walkingMs;
 
   const progress = timerProgress(active, countdown, stage);
@@ -300,8 +301,13 @@ function ActiveTimerView({
               )}>
               {headline.label}
             </span>
-            <span className="font-mono text-6xl font-semibold tracking-tight tabular-nums">
-              {formatClock(headline.ms)}
+            <span
+              className={cn(
+                "font-mono font-semibold tracking-tight tabular-nums",
+                // Hours do not fit in the ring at full size
+                clock.length > 7 ? "text-4xl" : clock.length > 5 ? "text-5xl" : "text-6xl"
+              )}>
+              {clock}
             </span>
             <span className="mt-1 text-xs text-muted-foreground">
               {travel
