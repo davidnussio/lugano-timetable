@@ -168,7 +168,11 @@ export function findTimerDeparture(
 ): ScheduledDeparture | undefined {
   // A planned bus not found yet: by line and time
   if (timer.routing === "" && timer.uid === undefined) {
-    return findLegDeparture(departures, timer.line, timer.departureAt);
+    const planned = timer.journey?.legs[0].departure;
+    return findLegDeparture(departures, timer.line, {
+      scheduled: planned?.scheduled ?? timer.departureAt,
+      estimated: timer.departureAt,
+    });
   }
   let best: ScheduledDeparture | undefined;
   for (const departure of departures) {
