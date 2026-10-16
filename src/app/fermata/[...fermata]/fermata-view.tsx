@@ -14,12 +14,25 @@ import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { findTarget, useTargets } from "~/hooks/use-targets";
 import { formatClimb, formatDeparture, formatDistance, town } from "~/lib/format";
+import { lineColor } from "~/lib/lines";
 import { cn } from "~/lib/utils";
 import { useClimb } from "~/terrain/use-climb";
 import { distanceMeters, type Position, walkingSeconds } from "~/timer/plan";
 import { isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
+import {
+  type FilterLine,
+  filterDepartures,
+  type LineChip,
+  lineChips,
+  lineFilterStore,
+  stopKey,
+  toggleLine,
+  withLines,
+} from "~/timetable/line-filter";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
+
+const noLines: ReadonlyArray<FilterLine> = [];
 
 
 // Soonest first; departures without a real-time wait by clock time
@@ -47,7 +60,15 @@ export function FermataView({ fermata }: { fermata: string[] }) {
   const granted = useGeolocationGranted();
   const { position } = useGeolocation(granted);
 
-  const departures = useMemo(() => [...data].sort(byDeparture), [data]);
+  // The lines chosen at this stop, remembered for the next visit
+  const key = stopKey(fermata);
+  const selected = lineFilterStore.useValue()?.[key] ?? noLines;
+  const setLines = (lines: ReadonlyArray<FilterLine>) =>
+    lineFilterStore.set((filters) => withLines(filters, key, lines));
+
+  const sorted = useMemo(() => [...data].sort(byDeparture), [data]);
+  const chips = useMemo(() => lineChips(sorted, selected), [sorted, selected]);
+  const departures = useMemo(() => filterDepartures(sorted, selected), [sorted, selected]);
   const currentIsFavorite = isLoaded && isFavorite(fermata);
 
   const platform = (departure: Departure) =>
@@ -119,6 +140,14 @@ export function FermataView({ fermata }: { fermata: string[] }) {
         </p>
       )}
 
+      {!isLoading && chips.length > 1 && (
+        <LineFilter
+          chips={chips}
+          onToggle={(line) => setLines(toggleLine(selected, line))}
+          onAll={() => setLines([])}
+        />
+      )}
+
       {isError && data.length === 0 ? (
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
           Servizio non disponibile, nuovo tentativo in corso…
@@ -145,14 +174,91 @@ export function FermataView({ fermata }: { fermata: string[] }) {
               />
             );
           })}
-          {departures.length === 0 && (
+          {sorted.length === 0 ? (
             <li className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
               Nessuna partenza nei prossimi minuti
             </li>
+          ) : (
+            departures.length === 0 && (
+              <li className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+                {selected.length === 1
+                  ? `Nessuna partenza della linea ${selected[0].line} nei prossimi minuti`
+                  : "Nessuna partenza delle linee scelte nei prossimi minuti"}
+                <button
+                  type="button"
+                  onClick={() => setLines([])}
+                  className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+                  Mostra tutte le linee
+                </button>
+              </li>
+            )
           )}
         </ul>
       )}
     </main>
+  );
+}
+
+// One chip per line, to keep only the chosen ones. Several can be chosen.
+function LineFilter({
+  chips,
+  onToggle,
+  onAll,
+}: {
+  chips: ReadonlyArray<LineChip>;
+  onToggle: (line: LineChip) => void;
+  onAll: () => void;
+}) {
+  const filtering = chips.some((chip) => chip.selected);
+  return (
+    <div
+      role="group"
+      aria-label="Filtra per linea"
+      className="flex gap-2 overflow-x-auto px-4 pb-1 pt-2 [scrollbar-width:none]">
+      <button
+        type="button"
+        aria-pressed={!filtering}
+        onClick={onAll}
+        className={cn(
+          "inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors",
+          filtering
+            ? "border-border bg-card text-foreground hover:bg-muted"
+            : "border-primary bg-primary text-primary-foreground"
+        )}>
+        Tutte
+      </button>
+      {chips.map((chip) => (
+        <button
+          key={chip.route}
+          type="button"
+          aria-pressed={chip.selected}
+          aria-label={
+            chip.absent
+              ? `Linea ${chip.line}, nessuna partenza ora`
+              : `Linea ${chip.line}`
+          }
+          onClick={() => onToggle(chip)}
+          className={cn(
+            "shrink-0 rounded-[14px] border-2 p-0.5 transition-colors",
+            chip.selected ? undefined : "border-transparent",
+            chip.absent && "border-dashed"
+          )}
+          style={chip.selected ? { borderColor: lineColor(chip.route) } : undefined}>
+          {/* Dimmed when left out, or when chosen but not running now */}
+          <LineBadge
+            img={chip.img}
+            route={chip.route}
+            line={chip.line}
+            size={32}
+            className={cn(
+              "rounded-[10px] transition-opacity",
+              filtering && !chip.selected && "opacity-40 grayscale",
+              chip.absent && "opacity-40"
+            )}
+          />
+        </button>
+      ))}
+    </div>
   );
 }
 
