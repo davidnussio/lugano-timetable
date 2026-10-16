@@ -13,9 +13,10 @@ import { useGeolocation, useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { findTarget, useTargets } from "~/hooks/use-targets";
-import { formatDeparture, formatDistance, town } from "~/lib/format";
+import { formatClimb, formatDeparture, formatDistance, town } from "~/lib/format";
 import { cn } from "~/lib/utils";
-import { distanceMeters, walkingSeconds } from "~/timer/plan";
+import { useClimb } from "~/terrain/use-climb";
+import { distanceMeters, type Position, walkingSeconds } from "~/timer/plan";
 import { isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
@@ -53,6 +54,11 @@ export function FermataView({ fermata }: { fermata: string[] }) {
     stop?.Coordinates.find((c) => c.Id === departure.Target) ??
     stop?.Coordinates[0];
   const nearest = position && stop && nearestPlatform(stop, position);
+  // The walk slows down uphill, as in the timer
+  const climb = useClimb(nearest && position, nearest?.position);
+  const climbLabel = formatClimb(climb);
+  const walkMinutes =
+    nearest && Math.max(1, Math.round(walkingSeconds(nearest.meters, "normal", climb) / 60));
 
   const startTimer = (departure: Departure) => {
     if (!stop || !isScheduled(departure)) return;
@@ -108,8 +114,8 @@ export function FermataView({ fermata }: { fermata: string[] }) {
       {nearest !== undefined && (
         <p className="flex items-center gap-1.5 px-5 pb-1 text-xs text-muted-foreground">
           <Footprints className="size-3.5" />
-          {formatDistance(nearest)} · circa{" "}
-          {Math.max(1, Math.round(walkingSeconds(nearest) / 60))} min a piedi
+          {formatDistance(nearest.meters)}
+          {climbLabel && ` ${climbLabel}`} · circa {walkMinutes} min a piedi
         </p>
       )}
 
@@ -152,12 +158,16 @@ export function FermataView({ fermata }: { fermata: string[] }) {
 
 function nearestPlatform(
   stop: Target,
-  position: { lat: number; lon: number }
-): number | undefined {
-  const distances = stop.Coordinates.map(({ Lat, Lon }) =>
-    distanceMeters(position, { lat: Lat, lon: Lon })
+  position: Position
+): { readonly meters: number; readonly position: Position } | undefined {
+  return stop.Coordinates.map(({ Lat, Lon }) => {
+    const platform = { lat: Lat, lon: Lon };
+    return { meters: distanceMeters(position, platform), position: platform };
+  }).reduce<{ meters: number; position: Position } | undefined>(
+    (nearest, platform) =>
+      nearest === undefined || platform.meters < nearest.meters ? platform : nearest,
+    undefined
   );
-  return distances.length > 0 ? Math.min(...distances) : undefined;
 }
 
 function DepartureRow({
