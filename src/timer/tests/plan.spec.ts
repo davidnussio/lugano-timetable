@@ -8,6 +8,7 @@ import {
   dueAlert,
   isFar,
   minutesLeft,
+  PACE_SPEED,
   peakHold,
   reliableFix,
   walkingRelease,
@@ -74,21 +75,21 @@ describe("walking", () => {
 
   it("walks slower than the crow flies", () => {
     expect(walkingSeconds(1300)).toBeCloseTo(1350);
-    expect(walkingSeconds(1000, "slow")).toBeCloseTo(1350);
+    expect(walkingSeconds(1000, PACE_SPEED.slow)).toBeCloseTo(1350);
   });
 
   it("walks slower uphill, as on the flat downhill", () => {
     // 500 m to the stop, 1350 × 500 / 1300 seconds on the flat
     const flat = walkingSeconds(500);
     // 35 m up over 675 m of streets: about a fifth more
-    expect(walkingSeconds(500, "normal", 35) / flat).toBeCloseTo(Math.exp((3.5 * 35) / 675));
-    expect(walkingSeconds(500, "normal", 35) - flat).toBeGreaterThan(90);
-    expect(walkingSeconds(500, "normal", -35)).toBeCloseTo(flat);
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35) / flat).toBeCloseTo(Math.exp((3.5 * 35) / 675));
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35) - flat).toBeGreaterThan(90);
+    expect(walkingSeconds(500, PACE_SPEED.normal, -35)).toBeCloseTo(flat);
   });
 
   it("caps the slope of a short walk", () => {
-    expect(walkingSeconds(20, "normal", 30)).toBeCloseTo(walkingSeconds(20) * Math.exp(3.5 * 0.25));
-    expect(walkingSeconds(0, "normal", 10)).toBe(0);
+    expect(walkingSeconds(20, PACE_SPEED.normal, 30)).toBeCloseTo(walkingSeconds(20) * Math.exp(3.5 * 0.25));
+    expect(walkingSeconds(0, PACE_SPEED.normal, 10)).toBe(0);
   });
 });
 
@@ -225,7 +226,7 @@ describe("peakHold", () => {
 
   it("keeps the time to leave from going back up with a noisy GPS", () => {
     const readings = [300, 304, 296, 299, 307, 291, 288, 295];
-    const release = walkingRelease("normal");
+    const release = walkingRelease();
     let envelope = peakHold(undefined, readings[0], 0, release);
     let previousLeave = Infinity;
     readings.forEach((meters, second) => {

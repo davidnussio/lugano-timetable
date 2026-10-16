@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, Bus, ChevronUp, MapPin } from "lucide-react";
+import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LineBadge } from "~/app/components/line-badge";
@@ -22,7 +22,7 @@ import {
 } from "~/lib/trip";
 import { cn } from "~/lib/utils";
 import { minutesLeft } from "~/timer/plan";
-import { isScheduled } from "~/timer/store";
+import { followsTrip, isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import {
   type Departure,
@@ -71,7 +71,8 @@ export function RoutingView({ routing }: { routing: string[] }) {
 
   // The departure of this bus from the stop of the user, in the real-time
   // list of the stop: same polling (and SWR cache) as the stop page
-  const stop = useTargets()?.find((t) => t.Identifiers.includes(target));
+  const targets = useTargets();
+  const stop = targets?.find((t) => t.Identifiers.includes(target));
   const { data: departures } = useMonitored<Departure>(
     "/api/timetable/itineraries",
     "itineraries",
@@ -106,6 +107,29 @@ export function RoutingView({ routing }: { routing: string[] }) {
     }
     router.push("/timer");
   };
+  // The timer follows this trip: a stop after the user's can be marked as the
+  // one to get off, tapped again to clear
+  const riding =
+    timer.timer !== null &&
+    mine !== -1 &&
+    followsTrip(timer.timer, { target, route, dir, routing: routingId });
+  const getOff = riding ? timer.timer?.getOff : undefined;
+  const toggleGetOff = (chosen: RoutingStop) => {
+    if (getOff?.target === chosen.UID) {
+      timer.chooseGetOff(undefined);
+      return;
+    }
+    const platform = targets
+      ?.find((t) => t.Identifiers.includes(chosen.UID))
+      ?.Coordinates.find((c) => c.Id === chosen.UID);
+    timer.chooseGetOff({
+      target: chosen.UID,
+      name: chosen.Name,
+      position: platform && { lat: platform.Lat, lon: platform.Lon },
+      time: chosen.Time,
+    });
+  };
+
   // Stops hidden above the bus until the user asks for them
   const hidden = showPassed ? 0 : Math.max(0, bus - PASSED_VISIBLE);
 
@@ -171,6 +195,15 @@ export function RoutingView({ routing }: { routing: string[] }) {
             />
           )}
 
+          {riding && mine < data.length - 1 && (
+            <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+              <Flag className="size-3.5 shrink-0 text-primary" />
+              {getOff
+                ? `Scendi a ${getOff.name}: tocca di nuovo la fermata per annullare`
+                : "Tocca la fermata dove scendi: ti avviseremo prima di arrivare"}
+            </p>
+          )}
+
           <ol className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             {hidden > 0 && (
               <li>
@@ -197,6 +230,10 @@ export function RoutingView({ routing }: { routing: string[] }) {
                   count={data.length}
                   position={position}
                   mine={index === mine}
+                  getOff={getOff?.target === stop.UID}
+                  onToggleGetOff={
+                    riding && index > mine ? () => toggleGetOff(stop) : undefined
+                  }
                   color={color}
                   timetable={timetableImageUrl(stop.Code, route, dir)}
                 />
@@ -299,6 +336,8 @@ function StopRow({
   count,
   position,
   mine,
+  getOff,
+  onToggleGetOff,
   color,
   timetable,
 }: {
@@ -308,6 +347,8 @@ function StopRow({
   count: number;
   position: BusPosition;
   mine: boolean;
+  getOff: boolean;
+  onToggleGetOff: (() => void) | undefined;
   color: string;
   timetable: string;
 }) {
@@ -325,7 +366,7 @@ function StopRow({
       ref={ref}
       className={cn(
         "relative flex min-h-14 items-stretch border-t border-border/60 first:border-t-0",
-        mine && "bg-primary/[0.06]"
+        (mine || getOff) && "bg-primary/[0.06]"
       )}>
       {/* Rail: the half segments meet in the node */}
       <div className="relative w-14 shrink-0">
@@ -335,7 +376,7 @@ function StopRow({
         {next !== undefined && (
           <Segment travelled={travelled(next)} color={color} />
         )}
-        <Node state={state} mine={mine} color={color} />
+        <Node state={state} mine={mine || getOff} color={color} />
         {busArriving && (
           <span
             className="absolute left-1/2 top-0 z-10 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-white shadow-md ring-2 ring-card"
@@ -346,42 +387,77 @@ function StopRow({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 py-2.5 pr-2">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span
-            className={cn(
-              "truncate",
-              state === "passed" ? "text-muted-foreground" : "font-medium",
-              (state === "current" || mine) && "font-semibold"
-            )}>
-            {stop.Name}
-          </span>
-          <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-            {state === "current" && (
-              <span className="font-semibold text-success">Bus alla fermata</span>
-            )}
-            {mine && (
-              <span className="rounded-full bg-primary/10 px-1.5 py-px font-semibold text-primary">
-                La tua fermata
-              </span>
-            )}
-            {state !== "current" && !mine && town(stop.Label)}
-          </span>
-        </div>
-        {showTime && (
-          <span
-            className={cn(
-              "font-mono text-sm tabular-nums",
-              state === "passed" && "text-muted-foreground/70",
-              delayed && "font-semibold text-destructive",
-              (state === "current" || mine) && "font-semibold"
-            )}>
-            {stop.Time}
-          </span>
-        )}
+      <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+        <Choice onToggle={onToggleGetOff} pressed={getOff} label={`Scendo a ${stop.Name}`}>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span
+              className={cn(
+                "truncate",
+                state === "passed" ? "text-muted-foreground" : "font-medium",
+                (state === "current" || mine || getOff) && "font-semibold"
+              )}>
+              {stop.Name}
+            </span>
+            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              {state === "current" && (
+                <span className="font-semibold text-success">Bus alla fermata</span>
+              )}
+              {mine && (
+                <span className="rounded-full bg-primary/10 px-1.5 py-px font-semibold text-primary">
+                  La tua fermata
+                </span>
+              )}
+              {getOff && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-1.5 py-px font-semibold text-primary-foreground">
+                  <Flag className="size-3" />
+                  Scendo qui
+                </span>
+              )}
+              {state !== "current" && !mine && !getOff && town(stop.Label)}
+            </span>
+          </div>
+          {showTime && (
+            <span
+              className={cn(
+                "font-mono text-sm tabular-nums",
+                state === "passed" && "text-muted-foreground/70",
+                delayed && "font-semibold text-destructive",
+                (state === "current" || mine) && "font-semibold"
+              )}>
+              {stop.Time}
+            </span>
+          )}
+        </Choice>
         <Timetable url={timetable} />
       </div>
     </li>
+  );
+}
+
+// The name and time of a stop: a toggle where the user can get off
+function Choice({
+  onToggle,
+  pressed,
+  label,
+  children,
+}: {
+  onToggle: (() => void) | undefined;
+  pressed: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const className = "flex min-w-0 flex-1 items-center gap-2 self-stretch py-2.5 text-left";
+  return onToggle ? (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={pressed}
+      aria-label={label}
+      className={cn(className, "transition-opacity active:opacity-60")}>
+      {children}
+    </button>
+  ) : (
+    <div className={className}>{children}</div>
   );
 }
 

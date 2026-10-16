@@ -26,7 +26,8 @@ export function distanceMeters(a: Position, b: Position): number {
 
 export type Pace = "slow" | "normal" | "fast";
 
-// Walking speeds in meters per second
+// Walking speeds in meters per second, until the pace of the user is
+// learned from the walks to the stop (see `pace.ts`)
 export const PACE_SPEED: Record<Pace, number> = {
   slow: 1.0,
   normal: 1.3,
@@ -50,9 +51,14 @@ export function climbFactor(meters: number, climb: number): number {
   return Math.exp(3.5 * grade);
 }
 
-// With `climb`, the meters to go up to the stop
-export function walkingSeconds(meters: number, pace: Pace = "normal", climb = 0): number {
-  return ((meters * DETOUR_FACTOR) / PACE_SPEED[pace]) * climbFactor(meters, climb);
+// At `speed` meters per second on the flat. With `climb`, the meters to go
+// up to the stop.
+export function walkingSeconds(
+  meters: number,
+  speed = PACE_SPEED.normal,
+  climb = 0
+): number {
+  return ((meters * DETOUR_FACTOR) / speed) * climbFactor(meters, climb);
 }
 
 export interface WeatherWalk {
@@ -112,8 +118,8 @@ export function weatherDelay(
 
 // Meters per second by which the distance shrinks when the walking time drops
 // by one second per second: the release of `peakHold` for the distance
-export function walkingRelease(pace: Pace = "normal"): number {
-  return PACE_SPEED[pace] / DETOUR_FACTOR;
+export function walkingRelease(speed = PACE_SPEED.normal): number {
+  return speed / DETOUR_FACTOR;
 }
 
 export interface Fix extends Position {
@@ -198,6 +204,20 @@ const MAX_ACCURACY_METERS = 50;
 const MIN_PROGRESS_METERS = 25;
 const ARRIVED_METERS = 30;
 
+export function isPrecise(accuracy: number): boolean {
+  return accuracy <= MAX_ACCURACY_METERS;
+}
+
+// Whether a fix `meters` from the stop within `accuracy` is closer than the
+// farthest one by more than the two can be wrong together
+export function closerThan(
+  farthest: NonNullable<Approach["farthest"]>,
+  meters: number,
+  accuracy: number
+): boolean {
+  return farthest.meters - meters > Math.max(MIN_PROGRESS_METERS, farthest.accuracy + accuracy);
+}
+
 // Moves the stage forward with a GPS fix: `meters` from the stop, measured
 // within `accuracy` meters. Returns `previous` itself when nothing changes.
 // Far from the stop, getting closer is riding towards it, not walking.
@@ -207,7 +227,7 @@ export function approach(
   accuracy: number
 ): Approach {
   const stage = previous?.stage ?? "away";
-  if (stage === "arrived" || accuracy > MAX_ACCURACY_METERS || isFar(meters)) {
+  if (stage === "arrived" || !isPrecise(accuracy) || isFar(meters)) {
     return previous ?? { stage };
   }
   if (meters <= ARRIVED_METERS) return { stage: "arrived" };
@@ -216,11 +236,7 @@ export function approach(
     previous?.farthest && previous.farthest.meters >= meters
       ? previous.farthest
       : { meters, accuracy };
-  // Closer than the two fixes can be wrong together
-  const closer =
-    farthest.meters - meters >
-    Math.max(MIN_PROGRESS_METERS, farthest.accuracy + accuracy);
-  const next = closer ? "walking" : stage;
+  const next = closerThan(farthest, meters, accuracy) ? "walking" : stage;
   return previous && next === stage && farthest === previous.farthest
     ? previous
     : { stage: next, farthest };

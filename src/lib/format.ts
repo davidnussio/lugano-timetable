@@ -33,6 +33,11 @@ export function formatDistance(meters: number): string {
     : `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
 }
 
+// "4,8 km/h", from meters per second
+export function formatSpeed(metersPerSecond: number): string {
+  return `${(metersPerSecond * 3.6).toFixed(1).replace(".", ",")} km/h`;
+}
+
 // Below this a climb is within the error of the heights: not worth showing
 const MIN_CLIMB_SHOWN = 5;
 

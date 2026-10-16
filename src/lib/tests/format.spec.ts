@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, formatWeather } from "../format";
+import { formatDuration, formatSpeed, formatWeather } from "../format";
 
 describe("formatDuration", () => {
   it("shows minutes, then hours", () => {
@@ -13,5 +13,12 @@ describe("formatWeather", () => {
   it("shows the minutes added by the weather", () => {
     expect(formatWeather({ label: "Pioggia", minutes: 2 })).toBe("Pioggia +2 min");
     expect(formatWeather(undefined)).toBeUndefined();
+  });
+});
+
+describe("formatSpeed", () => {
+  it("shows km/h with a decimal comma", () => {
+    expect(formatSpeed(1.3)).toBe("4,7 km/h");
+    expect(formatSpeed(1.5)).toBe("5,4 km/h");
   });
 });

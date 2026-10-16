@@ -21,7 +21,7 @@ import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useClimb, useStopHeights } from "~/terrain/use-climb";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
-import type { Coordinates, Departure, Target } from "~/timetable/models";
+import type { Coordinates, Departure, RoutingStop, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
 import { useWeather } from "~/weather/use-weather";
 import {
@@ -30,6 +30,15 @@ import {
   requestNotifications,
   unlockAudio,
 } from "./alerts";
+import {
+  clockAt,
+  dueGetOffAlert,
+  followRide,
+  type GetOff,
+  getOffMessage,
+  type Ride,
+  rideState,
+} from "./get-off";
 import {
   type Alternative,
   expected,
@@ -61,6 +70,14 @@ import {
   weatherWalk,
 } from "./plan";
 import {
+  followWalk,
+  type LearnedPace,
+  learnPace,
+  NO_PACE,
+  type PaceSpeeds,
+  paceSpeeds,
+} from "./pace";
+import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
@@ -69,6 +86,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  paceStore,
   planAlerts,
   type ScheduledDeparture,
   settingsStore,
@@ -77,8 +95,12 @@ import {
   timerStore,
 } from "./store";
 
-// The timer is gone this long after the departure (the arrival of a journey)
+// The timer is gone this long after the departure (the arrival of a journey,
+// or at the stop to get off)
 const EXPIRES_AFTER_MS = 10 * 60_000;
+// The ride is followed from shortly before the departure: earlier, the
+// routing of the line may show the run before
+const BOARDING_MS = 60_000;
 // The forecasts of the timetable change about every minute
 const JOURNEY_REFRESH_MS = 30_000;
 
@@ -87,6 +109,10 @@ const defaultSettings: TimerSettings = { pace: "normal" };
 export interface TimerContextValue {
   readonly timer: ActiveTimer | null;
   readonly settings: Required<TimerSettings>;
+  // The walks measured so far, and the walking speed of each pace in meters
+  // per second: the learned one once there are enough walks
+  readonly learnedPace: LearnedPace;
+  readonly speeds: PaceSpeeds;
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
   // Meters to go up to the stop (negative downhill), when known
@@ -109,6 +135,9 @@ export interface TimerContextValue {
   readonly journey: JourneyState | undefined;
   // The way to fall back on when a connection is lost, from its stop
   readonly fallback: { readonly index: number; readonly plan: Connection } | undefined;
+  // A single bus with a stop to get off: where it is on the way there, once
+  // followed with the routing
+  readonly ride: Ride | undefined;
   start(
     departure: ScheduledDeparture,
     stop: ActiveTimer["stop"],
@@ -122,8 +151,15 @@ export interface TimerContextValue {
   ): void;
   // Continues the journey after the leg `index` with another plan
   reroute(index: number, plan: Connection): void;
+  // Sets the stop to get off a single bus, with its time in the routing, or
+  // clears it
+  chooseGetOff(
+    stop: (Pick<GetOff, "target" | "name" | "position"> & { readonly time: string }) | undefined
+  ): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
+  // Forgets the walks measured: back to the default paces
+  resetPace(): void;
   enableNotifications(): Promise<void>;
   dismissAlert(): void;
 }
@@ -199,6 +235,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     ...stored,
     useLocation: stored.useLocation ?? granted,
   };
+  const learnedPace = paceStore.useValue() ?? NO_PACE;
+  const speeds = useMemo(() => paceSpeeds(learnedPace), [learnedPace]);
+  const speed = speeds[settings.pace];
   const active = timer !== null && timer !== undefined;
   const now = useNow(active);
   const geolocation = useGeolocation(active && settings.useLocation);
@@ -289,14 +328,6 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const rawDistance =
     timer?.coordinates && fix ? distanceMeters(fix, timer.coordinates) : undefined;
   const accuracy = fix?.accuracy;
-  useEffect(() => {
-    if (rawDistance === undefined || accuracy === undefined) return;
-    timerStore.set((current) => {
-      if (!current) return current;
-      const next = approach(current.approach, rawDistance, accuracy);
-      return next === current.approach ? current : { ...current, approach: next };
-    });
-  }, [rawDistance, accuracy]);
   const stage = timer?.approach?.stage ?? "away";
   // Too far to walk to the stop (on another bus, in another town): the walk
   // of the GPS would make the user hours late
@@ -311,12 +342,39 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     timer?.startedAt,
     // On the way the distance really shrinks: follow it, faster than any
     // pace, instead of holding it back as GPS noise
-    walkingRelease(settings.pace) * (stage === "walking" ? 3 : 1)
+    walkingRelease(speed) * (stage === "walking" ? 3 : 1)
   );
   // The walk to the stop slows down uphill, and in the rain or the snow
   const walkingFix = distance !== undefined && stage !== "arrived" ? fix : undefined;
   const climb = useClimb(walkingFix, timer?.coordinates);
   const weatherNow = weatherWalk(useWeather(walkingFix));
+
+  // Move forward on the way to the stop, and measure the walk there to learn
+  // the pace of the user. Runs again with the same fix when the climb, the
+  // pace or the weather change: both steps then return what they had.
+  const fixAt = fix?.at;
+  const pace = settings.pace;
+  const weatherFactor = weatherNow.factor;
+  useEffect(() => {
+    if (rawDistance === undefined || accuracy === undefined || fixAt === undefined) return;
+    const current = timerStore.get();
+    if (!current) return;
+    const next = approach(current.approach, rawDistance, accuracy);
+    const { walk, speed: walked } = followWalk(current.walk, current.approach, next, {
+      meters: rawDistance,
+      accuracy,
+      at: fixAt,
+      climb,
+      pace,
+    });
+    if (next !== current.approach || walk !== current.walk) {
+      timerStore.set({ ...current, approach: next, walk });
+    }
+    // A walk in the rain is slower than the pace of the user: learn it as dry
+    if (walked !== undefined) {
+      paceStore.set((learned) => learnPace(learned, walked * weatherFactor));
+    }
+  }, [rawDistance, accuracy, fixAt, climb, pace, weatherFactor]);
   // Without a usable position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
   const walkSource: WalkSource | undefined =
@@ -325,14 +383,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       : plannedWalk === undefined
         ? undefined
         : "timetable";
+  // The timetable plans its walks at the default normal pace
   const walk =
     stage === "arrived"
       ? 0
       : distance !== undefined
-        ? walkingSeconds(distance, settings.pace, climb) * weatherNow.factor
+        ? walkingSeconds(distance, speed, climb) * weatherNow.factor
         : plannedWalk === undefined
           ? undefined
-          : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
+          : (plannedWalk / 1000) * (PACE_SPEED.normal / speed);
   // Without the GPS the weather is not asked: the walk stays as dry
   const weather = walk === undefined ? undefined : weatherDelay(walk, weatherNow);
   // Far away there is no time to leave yet: count down to the bus
@@ -354,9 +413,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const journey = useMemo(
     () =>
       legs && legs.length > 1
-        ? journeyState(legs, now, walk, { pace: settings.pace, heightOf })
+        ? journeyState(legs, now, walk, { speed, heightOf })
         : undefined,
-    [legs, now, walk, settings.pace, heightOf]
+    [legs, now, walk, speed, heightOf]
   );
 
   // A lost connection: look for another way from the stop of the transfer
@@ -377,11 +436,61 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const fallback = useMemo(() => {
     if (lostIndex === undefined || !legs || !plans) return undefined;
     const plan = fallbackPlan(plans, legs[lostIndex], legs[lostIndex + 1], {
-      pace: settings.pace,
+      speed,
       heightOf,
     });
     return plan && { index: lostIndex, plan };
-  }, [lostIndex, legs, plans, settings.pace, heightOf]);
+  }, [lostIndex, legs, plans, speed, heightOf]);
+
+  // Follow the ride to the stop to get off: same polling (and SWR cache) as
+  // the line page
+  const getOff = timer?.journey === undefined ? timer?.getOff : undefined;
+  const boarding = !!timer && now >= timer.departureAt - BOARDING_MS;
+  const { data: routingStops, isError: routingError } = useMonitored<RoutingStop>(
+    "/api/timetable/routing",
+    "routing",
+    timer && getOff && boarding && timer.routing !== ""
+      ? [timer.target, timer.route, timer.dir, timer.routing]
+      : null
+  );
+  // Data kept from before an error would show the bus standing still
+  const mine = timer?.target;
+  const getOffTarget = getOff?.target;
+  const getOffLeft = getOff?.left;
+  const ride = useMemo(
+    () =>
+      mine !== undefined && getOffTarget !== undefined && boarding && !routingError
+        ? rideState(routingStops, mine, { target: getOffTarget, left: getOffLeft })
+        : undefined,
+    [mine, getOffTarget, getOffLeft, boarding, routingError, routingStops]
+  );
+  useEffect(() => {
+    if (ride === undefined) return;
+    timerStore.set((current) => {
+      if (!current?.getOff) return current;
+      const next = followRide(current.getOff, ride, Date.now());
+      return next === current.getOff ? current : { ...current, getOff: next };
+    });
+  }, [ride]);
+  // Without the routing, how close the bus is to the stop by the GPS
+  const getOffDistance =
+    getOff?.position && fix ? distanceMeters(fix, getOff.position) : undefined;
+
+  // Tell when the stop to get off is next, then when it is reached
+  useEffect(() => {
+    const stored = timerStore.get();
+    const getOff = stored?.journey === undefined ? stored?.getOff : undefined;
+    if (!stored || !getOff) return;
+    const due = dueGetOffAlert(ride, getOffDistance, getOff.alerted, departed);
+    if (due === undefined) return;
+    const message = getOffMessage(due, getOff, stored.line, stored.destination);
+    timerStore.set({
+      ...stored,
+      getOff: { ...getOff, alerted: [...getOff.alerted, due] },
+      lastAlert: { ...message, at: Date.now() },
+    });
+    void notify(message);
+  }, [ride, getOffDistance, departed]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
@@ -489,11 +598,31 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const chooseGetOff = useCallback<TimerContextValue["chooseGetOff"]>((stop) => {
+    timerStore.set(
+      (current) =>
+        current && {
+          ...current,
+          // Whether the bus has left is about the ride, whatever the stop
+          getOff: stop && {
+            target: stop.target,
+            name: stop.name,
+            position: stop.position,
+            arrivalAt: clockAt(stop.time, Date.now()),
+            left: current.getOff?.left,
+            alerted: [],
+          },
+        }
+    );
+  }, []);
+
   const cancel = useCallback(() => timerStore.set(null), []);
 
   const updateSettings = useCallback((patch: Partial<TimerSettings>) => {
     settingsStore.set((s) => ({ ...s, ...patch }));
   }, []);
+
+  const resetPace = useCallback(() => paceStore.set(NO_PACE), []);
 
   const enableNotifications = useCallback(async () => {
     await requestNotifications();
@@ -508,6 +637,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const value: TimerContextValue = {
     timer: timer ?? null,
     settings,
+    learnedPace,
+    speeds,
     countdown: current,
     distance,
     climb,
@@ -522,11 +653,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     legs,
     journey,
     fallback,
+    ride,
     start,
     startJourney,
     reroute,
+    chooseGetOff,
     cancel,
     updateSettings,
+    resetPace,
     enableNotifications,
     dismissAlert,
   };
