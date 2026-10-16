@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { NextRequest } from "next/server";
+import { Reliability } from "~/timetable/reliability-store";
 import { Identifier } from "~/timetable/schema";
 import { Timetable } from "~/timetable/timetable";
 import { respond } from "../../respond";
@@ -18,7 +19,12 @@ export function GET(request: NextRequest) {
         itineraries: request.nextUrl.searchParams.getAll("itineraries"),
       });
       const timetable = yield* Timetable;
-      return yield* timetable.itineraries(itineraries);
+      const result = yield* timetable.itineraries(itineraries);
+      // Learn how late the buses about to leave are, detached: the answer
+      // never waits for the storage
+      const reliability = yield* Reliability;
+      yield* Effect.forkDetach(reliability.record(result.data));
+      return result;
     }),
     monitoredCacheControl
   );

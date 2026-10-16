@@ -2,6 +2,7 @@ import { type Config, Layer, ManagedRuntime } from "effect";
 import { Opendata } from "~/journey/opendata-client";
 import { Swisstopo } from "~/terrain/swisstopo-client";
 import { OpenMeteo } from "~/weather/open-meteo-client";
+import { Reliability } from "./reliability-store";
 import { Timetable } from "./timetable";
 
 declare global {
@@ -9,7 +10,7 @@ declare global {
   // in development): keep a single runtime per server process.
   var serverRuntime:
     | ManagedRuntime.ManagedRuntime<
-        Timetable | Opendata | Swisstopo | OpenMeteo,
+        Timetable | Opendata | Swisstopo | OpenMeteo | Reliability,
         Config.ConfigError
       >
     | undefined;
@@ -19,5 +20,11 @@ declare global {
 // components, so the stop cache and the in-memory sessions are shared between
 // requests.
 export const runtime = (globalThis.serverRuntime ??= ManagedRuntime.make(
-  Layer.mergeAll(Timetable.layer, Opendata.layer, Swisstopo.layer, OpenMeteo.layer)
+  Layer.mergeAll(
+    Timetable.layer,
+    Opendata.layer,
+    Swisstopo.layer,
+    OpenMeteo.layer,
+    Reliability.layer
+  )
 ));

@@ -1,14 +1,6 @@
-import { Redis } from "@upstash/redis";
-import {
-  Clock,
-  Config,
-  Context,
-  Duration,
-  Effect,
-  Layer,
-  Option,
-  Redacted,
-} from "effect";
+import type { Redis } from "@upstash/redis";
+import { Clock, Context, Duration, Effect, Layer, Option } from "effect";
+import { upstashRedis } from "./redis";
 
 const SESSION_TTL = Duration.minutes(5);
 
@@ -77,18 +69,10 @@ export class SessionStore extends Context.Service<
       })
     );
 
-  // Uses Upstash Redis (Vercel Marketplace variables included) when
-  // configured, memory otherwise (e.g. local development).
+  // Uses Upstash Redis when configured, memory otherwise
   static readonly layer = Layer.unwrap(
     Effect.gen(function* () {
-      const redis = yield* Config.all({
-        url: Config.String("UPSTASH_REDIS_REST_URL").pipe(
-          Config.orElse(() => Config.String("KV_REST_API_URL"))
-        ),
-        token: Config.Redacted("UPSTASH_REDIS_REST_TOKEN").pipe(
-          Config.orElse(() => Config.Redacted("KV_REST_API_TOKEN"))
-        ),
-      }).pipe(Config.option);
+      const redis = yield* upstashRedis;
 
       if (Option.isNone(redis)) {
         yield* Effect.logWarning(
@@ -97,12 +81,7 @@ export class SessionStore extends Context.Service<
         return SessionStore.layerMemory;
       }
 
-      return SessionStore.layerRedis(
-        new Redis({
-          url: redis.value.url,
-          token: Redacted.value(redis.value.token),
-        })
-      );
+      return SessionStore.layerRedis(redis.value);
     })
   );
 }
