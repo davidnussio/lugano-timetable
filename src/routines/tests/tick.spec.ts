@@ -68,6 +68,7 @@ const fakeOpendata = (
         return answer();
       },
       legs: () => Effect.succeed([]),
+      stationboard: () => Effect.succeed([]),
     })
   );
 
