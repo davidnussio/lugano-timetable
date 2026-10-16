@@ -332,9 +332,18 @@ describe("journeyHeadline", () => {
     expect(journeyHeadline(legs, 4 * MIN)).toEqual({
       label: "Scendi a Lugano, Centro tra",
       ms: 6 * MIN,
+      phase: "transfer",
     });
-    expect(journeyHeadline(legs, 12 * MIN)).toEqual({ label: "Linea 5 tra", ms: 3 * MIN });
-    expect(journeyHeadline(legs, 20 * MIN)).toEqual({ label: "Arrivo tra", ms: 5 * MIN });
-    expect(journeyHeadline(legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0 });
+    expect(journeyHeadline(legs, 12 * MIN)).toEqual({
+      label: "Linea 5 tra",
+      ms: 3 * MIN,
+      phase: "bus",
+    });
+    expect(journeyHeadline(legs, 20 * MIN)).toEqual({
+      label: "Arrivo tra",
+      ms: 5 * MIN,
+      phase: "arrival",
+    });
+    expect(journeyHeadline(legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
   });
 });

@@ -13,6 +13,7 @@ import {
   type Position,
   walkingSeconds,
 } from "./plan";
+import type { Headline } from "./tone";
 
 // A scheduled time with the latest real-time estimate, in milliseconds
 export interface Timing {
@@ -298,16 +299,16 @@ export function transferMessage(
 export function journeyHeadline(
   legs: ReadonlyArray<Leg>,
   now: number
-): { readonly label: string; readonly ms: number } | undefined {
+): Headline | undefined {
   if (legs.length === 0 || expected(legs[0].departure) > now) return undefined;
   const index = legs.findIndex((leg) => expected(leg.arrival) > now);
-  if (index === -1) return { label: "Arrivato", ms: 0 };
+  if (index === -1) return { label: "Arrivato", ms: 0, phase: "arrival" };
   const leg = legs[index];
   // Between two legs: waiting for the next bus
   if (expected(leg.departure) > now) {
-    return { label: `Linea ${leg.line} tra`, ms: expected(leg.departure) - now };
+    return { label: `Linea ${leg.line} tra`, ms: expected(leg.departure) - now, phase: "bus" };
   }
   const ms = expected(leg.arrival) - now;
-  if (index === legs.length - 1) return { label: "Arrivo tra", ms };
-  return { label: `Scendi a ${leg.to.name} tra`, ms };
+  if (index === legs.length - 1) return { label: "Arrivo tra", ms, phase: "arrival" };
+  return { label: `Scendi a ${leg.to.name} tra`, ms, phase: "transfer" };
 }

@@ -14,6 +14,7 @@ import Link from "next/link";
 import { type ComponentProps, type RefObject, useCallback, useRef, useState } from "react";
 import { AlertBanner } from "~/app/components/alert-banner";
 import { PageHeader } from "~/app/components/page-header";
+import { PhaseIcon } from "~/app/components/phase-icon";
 import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
@@ -154,7 +155,11 @@ function CompactCountdown({
         aria-label="Torna al timer"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="flex w-full items-center gap-4 px-4 py-2 text-left">
-        <div className="flex min-w-0 flex-col">
+        <PhaseIcon
+          phase={headline.phase}
+          className={cn("size-7 shrink-0", travel ? "text-primary" : toneText[tone])}
+        />
+        <div className="-ml-1 flex min-w-0 flex-col">
           <span className={cn("truncate text-xs font-semibold", travel ? "text-primary" : toneText[tone])}>
             {headline.label}
           </span>
@@ -307,6 +312,15 @@ function ActiveTimerView({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {/* Keyed to show the change of step with a little zoom */}
+            <PhaseIcon
+              key={headline.phase}
+              phase={headline.phase}
+              className={cn(
+                "mb-1 size-8 animate-in fade-in zoom-in-50 duration-300",
+                travel ? "text-primary" : toneText[tone]
+              )}
+            />
             <span
               className={cn(
                 "max-w-52 truncate text-center text-sm font-semibold",

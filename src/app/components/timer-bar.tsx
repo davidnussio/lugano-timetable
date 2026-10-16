@@ -6,9 +6,10 @@ import { useNow } from "~/hooks/use-now";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
-import { timerHeadline, timerTone, toneBackground } from "~/timer/tone";
+import { timerHeadline, timerTone, toneText } from "~/timer/tone";
 import { useTimer } from "~/timer/timer-provider";
 import { AlertBanner } from "./alert-banner";
+import { PhaseIcon } from "./phase-icon";
 import { TimerBadge } from "./timer-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
@@ -51,11 +52,9 @@ export function TimerBar() {
               {timer.journey?.to.name ?? timer.destination}
             </p>
             <p className="flex items-center gap-1.5 truncate text-xs opacity-70">
-              <span
-                className={cn(
-                  "size-1.5 shrink-0 rounded-full",
-                  travel ? "bg-primary" : toneBackground[tone]
-                )}
+              <PhaseIcon
+                phase={headline.phase}
+                className={cn("size-3.5 shrink-0", travel ? "text-primary" : toneText[tone])}
               />
               {headline.label} · {where}
             </p>
