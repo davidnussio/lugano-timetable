@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Flag,
   Footprints,
+  History,
   LocateFixed,
   TimerOff,
 } from "lucide-react";
@@ -19,15 +20,17 @@ import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
+import { useReliability } from "~/hooks/use-reliability";
 import { formatClimb, formatClock, formatDistance, formatSpeed, formatWeather } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { formatTime, journeyHeadline } from "~/timer/journey";
 import { learnedSpeed, MIN_WALKS } from "~/timer/pace";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
+import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
-import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
+import { type Tone, timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 import { JourneySection, LaterSuggestion } from "./journey-view";
 import { NextBusCard } from "./next-bus-card";
 import { NotificationsCard } from "./notifications-card";
@@ -118,6 +121,11 @@ function PaceLearning() {
   );
 }
 
+// Once the bus has left there is nothing to cancel: the timer is just over
+function cancelLabel(tone: Tone): string {
+  return tone === "gone" ? "Termina timer" : "Annulla timer";
+}
+
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
   if (walkingMs === undefined) return "—";
   return leaveMs < 0
@@ -135,7 +143,22 @@ export default function TimerPage() {
   return (
     <main className="flex flex-1 flex-col">
       <div ref={header} className="sticky top-0 z-20">
-        <PageHeader back="/" title="Timer" />
+        <PageHeader
+          back="/"
+          title="Timer"
+          actions={
+            active &&
+            countdown && (
+              <button
+                type="button"
+                onClick={timer.cancel}
+                aria-label={cancelLabel(timerTone(countdown, timer.stage))}
+                className="grid size-10 place-items-center rounded-full text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/10">
+                <TimerOff className="size-5" />
+              </button>
+            )
+          }
+        />
         {active && countdown && (
           <CompactCountdown active={active} countdown={countdown} show={compact} />
         )}
@@ -321,8 +344,8 @@ function ActiveTimerView({
   return (
     <div className="space-y-3 px-4 pb-8 pt-3">
       <AlertBanner />
-      {/* The bus */}
-      <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
+      {/* The bus: where it is, once known */}
+      <BusCard href={active.routing !== "" ? routingHref : undefined}>
         <TimerBadge timer={active} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{active.destination}</p>
@@ -338,7 +361,10 @@ function ActiveTimerView({
           )}>
           {live ? "Live" : "Ultimo dato"}
         </span>
-      </section>
+        {active.routing !== "" && (
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        )}
+      </BusCard>
 
       {/* Countdown */}
       <section className="flex flex-col items-center rounded-3xl border border-border bg-card px-4 py-6 shadow-sm">
@@ -431,6 +457,11 @@ function ActiveTimerView({
             className={walking === undefined ? undefined : toneText[tone]}
           />
         </dl>
+
+        {/* A journey follows the times of SBB, not of the stop */}
+        {!active.journey && (
+          <ReliabilityLine active={active} showMargin={stage === "away" && tone !== "gone"} />
+        )}
       </section>
 
       {nextAlert !== undefined && tone !== "gone" && stage === "away" && far === undefined && (
@@ -546,10 +577,50 @@ function ActiveTimerView({
           onClick={cancel}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-destructive/10 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/15">
           <TimerOff className="size-4" />
-          {tone === "gone" ? "Chiudi" : "Annulla timer"}
+          {cancelLabel(tone)}
         </button>
       </div>
     </div>
+  );
+}
+
+// How late the bus left on the past days, with the margin to keep once out
+// of the door when the delay changes a lot
+function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMargin: boolean }) {
+  const stats = useReliability(
+    active.target === "" || active.routing === ""
+      ? null
+      : { target: active.target, route: active.route, dir: active.dir, time: active.time }
+  );
+  const note = reliabilityNote(stats);
+  if (note === undefined) return null;
+
+  return (
+    <div className="mt-4 w-full space-y-1 border-t border-border pt-3 text-center text-xs">
+      <p className="flex items-center justify-center gap-1.5 text-muted-foreground">
+        <History className="size-3.5 shrink-0" />
+        {note.summary}
+      </p>
+      {showMargin && note.margin !== undefined && (
+        <p className="font-medium text-warning">
+          Margine consigliato {note.margin} min: il bus può recuperare il ritardo
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BusCard({ href, children }: { href: string | undefined; children: React.ReactNode }) {
+  const className =
+    "flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm";
+  return href === undefined ? (
+    <section className={className}>{children}</section>
+  ) : (
+    <Link
+      href={href}
+      className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
+      {children}
+    </Link>
   );
 }
 

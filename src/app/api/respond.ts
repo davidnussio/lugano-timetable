@@ -3,6 +3,7 @@ import type { Opendata, OpendataError } from "~/journey/opendata-client";
 import type { RoutineStore, RoutineStoreError, RoutinesUnavailable } from "~/routines/store";
 import type { WebPush } from "~/routines/web-push-client";
 import type { Swisstopo, SwisstopoError } from "~/terrain/swisstopo-client";
+import type { Reliability } from "~/timetable/reliability-store";
 import type { RtpiError } from "~/timetable/rtpi-client";
 import { runtime } from "~/timetable/runtime";
 import type { Timetable } from "~/timetable/timetable";
@@ -22,7 +23,7 @@ export function respond<A>(
     | RoutineStoreError
     | RoutinesUnavailable
     | Schema.SchemaError,
-    Timetable | Opendata | Swisstopo | OpenMeteo | RoutineStore | WebPush
+    Timetable | Opendata | Swisstopo | OpenMeteo | Reliability | RoutineStore | WebPush
   >,
   cacheControl?: string | ((body: A) => string)
 ): Promise<Response> {

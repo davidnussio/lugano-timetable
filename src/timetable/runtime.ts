@@ -4,6 +4,7 @@ import { RoutineStore } from "~/routines/store";
 import { WebPush } from "~/routines/web-push-client";
 import { Swisstopo } from "~/terrain/swisstopo-client";
 import { OpenMeteo } from "~/weather/open-meteo-client";
+import { Reliability } from "./reliability-store";
 import { Timetable } from "./timetable";
 
 declare global {
@@ -11,7 +12,7 @@ declare global {
   // in development): keep a single runtime per server process.
   var serverRuntime:
     | ManagedRuntime.ManagedRuntime<
-        Timetable | Opendata | Swisstopo | OpenMeteo | RoutineStore | WebPush,
+        Timetable | Opendata | Swisstopo | OpenMeteo | Reliability | RoutineStore | WebPush,
         Config.ConfigError
       >
     | undefined;
@@ -26,6 +27,7 @@ export const runtime = (globalThis.serverRuntime ??= ManagedRuntime.make(
     Opendata.layer,
     Swisstopo.layer,
     OpenMeteo.layer,
+    Reliability.layer,
     RoutineStore.layer,
     WebPush.layer
   )

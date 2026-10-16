@@ -143,7 +143,13 @@ function RideCard({
       )}>
       <Link
         className="flex min-w-0 flex-1 items-center gap-3 p-3 transition-colors hover:bg-muted/60 active:bg-muted"
-        href={`/fermata/${ride.stop.identifiers.join("/")}`}>
+        href={
+          // The trip of the next departure, as from the stop page; the stop
+          // until the departures are loaded
+          next !== undefined
+            ? `/routing/${next.Target}/${next.Route}/${next.Dir}/${next.Routing}`
+            : `/fermata/${ride.stop.identifiers.join("/")}`
+        }>
         <LineBadge img={ride.img} route={ride.route} line={ride.line} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate font-semibold">{next?.Dest ?? ride.destination}</span>

@@ -36,24 +36,34 @@ interface StopProperties {
 
 type Stops = FeatureCollection<Point, StopProperties>;
 
-// One point per platform: they are grouped while zoomed out
+// One point per stop, between its platforms: the stop page shows them all
 function toStops(targets: ReadonlyArray<Target>): Stops {
   return {
     type: "FeatureCollection",
-    features: targets.flatMap((target) =>
-      target.Coordinates.map(
-        ({ Id, Lat, Lon }): Stops["features"][number] => ({
+    features: targets.flatMap((target): Stops["features"] => {
+      const platforms = target.Coordinates;
+      if (platforms.length === 0) return [];
+      const mean = (values: ReadonlyArray<number>) =>
+        values.reduce((sum, value) => sum + value, 0) / values.length;
+      return [
+        {
           type: "Feature",
-          id: Id,
-          geometry: { type: "Point", coordinates: [Lon, Lat] },
+          id: platforms[0].Id,
+          geometry: {
+            type: "Point",
+            coordinates: [
+              mean(platforms.map(({ Lon }) => Lon)),
+              mean(platforms.map(({ Lat }) => Lat)),
+            ],
+          },
           properties: {
             name: target.Name,
             town: town(target.Label),
             href: `/fermata/${target.Identifiers.join("/")}`,
           },
-        })
-      )
-    ),
+        },
+      ];
+    }),
   };
 }
 
@@ -200,9 +210,9 @@ export function StopsMap() {
           data={data}
           cluster
           clusterRadius={50}
-          // Platforms of the same stop are a few meters apart: show them
-          // one by one only when zoomed in on the street
-          clusterMaxZoom={15}>
+          // Stops are a couple of hundred meters apart: show them one by
+          // one once zoomed in on the neighbourhood
+          clusterMaxZoom={14}>
           <Layer {...clusters} />
           <Layer {...clusterCount} />
           <Layer {...stops} />
