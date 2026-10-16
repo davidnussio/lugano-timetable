@@ -111,3 +111,27 @@
     cursor: pointer;
   }
 }
+
+/* The departure board on the map: the popup of MapLibre without its white
+   box, and its tip as black as the board */
+.departure-popup .maplibregl-popup-content {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.departure-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.departure-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.departure-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: #0d0d0d;
+}
+.departure-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.departure-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.departure-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: #0d0d0d;
+}
+.departure-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: #0d0d0d;
+}
+.departure-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: #0d0d0d;
+}

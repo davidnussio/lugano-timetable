@@ -76,6 +76,8 @@ const IdentifyResponse = Schema.Struct({
         name: Nullable(Schema.String),
         // "Bus", "Zug", "Schiff"…: empty for the stops without service
         verkehrsmittel_de: Nullable(Schema.String),
+        // The company in charge of the stop: "PAG", "FART"…
+        tuabkuerzung: Nullable(Schema.String),
       }),
     })
   ),
@@ -90,6 +92,26 @@ const ICONS: Record<string, string> = {
   Schiff: "ship",
 };
 
+// The names of the companies of Ticino, by their code: the others as coded
+const OPERATORS: Record<string, string> = {
+  PAG: "AutoPostale",
+  FART: "FART",
+  TPL: "TPL",
+  ABl: "Autolinee Bleniesi",
+  AMSA: "Autolinee Mendrisiensi",
+  "SBB CFF FFS": "FFS",
+  SNL: "Navigazione Lago di Lugano",
+  ARL: "Autolinee Regionali Luganesi",
+  FLP: "Ferrovie Luganesi",
+  NLM: "Navigazione Lago Maggiore",
+  FMB: "Funicolare Monte Brè",
+  MS: "Funicolare Monte San Salvatore",
+  MG: "Ferrovia Monte Generoso",
+  FLMS: "Funicolare Locarno-Madonna del Sasso",
+  CIT: "Cardada Impianti Turistici",
+  MGB: "Matterhorn Gotthard Bahn",
+};
+
 export function toStop({ id, geometry, properties }: IdentifyResult): Station | undefined {
   const [point] = geometry.coordinates;
   const means = properties.verkehrsmittel_de;
@@ -97,7 +119,14 @@ export function toStop({ id, geometry, properties }: IdentifyResult): Station | 
   const [lon, lat] = point;
   // Several means ("Bus / Zug"): the first one
   const icon = ICONS[means.split(" / ")[0]] ?? "cableway";
-  return { id: String(id), name: properties.name, position: { lat, lon }, icon };
+  const code = properties.tuabkuerzung;
+  return {
+    id: String(id),
+    name: properties.name,
+    position: { lat, lon },
+    icon,
+    ...(code ? { operator: OPERATORS[code] ?? code } : {}),
+  };
 }
 
 // WGS84 to the Swiss coordinates (LV95) with the approximate formulas of

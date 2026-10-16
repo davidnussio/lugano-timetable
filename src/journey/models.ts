@@ -11,6 +11,9 @@ export interface Station {
   readonly distance?: number;
   // "bus", "train", "ship", "cableway"…
   readonly icon?: string;
+  // The company in charge of the stop ("AutoPostale"), not always the one of
+  // every line stopping there
+  readonly operator?: string;
 }
 
 export interface PlannedLeg extends Leg {

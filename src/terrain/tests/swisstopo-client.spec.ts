@@ -56,10 +56,17 @@ describe("Swisstopo", () => {
 
   it.effect("lists every stop in boxes, without their platforms", () => {
     const requested: Array<URL> = [];
-    const feature = (id: number | string, name: string, means: string | null, lon: number, lat: number) => ({
+    const feature = (
+      id: number | string,
+      name: string,
+      means: string | null,
+      lon: number,
+      lat: number,
+      operator: string | null = "PAG"
+    ) => ({
       id,
       geometry: { type: "MultiPoint", coordinates: [[lon, lat]] },
-      properties: { name, verkehrsmittel_de: means },
+      properties: { name, verkehrsmittel_de: means, tuabkuerzung: operator },
     });
     // 500 bus stops and their platforms around Lugano, too many for a box
     // of the grid, and a few other stops
@@ -68,9 +75,10 @@ describe("Swisstopo", () => {
         feature(8500000 + i, `Stop ${i}`, "Bus", 8.9 + (i % 25) * 0.004, 46 + Math.floor(i / 25) * 0.004),
         feature(`ch:1:sloid:${i}:0:1`, `Stop ${i}`, null, 8.9 + (i % 25) * 0.004, 46 + Math.floor(i / 25) * 0.004),
       ]).flat(),
-      feature(8505000, "Bellinzona", "Zug", 9.0293, 46.1955),
+      feature(8505000, "Bellinzona", "Zug", 9.0293, 46.1955, "SBB CFF FFS"),
       feature(8505001, "Without service", "", 9.03, 46.2),
-      feature(8575302, "Monte Brè", "Standseilbahn", 8.9707, 46.0109),
+      feature(8575302, "Monte Brè", "Standseilbahn", 8.9707, 46.0109, "XYZ"),
+      feature(8575303, "Unknown company", "Bus", 8.97, 46.01, null),
     ];
     // The features in the box, at most 200 and in no stable order
     const identify = (url: URL) => {
@@ -83,12 +91,20 @@ describe("Swisstopo", () => {
     return Effect.gen(function* () {
       const client = yield* Swisstopo;
       const stops = yield* client.stops();
-      assert.strictEqual(stops.length, 502);
-      assert.deepStrictEqual(
-        stops.find((stop) => stop.id === "8505000"),
-        { id: "8505000", name: "Bellinzona", position: { lat: 46.1955, lon: 9.0293 }, icon: "train" }
-      );
-      assert.strictEqual(stops.find((stop) => stop.id === "8575302")?.icon, "cableway");
+      assert.strictEqual(stops.length, 503);
+      assert.deepStrictEqual(stops.find((stop) => stop.id === "8505000"), {
+        id: "8505000",
+        name: "Bellinzona",
+        position: { lat: 46.1955, lon: 9.0293 },
+        icon: "train",
+        operator: "FFS",
+      });
+      assert.strictEqual(stops.find((stop) => stop.id === "8500000")?.operator, "AutoPostale");
+      // An unknown company as coded, none when missing
+      const monteBre = stops.find((stop) => stop.id === "8575302");
+      assert.strictEqual(monteBre?.icon, "cableway");
+      assert.strictEqual(monteBre?.operator, "XYZ");
+      assert.isFalse("operator" in (stops.find((stop) => stop.id === "8575303") ?? {}));
       assert.strictEqual(`${requested[0].origin}${requested[0].pathname}`, IDENTIFY_URL);
       assert.strictEqual(requested[0].searchParams.get("layers"), "all:ch.bav.haltestellen-oev");
     }).pipe(Effect.provide(swisstopo(identify, requested)));

@@ -6,8 +6,6 @@ import type {
   GeoJSONSource,
   Map as MapLibre,
 } from "maplibre-gl";
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -34,6 +32,7 @@ import { createLocalStore } from "~/lib/local-store";
 import { MAP_COLORS, MAP_STYLE } from "~/lib/maplibre";
 import type { Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
+import { DepartureBoard } from "./departure-board";
 
 const LUGANO = { latitude: 46.0037, longitude: 8.9511, zoom: 13 };
 
@@ -86,6 +85,8 @@ interface StopProperties {
   // National code and full name, for the journey planner
   readonly code?: string;
   readonly label: string;
+  // The company in charge of the other stops
+  readonly operator?: string;
 }
 
 type Stops = FeatureCollection<Point, StopProperties>;
@@ -150,6 +151,7 @@ function toOtherStops(
               }),
           code: station.id,
           label: station.name,
+          ...(station.operator ? { operator: station.operator } : {}),
         },
       },
     ];
@@ -363,33 +365,17 @@ export function StopsMap() {
           longitude={selected.longitude}
           latitude={selected.latitude}
           offset={14}
+          maxWidth="none"
+          className="departure-popup"
           closeButton={false}
           onClose={() => setSelected(undefined)}>
-          <div className="flex flex-col gap-2 text-neutral-900">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-semibold">{selected.name}</span>
-              {selected.town && (
-                <span className="text-xs text-neutral-500">{selected.town}</span>
-              )}
-            </span>
-            <span className="flex items-center gap-4 text-sm font-medium text-[#1957d2]">
-              {selected.href && (
-                <Link href={selected.href} className="flex items-center">
-                  Partenze
-                  <ChevronRight className="size-4" />
-                </Link>
-              )}
-              {selected.code && (
-                <button
-                  type="button"
-                  onClick={() => planFrom(selected)}
-                  className="flex items-center">
-                  Tragitto da qui
-                  <ChevronRight className="size-4" />
-                </button>
-              )}
-            </span>
-          </div>
+          <DepartureBoard
+            name={selected.name}
+            subtitle={[selected.town, selected.operator].filter(Boolean).join(" · ")}
+            code={selected.code}
+            href={selected.href}
+            onPlan={() => planFrom(selected)}
+          />
         </Popup>
       )}
     </MapView>
