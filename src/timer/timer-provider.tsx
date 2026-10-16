@@ -83,6 +83,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  nextTimerDeparture,
   paceStore,
   planAlerts,
   type ScheduledDeparture,
@@ -129,6 +130,9 @@ export interface TimerContextValue {
   readonly journey: JourneyState | undefined;
   // The way to fall back on when a connection is lost, from its stop
   readonly fallback: { readonly index: number; readonly plan: Connection } | undefined;
+  // The next bus of the same line from the stop that can still be caught, to
+  // move a single departure on once missed
+  readonly next: ScheduledDeparture | undefined;
   // A single bus with a stop to get off: where it is on the way there, once
   // followed with the routing
   readonly ride: Ride | undefined;
@@ -387,6 +391,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const current =
     timer && now > 0
       ? countdown(timer.departureAt, now, far === undefined ? walk : undefined)
+      : undefined;
+
+  // A bus that can still be caught once at the stop, walking from now
+  const next =
+    timer && current
+      ? nextTimerDeparture(timer, departures, now + (current.walkingMs ?? 0))
       : undefined;
 
   const legs = useMemo(
@@ -650,6 +660,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     legs,
     journey,
     fallback,
+    next,
     ride,
     start,
     startJourney,
