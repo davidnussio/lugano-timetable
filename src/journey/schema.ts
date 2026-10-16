@@ -25,6 +25,8 @@ export type OpendataStation = typeof OpendataStation.Type;
 export const Prognosis = Schema.Struct({
   arrival: Nullable(Schema.String),
   departure: Nullable(Schema.String),
+  // Set when the platform changes
+  platform: Nullable(Schema.String),
 });
 
 export const Checkpoint = Schema.Struct({
@@ -32,6 +34,8 @@ export const Checkpoint = Schema.Struct({
   // Scheduled times in epoch seconds
   arrivalTimestamp: Nullable(Schema.Number),
   departureTimestamp: Nullable(Schema.Number),
+  // "B", "2": most bus stops have none
+  platform: Nullable(Schema.String),
   // Real-time forecasts: present (even when on time) when known
   prognosis: Nullable(Prognosis),
 });
