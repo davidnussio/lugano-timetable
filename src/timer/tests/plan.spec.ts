@@ -13,6 +13,8 @@ import {
   reliableFix,
   walkingRelease,
   walkingSeconds,
+  weatherDelay,
+  weatherWalk,
 } from "../plan";
 
 describe("alertThresholds", () => {
@@ -91,6 +93,62 @@ describe("walking", () => {
   });
 });
 
+describe("weatherWalk", () => {
+  const dry = { precipitation: 0, snowfall: 0, code: 3 };
+
+  it("walks as usual when dry or unknown", () => {
+    expect(weatherWalk(dry)).toEqual({ factor: 1 });
+    expect(weatherWalk(undefined)).toEqual({ factor: 1 });
+    // A drizzle does not count
+    expect(weatherWalk({ ...dry, precipitation: 0.2, code: 51 })).toEqual({ factor: 1 });
+  });
+
+  it("walks slower in the rain, more under a downpour", () => {
+    expect(weatherWalk({ ...dry, precipitation: 0.3, code: 53 })).toEqual({
+      factor: 1.1,
+      label: "Pioggia",
+    });
+    // The code of the model tells the rain also with little water
+    expect(weatherWalk({ ...dry, precipitation: 0.1, code: 80 }).label).toBe("Pioggia");
+    expect(weatherWalk({ ...dry, precipitation: 4, code: 63 })).toEqual({
+      factor: 1.15,
+      label: "Pioggia forte",
+    });
+    expect(weatherWalk({ ...dry, precipitation: 2, code: 82 }).factor).toBe(1.15);
+  });
+
+  it("walks much slower on snow and ice", () => {
+    expect(weatherWalk({ ...dry, precipitation: 0.1, snowfall: 0.1 })).toEqual({
+      factor: 1.3,
+      label: "Neve",
+    });
+    // Snow wins over the rain of the same hour
+    expect(weatherWalk({ precipitation: 5, snowfall: 0, code: 85 }).label).toBe("Neve");
+    expect(weatherWalk({ ...dry, precipitation: 1, code: 66 })).toEqual({
+      factor: 1.3,
+      label: "Ghiaccio",
+    });
+    expect(weatherWalk({ ...dry, code: 56 }).factor).toBe(1.3);
+  });
+});
+
+describe("weatherDelay", () => {
+  it("tells the minutes added by the weather, from one up", () => {
+    // 10 minutes dry, 11 in the rain
+    expect(weatherDelay(660, { factor: 1.1, label: "Pioggia" })).toEqual({
+      label: "Pioggia",
+      minutes: 1,
+    });
+    expect(weatherDelay(1300, { factor: 1.3, label: "Neve" })).toEqual({
+      label: "Neve",
+      minutes: 5,
+    });
+    // 4 minutes dry: 24 seconds more
+    expect(weatherDelay(264, { factor: 1.1, label: "Pioggia" })).toBeUndefined();
+    expect(weatherDelay(600, { factor: 1 })).toBeUndefined();
+  });
+});
+
 describe("countdown", () => {
   it("subtracts the walking time", () => {
     expect(countdown(600_000, 0, 120)).toEqual({
@@ -120,6 +178,12 @@ describe("alertMessage", () => {
     );
     expect(alertMessage("2", "Castagnola", countdown(120_000, 0, 300)).title).toBe(
       "In ritardo di 3 min: affrettati!"
+    );
+  });
+
+  it("tells what slows down the walk", () => {
+    expect(alertMessage("2", "Castagnola", countdown(600_000, 0, 300), "Pioggia forte").body).toBe(
+      "Linea 2 per Castagnola · il bus parte tra 10 min, 5 min a piedi (pioggia forte)"
     );
   });
 

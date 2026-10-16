@@ -19,7 +19,7 @@ import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
-import { formatClimb, formatClock, formatDistance, formatSpeed } from "~/lib/format";
+import { formatClimb, formatClock, formatDistance, formatSpeed, formatWeather } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { formatTime, journeyHeadline } from "~/timer/journey";
@@ -29,6 +29,7 @@ import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 import { JourneySection, LaterSuggestion } from "./journey-view";
+import { NextBusCard } from "./next-bus-card";
 import { NotificationsCard } from "./notifications-card";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
@@ -269,6 +270,7 @@ function ActiveTimerView({
     settings,
     distance,
     climb,
+    weather,
     far,
     geolocation,
     stage,
@@ -414,7 +416,11 @@ function ActiveTimerView({
             hint={
               stage === "arrived" || meters === undefined
                 ? undefined
-                : [formatDistance(meters), far === undefined ? formatClimb(climb) : undefined]
+                : [
+                    formatDistance(meters),
+                    far === undefined ? formatClimb(climb) : undefined,
+                    formatWeather(weather),
+                  ]
                     .filter(Boolean)
                     .join(" · ")
             }
@@ -441,6 +447,15 @@ function ActiveTimerView({
         </p>
       )}
 
+      {/* Missed, or too late to make it: offer the next bus of the line.
+          With a stop to get off the timer follows the ride once the bus has
+          left: only the GPS can tell that the user was not on board. */}
+      {!active.journey &&
+        ((tone === "gone" &&
+          (active.getOff === undefined || (walking !== undefined && stage !== "arrived"))) ||
+          (walking !== undefined && countdown.leaveMs < 0 && stage !== "arrived")) && (
+          <NextBusCard now={now} />
+        )}
       {active.journey === undefined && active.routing !== "" && (
         <GetOffLink active={active} href={routingHref} />
       )}

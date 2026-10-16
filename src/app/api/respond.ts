@@ -6,6 +6,7 @@ import type { Swisstopo, SwisstopoError } from "~/terrain/swisstopo-client";
 import type { RtpiError } from "~/timetable/rtpi-client";
 import { runtime } from "~/timetable/runtime";
 import type { Timetable } from "~/timetable/timetable";
+import type { OpenMeteo, OpenMeteoError } from "~/weather/open-meteo-client";
 
 // Runs a route handler program and maps its failures to HTTP responses. With
 // `cacheControl`, successful responses are cached by the CDN; a function
@@ -17,15 +18,16 @@ export function respond<A>(
     | RtpiError
     | OpendataError
     | SwisstopoError
+    | OpenMeteoError
     | RoutineStoreError
     | RoutinesUnavailable
     | Schema.SchemaError,
-    Timetable | Opendata | Swisstopo | RoutineStore | WebPush
+    Timetable | Opendata | Swisstopo | OpenMeteo | RoutineStore | WebPush
   >,
   cacheControl?: string | ((body: A) => string)
 ): Promise<Response> {
   const upstreamError = (
-    error: RtpiError | OpendataError | SwisstopoError | RoutineStoreError
+    error: RtpiError | OpendataError | SwisstopoError | OpenMeteoError | RoutineStoreError
   ) =>
     Effect.as(
       Effect.logError(`${error._tag} request failed`, error),
@@ -50,6 +52,7 @@ export function respond<A>(
         RtpiError: upstreamError,
         OpendataError: upstreamError,
         SwisstopoError: upstreamError,
+        OpenMeteoError: upstreamError,
         RoutineStoreError: upstreamError,
         RoutinesUnavailable: () =>
           Effect.succeed(
