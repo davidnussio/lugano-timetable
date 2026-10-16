@@ -8,6 +8,7 @@ import {
   createJourneyTimer,
   dueTransferAlert,
   findTimerDeparture,
+  followsTrip,
   legsQuery,
   liveLegs,
   planAlerts,
@@ -237,6 +238,36 @@ describe("timerEndsAt", () => {
   it("ends at the arrival of a journey", () => {
     expect(timerEndsAt(timer())).toBe(50 * MIN);
     expect(timerEndsAt(timer({ journey: undefined }))).toBe(10 * MIN);
+  });
+
+  it("ends at the stop to get off a single bus", () => {
+    const getOff = { target: "4", name: "Cornaredo", alerted: [] };
+    const single = timer({ journey: undefined, departureAt: 10 * MIN });
+    expect(timerEndsAt({ ...single, getOff: { ...getOff, arrivalAt: 25 * MIN } })).toBe(25 * MIN);
+    // Not before the departure, whatever the time of the routing
+    expect(timerEndsAt({ ...single, getOff: { ...getOff, arrivalAt: 5 * MIN } })).toBe(10 * MIN);
+    expect(timerEndsAt({ ...single, getOff })).toBe(10 * MIN);
+    // Once there, however late
+    expect(
+      timerEndsAt({ ...single, getOff: { ...getOff, arrivalAt: 25 * MIN, arrivedAt: 31 * MIN } })
+    ).toBe(31 * MIN);
+    // A journey ends at its arrival
+    expect(timerEndsAt(timer({ getOff: { ...getOff, arrivalAt: 25 * MIN } }))).toBe(50 * MIN);
+  });
+});
+
+describe("followsTrip", () => {
+  const trip = { target: "12", route: "3", dir: "1", routing: "586" };
+  const single = timer({ journey: undefined, ...trip });
+
+  it("matches a single bus on the same trip", () => {
+    expect(followsTrip(single, trip)).toBe(true);
+    expect(followsTrip(single, { ...trip, dir: "2" })).toBe(false);
+    expect(followsTrip(single, { ...trip, target: "13" })).toBe(false);
+  });
+
+  it("leaves the journeys out", () => {
+    expect(followsTrip(timer(trip), trip)).toBe(false);
   });
 });
 
