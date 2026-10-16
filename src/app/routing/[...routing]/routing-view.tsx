@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin } from "lucide-react";
+import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LineBadge } from "~/app/components/line-badge";
@@ -22,6 +22,7 @@ import {
 } from "~/lib/trip";
 import { cn } from "~/lib/utils";
 import { minutesLeft } from "~/timer/plan";
+import { createRide, ridesStore, sameRide, toggleRide } from "~/timer/rides";
 import { followsTrip, isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import {
@@ -70,13 +71,14 @@ export function RoutingView({ routing }: { routing: string[] }) {
   const mine = data.findIndex((stop) => stop.UID === target);
 
   // The departure of this bus from the stop of the user, in the real-time
-  // list of the stop: same polling (and SWR cache) as the stop page
+  // list of the stop: same polling (and SWR cache) as the stop page. Also
+  // once the bus has passed, for the line of the favorite ride.
   const targets = useTargets();
   const stop = targets?.find((t) => t.Identifiers.includes(target));
   const { data: departures } = useMonitored<Departure>(
     "/api/timetable/itineraries",
     "itineraries",
-    stop && mine !== -1 && bus <= mine ? stop.Identifiers : null
+    stop && mine !== -1 ? stop.Identifiers : null
   );
   const departure =
     stop && mine !== -1 && bus <= mine
@@ -107,6 +109,24 @@ export function RoutingView({ routing }: { routing: string[] }) {
     }
     router.push("/timer");
   };
+
+  // The line in this direction from the stop of the user, as a favorite ride.
+  // Its name and badge are in the departures of the stop, not in the routing.
+  const rides = ridesStore.useValue();
+  const rideKey = stop && { identifiers: stop.Identifiers, route, dir };
+  const favorite = !!rideKey && !!rides?.some((ride) => sameRide(ride, rideKey));
+  const lineDeparture =
+    departure ?? departures.find((d) => d.Route === route && d.Dir === dir);
+  const toggleFavorite = () => {
+    if (!rideKey) return;
+    if (favorite) {
+      ridesStore.set((current) => current.filter((ride) => !sameRide(ride, rideKey)));
+    } else if (stop && lineDeparture) {
+      const stopOf = { name: stop.Name, label: stop.Label, identifiers: stop.Identifiers };
+      ridesStore.set((current) => toggleRide(current, createRide(lineDeparture, stopOf)));
+    }
+  };
+
   // The timer follows this trip: a stop after the user's can be marked as the
   // one to get off, tapped again to clear
   const riding =
@@ -155,23 +175,43 @@ export function RoutingView({ routing }: { routing: string[] }) {
           </span>
         }
         actions={
-          departure &&
-          isScheduled(departure) && (
-            <button
-              type="button"
-              onClick={startTimer}
-              className={cn(
-                "grid size-10 place-items-center rounded-full transition-colors hover:bg-muted",
-                timed ? "text-primary" : "text-muted-foreground"
-              )}
-              aria-label={
-                timed
-                  ? "Apri il timer"
-                  : `Avvia timer per la linea ${departure.RouteCode} delle ${departure.Time}`
-              }>
-              {timed ? <BellRing className="size-5" /> : <Bell className="size-5" />}
-            </button>
-          )
+          <>
+            {rides !== null && mine !== -1 && (favorite || lineDeparture) && (
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
+                aria-pressed={favorite}
+                aria-label={
+                  favorite
+                    ? "Rimuovi la corsa dai preferiti"
+                    : "Aggiungi la corsa ai preferiti"
+                }>
+                <Star
+                  className={cn(
+                    "size-5 transition-colors",
+                    favorite ? "fill-favorite text-favorite" : "text-muted-foreground"
+                  )}
+                />
+              </button>
+            )}
+            {departure && isScheduled(departure) && (
+              <button
+                type="button"
+                onClick={startTimer}
+                className={cn(
+                  "grid size-10 place-items-center rounded-full transition-colors hover:bg-muted",
+                  timed ? "text-primary" : "text-muted-foreground"
+                )}
+                aria-label={
+                  timed
+                    ? "Apri il timer"
+                    : `Avvia timer per la linea ${departure.RouteCode} delle ${departure.Time}`
+                }>
+                {timed ? <BellRing className="size-5" /> : <Bell className="size-5" />}
+              </button>
+            )}
+          </>
         }
       />
 
