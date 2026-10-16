@@ -4,6 +4,7 @@ import {
   Bell,
   Bus,
   Footprints,
+  History,
   LocateFixed,
   TimerOff,
 } from "lucide-react";
@@ -17,10 +18,12 @@ import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
+import { useReliability } from "~/hooks/use-reliability";
 import { formatClimb, formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
+import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
@@ -379,6 +382,11 @@ function ActiveTimerView({
             className={walking === undefined ? undefined : toneText[tone]}
           />
         </dl>
+
+        {/* A journey follows the times of SBB, not of the stop */}
+        {!active.journey && (
+          <ReliabilityLine active={active} showMargin={stage === "away" && tone !== "gone"} />
+        )}
       </section>
 
       {nextAlert !== undefined && tone !== "gone" && stage === "away" && far === undefined && (
@@ -483,6 +491,32 @@ function ActiveTimerView({
           {tone === "gone" ? "Chiudi" : "Annulla timer"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// How late the bus left on the past days, with the margin to keep once out
+// of the door when the delay changes a lot
+function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMargin: boolean }) {
+  const stats = useReliability(
+    active.target === "" || active.routing === ""
+      ? null
+      : { target: active.target, route: active.route, dir: active.dir, time: active.time }
+  );
+  const note = reliabilityNote(stats);
+  if (note === undefined) return null;
+
+  return (
+    <div className="mt-4 w-full space-y-1 border-t border-border pt-3 text-center text-xs">
+      <p className="flex items-center justify-center gap-1.5 text-muted-foreground">
+        <History className="size-3.5 shrink-0" />
+        {note.summary}
+      </p>
+      {showMargin && note.margin !== undefined && (
+        <p className="font-medium text-warning">
+          Margine consigliato {note.margin} min: il bus può recuperare il ritardo
+        </p>
+      )}
     </div>
   );
 }
