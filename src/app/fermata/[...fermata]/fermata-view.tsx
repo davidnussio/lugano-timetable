@@ -20,6 +20,7 @@ import { distanceMeters, type Position, walkingSeconds } from "~/timer/plan";
 import { isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
+import { FallbackDepartures, ServiceUnavailable } from "./fallback-departures";
 
 
 // Soonest first; departures without a real-time wait by clock time
@@ -121,10 +122,13 @@ export function FermataView({ fermata }: { fermata: string[] }) {
         </p>
       )}
 
+      {/* The timetable of opendata stands in until the TPL list is back */}
       {isError && data.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-          Servizio non disponibile, nuovo tentativo in corso…
-        </p>
+        stop?.CodeNat ? (
+          <FallbackDepartures stationId={stop.CodeNat} now={now} />
+        ) : (
+          <ServiceUnavailable />
+        )
       ) : isLoading ? (
         <SkeletonList />
       ) : (

@@ -142,6 +142,92 @@ export const stationboard = {
   ],
 };
 
+const centro = station("8591603", "Lugano, Centro", 46.005983, 8.952448);
+
+// Departures of Lugano, Centro, shared by TPL and ARL: bus 2 late at
+// platform B, bus 442 of ARL on time, bus 5 without forecast, bus 3 moved
+// from platform C to A, and a run without a scheduled time
+export const centroBoard = {
+  station: centro,
+  stationboard: [
+    {
+      name: "002118",
+      category: "B",
+      subcategory: null,
+      number: "2",
+      operator: "TPL",
+      to: "Paradiso, Geretta",
+      stop: {
+        ...checkpoint(centro, null, 1791741900, {
+          departure: "2026-10-11T20:08:00+0200",
+        }),
+        delay: 3,
+        platform: "B",
+      },
+      passList: [],
+    },
+    {
+      name: "000937",
+      category: "B",
+      subcategory: null,
+      number: "442",
+      operator: "ARL",
+      to: "Tesserete, Stazione",
+      stop: checkpoint(centro, null, 1791742020, {
+        departure: "2026-10-11T20:07:00+0200",
+      }),
+      passList: [],
+    },
+    {
+      name: "005262",
+      category: "B",
+      subcategory: null,
+      number: "5",
+      operator: "TPL",
+      to: null,
+      stop: checkpoint(centro, null, 1791742140),
+      passList: [
+        checkpoint(centro, null, 1791742140),
+        checkpoint(
+          station("8591500", "Manno, Uovo di Manno", 46.0303, 8.9192),
+          1791743700,
+          null
+        ),
+      ],
+    },
+    {
+      name: "003380",
+      category: "B",
+      subcategory: null,
+      number: "3",
+      operator: "TPL",
+      to: "Breganzona, Posta",
+      stop: (() => {
+        const stop = checkpoint(centro, null, 1791742320, {
+          departure: "2026-10-11T20:13:00+0200",
+        });
+        return {
+          ...stop,
+          delay: 1,
+          platform: "C",
+          prognosis: stop.prognosis && { ...stop.prognosis, platform: "A" },
+        };
+      })(),
+      passList: [],
+    },
+    {
+      name: "001234",
+      category: "B",
+      subcategory: null,
+      number: "4",
+      operator: "TPL",
+      to: "Lugano, Stazione",
+      stop: checkpoint(centro, null, null),
+      passList: [],
+    },
+  ],
+};
+
 export const locations = {
   stations: [
     { ...station(null, "Piazza Dante Alighieri 9, Lugano", 46.0048, 8.9514), distance: 15.4 },

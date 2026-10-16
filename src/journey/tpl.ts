@@ -4,12 +4,17 @@
 import type { Coordinates, Departure, Target } from "~/timetable/models";
 import { expected, formatTime, type Timing } from "~/timer/journey";
 import { distanceMeters, type Position } from "~/timer/plan";
-import type { PlannedLeg } from "./models";
+import type { PlannedLeg, StationDeparture } from "./models";
 
 // Planned buses farther than this from the real-time departure are another run
 const MATCH_TOLERANCE_MS = 15 * 60_000;
 // The real-time estimate may run this much ahead of the timetable
 const EARLY_MS = 2 * 60_000;
+
+// Bus categories of the timetable: plain, night, low floor, minibus, express
+const BUSES = new Set(["B", "BN", "BUS", "NFB", "KB", "EXB"]);
+// A departure of the forecast minute may still be at the stop
+const LEFT_MS = 60_000;
 
 export function isTplLeg(leg: Pick<PlannedLeg, "operator">): boolean {
   return leg.operator?.toUpperCase() === "TPL";
@@ -77,4 +82,24 @@ export function findLegDeparture(
     }
   }
   return best;
+}
+
+// The departures of a TPL stop from transport.opendata.ch, standing in for
+// the real-time list while the TPL server is down. The station also lists
+// the trains and the buses of other operators passing by: only the buses
+// are kept, and only those of TPL when there are any, as in the real-time
+// list. Soonest first, without the buses already gone.
+export function tplBoard(
+  departures: ReadonlyArray<StationDeparture>,
+  now: number
+): ReadonlyArray<StationDeparture> {
+  const buses = departures.filter(
+    (departure) =>
+      BUSES.has(departure.category.toUpperCase()) &&
+      expected(departure.departure) >= now - LEFT_MS
+  );
+  const tpl = buses.filter(isTplLeg);
+  return (tpl.length > 0 ? tpl : buses).sort(
+    (a, b) => expected(a.departure) - expected(b.departure)
+  );
 }

@@ -1,6 +1,12 @@
 // Conversions from the transport.opendata.ch responses to the app models
 import type { Timing } from "~/timer/journey";
-import type { Connection, LegUpdate, PlannedLeg, Station } from "./models";
+import type {
+  Connection,
+  LegUpdate,
+  PlannedLeg,
+  Station,
+  StationDeparture,
+} from "./models";
 import type {
   Checkpoint,
   OpendataConnection,
@@ -109,6 +115,26 @@ export function toLegUpdate(
   const departure = timing(entry.stop, "departure");
   const arrival = stop && timing(stop, "arrival");
   return departure && arrival ? { departure, arrival } : null;
+}
+
+// A departure of the stationboard. Without a scheduled time there is
+// nothing to count down to.
+export function toStationDeparture(
+  entry: StationboardEntry
+): StationDeparture | undefined {
+  const departure = timing(entry.stop, "departure");
+  const destination = entry.to ?? entry.passList.at(-1)?.station.name;
+  if (!departure || !destination) return undefined;
+  const platform = entry.stop.prognosis?.platform ?? entry.stop.platform;
+  return {
+    trip: entry.name,
+    line: lineLabel(entry.category, entry.number),
+    category: entry.category,
+    ...(entry.operator ? { operator: entry.operator } : {}),
+    destination,
+    departure,
+    ...(platform ? { platform } : {}),
+  };
 }
 
 const localDateTime = new Intl.DateTimeFormat("sv-SE", {
