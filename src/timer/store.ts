@@ -225,6 +225,40 @@ export function findTimerDeparture(
   return best;
 }
 
+// Later runs of a line are minutes apart: closer, it is the bus of the timer
+// itself with a newer time
+const NEXT_RUN_GAP_MS = 60_000;
+
+// The bus to take once the one of the timer is missed: the first later run of
+// the same line in the same direction that can still be caught at `earliest`
+// (now, plus the walk when known). From any platform of the stop and on any
+// variant of the line: the destination shown tells a shorter run apart.
+export function nextTimerDeparture(
+  timer: ActiveTimer,
+  departures: ReadonlyArray<Departure>,
+  earliest: number
+): ScheduledDeparture | undefined {
+  // A journey looks for its later plans itself
+  if (timer.journey !== undefined) return undefined;
+  let best: ScheduledDeparture | undefined;
+  for (const departure of departures) {
+    if (
+      !isScheduled(departure) ||
+      departure.Route !== timer.route ||
+      departure.Dir !== timer.dir ||
+      (timer.uid !== undefined && departure.Uid === timer.uid) ||
+      departure.DepartureAt < timer.departureAt + NEXT_RUN_GAP_MS ||
+      departure.DepartureAt < earliest
+    ) {
+      continue;
+    }
+    if (best === undefined || departure.DepartureAt < best.DepartureAt) {
+      best = departure;
+    }
+  }
+  return best;
+}
+
 // The thresholds planned again once the walk is better known, until the
 // first alert: on the walk of the timetable, then on the one of the GPS
 export function planAlerts(

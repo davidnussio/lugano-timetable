@@ -2,7 +2,7 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { OPENDATA_URL, Opendata } from "../opendata-client";
-import { connection, locations, stationboard } from "./fixtures";
+import { centroBoard, connection, locations, stationboard } from "./fixtures";
 
 // HttpClient answering with `respond(url)`, recording the requested URLs
 const fakeHttp = (respond: (url: URL) => Response, requested: Array<URL>) =>
@@ -78,6 +78,22 @@ describe("Opendata", () => {
       assert.strictEqual(requested[0].searchParams.get("id"), "8591653");
       assert.strictEqual(requested[0].searchParams.get("datetime"), "2026-10-11 20:19");
     }).pipe(Effect.provide(opendata(json(stationboard), requested)));
+  });
+
+  it.effect("lists the departures of a stop", () => {
+    const requested: Array<URL> = [];
+    return Effect.gen(function* () {
+      const client = yield* Opendata;
+      const departures = yield* client.stationboard("8591603", 30);
+      assert.deepStrictEqual(
+        departures.map((departure) => departure.line),
+        ["2", "442", "5", "3"]
+      );
+      assert.strictEqual(
+        requested[0].href,
+        `${OPENDATA_URL}/stationboard?id=8591603&limit=30`
+      );
+    }).pipe(Effect.provide(opendata(json(centroBoard), requested)));
   });
 
   // Real clock: the 504 is retried once after a short pause
