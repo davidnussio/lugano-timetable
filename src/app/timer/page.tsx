@@ -3,6 +3,8 @@
 import {
   Bell,
   Bus,
+  ChevronRight,
+  Flag,
   Footprints,
   History,
   LocateFixed,
@@ -21,7 +23,8 @@ import { useNow } from "~/hooks/use-now";
 import { useReliability } from "~/hooks/use-reliability";
 import { formatClimb, formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
-import { journeyHeadline } from "~/timer/journey";
+import { getOffHeadline, rideSummary } from "~/timer/get-off";
+import { formatTime, journeyHeadline } from "~/timer/journey";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
 import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
@@ -66,11 +69,20 @@ function timerProgress(active: ActiveTimer, countdown: Countdown, stage: Stage):
   return Math.min(1, Math.max(0, leaveTotal > 0 ? timerHeadline(countdown).ms / leaveTotal : 0));
 }
 
-// The countdown to leave, or what comes next once on board of a journey
+// The countdown to leave, or what comes next once on board: of a journey, or
+// of a single bus with a stop to get off
 function useHeadline(countdown: Countdown) {
-  const { legs, stage } = useTimer();
+  const { timer, legs, stage, ride } = useTimer();
   const now = useNow();
-  const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
+  const getOff = timer?.journey === undefined ? timer?.getOff : undefined;
+  const travel =
+    now === 0
+      ? undefined
+      : legs
+        ? journeyHeadline(legs, now)
+        : getOff && timer
+          ? getOffHeadline(getOff, ride, now >= timer.departureAt, now)
+          : undefined;
   return {
     headline: travel ?? timerHeadline(countdown, stage),
     travel: travel !== undefined,
@@ -238,6 +250,7 @@ function ActiveTimerView({
     cancel,
     updateSettings,
     enableNotifications,
+    ride,
   } = useTimer();
   const tone = timerTone(countdown, stage);
   const { headline, travel, now } = useHeadline(countdown);
@@ -247,6 +260,7 @@ function ActiveTimerView({
   const meters = distance ?? far;
 
   const progress = timerProgress(active, countdown, stage);
+  const routingHref = `/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`;
 
   // Switch to the compact countdown once a fifth of the ring is under the
   // header, measured as it is (it is taller with the notch of the iPhone)
@@ -341,7 +355,9 @@ function ActiveTimerView({
             </span>
             <span className="mt-1 text-xs text-muted-foreground">
               {travel
-                ? `In viaggio verso ${active.journey?.to.name ?? active.destination}`
+                ? active.journey === undefined && active.getOff
+                  ? rideSummary(active.getOff, ride)
+                  : `In viaggio verso ${active.journey?.to.name ?? active.destination}`
                 : tone === "gone"
                 ? "Il bus è partito"
                 : countdown.departureMs <= 0
@@ -401,6 +417,10 @@ function ActiveTimerView({
               : ", quando devi uscire"
             : `, a ${nextAlert} min ${walking === undefined ? "dalla partenza" : "dall'uscita"}`}
         </p>
+      )}
+
+      {active.journey === undefined && active.routing !== "" && (
+        <GetOffLink active={active} href={routingHref} />
       )}
 
       {active.journey && (
@@ -477,7 +497,7 @@ function ActiveTimerView({
       <div className={cn("grid gap-2 pt-1", active.routing !== "" && "grid-cols-2")}>
         {active.routing !== "" && (
         <Link
-          href={`/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`}
+          href={routingHref}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
           <Bus className="size-4" />
           Dov&apos;è il bus?
@@ -518,6 +538,37 @@ function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMarg
         </p>
       )}
     </div>
+  );
+}
+
+// Where to get off the bus, chosen on the line page
+function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
+  const { ride } = useTimer();
+  const { getOff } = active;
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/60">
+      <Flag className="size-5 shrink-0 text-primary" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">
+          {getOff ? `Scendi a ${getOff.name}` : "Dove scendi?"}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">
+          {getOff
+            ? [
+                getOff.arrivalAt === undefined
+                  ? undefined
+                  : `${getOff.arrivedAt === undefined ? "Arrivo alle" : "Arrivato alle"} ${formatTime(getOff.arrivedAt ?? getOff.arrivalAt)}`,
+                ride ? rideSummary(getOff, ride) : "ti avviseremo",
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : "Scegli la fermata, ti avviseremo prima"}
+        </p>
+      </div>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 

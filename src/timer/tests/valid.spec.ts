@@ -62,6 +62,24 @@ describe("isActiveTimer", () => {
     expect(isActiveTimer("timer")).toBe(false);
   });
 
+  it("accepts a stop to get off, also on timers saved before it", () => {
+    const getOff = {
+      target: "15",
+      name: "Cornaredo",
+      position: { lat: 46.02, lon: 8.96 },
+      arrivalAt: 25 * MIN,
+      left: true,
+      alerted: ["next"],
+    };
+    expect(isActiveTimer(JSON.parse(JSON.stringify({ ...single, getOff })))).toBe(true);
+    expect(
+      isActiveTimer({ ...single, getOff: { target: "15", name: "Cornaredo", alerted: [] } })
+    ).toBe(true);
+    expect(isActiveTimer({ ...single, getOff: { ...getOff, alerted: ["later"] } })).toBe(false);
+    expect(isActiveTimer({ ...single, getOff: { ...getOff, left: "yes" } })).toBe(false);
+    expect(isActiveTimer({ ...single, getOff: { name: "Cornaredo", alerted: [] } })).toBe(false);
+  });
+
   it("accepts no timer as stored value", () => {
     expect(isStoredTimer(null)).toBe(true);
     expect(isStoredTimer(undefined)).toBe(false);
