@@ -2,6 +2,7 @@
 // a value saved by an older version of the app, or corrupted, must not reach
 // the components.
 import type { GetOffAlert } from "./get-off";
+import type { LearnedPace } from "./pace";
 import type { FavoriteRide } from "./rides";
 import type { ActiveTimer } from "./store";
 
@@ -67,6 +68,17 @@ const isStop = (value: unknown): value is Shape =>
   isString(value.label) &&
   isArrayOf(value.identifiers, isString);
 
+const isPace = (value: unknown) => value === "slow" || value === "normal" || value === "fast";
+
+const isWalk = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isNumber(value.at) &&
+  isNumber(value.meters) &&
+  isOptional(value.climb, isNumber) &&
+  isPace(value.pace) &&
+  isNumber(value.lastAt) &&
+  isOptional(value.spoiled, (spoiled) => typeof spoiled === "boolean");
+
 export function isActiveTimer(value: unknown): value is ActiveTimer {
   return (
     isObject(value) &&
@@ -88,6 +100,7 @@ export function isActiveTimer(value: unknown): value is ActiveTimer {
     typeof value.plannedWithWalk === "boolean" &&
     isOptional(value.journey, isJourney) &&
     isOptional(value.approach, isObject) &&
+    isOptional(value.walk, isWalk) &&
     isOptional(value.getOff, isGetOff)
   );
 }
@@ -113,3 +126,7 @@ export function isFavoriteRide(value: unknown): value is FavoriteRide {
 
 export const isStoredRides = (value: unknown): value is FavoriteRide[] =>
   isArrayOf(value, isFavoriteRide);
+
+export function isLearnedPace(value: unknown): value is LearnedPace {
+  return isObject(value) && isArrayOf(value.speeds, isNumber) && isNumber(value.count);
+}
