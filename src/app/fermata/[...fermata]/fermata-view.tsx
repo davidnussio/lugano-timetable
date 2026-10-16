@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, Footprints, Star } from "lucide-react";
+import { Bell, BellRing, Footprints, Route, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -13,6 +13,7 @@ import { useGeolocation, useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { findTarget, useTargets } from "~/hooks/use-targets";
+import { journeySearchStore } from "~/journey/search-store";
 import { formatClimb, formatDeparture, formatDistance, town } from "~/lib/format";
 import { lineColor } from "~/lib/lines";
 import { cn } from "~/lib/utils";
@@ -94,6 +95,23 @@ export function FermataView({ fermata }: { fermata: string[] }) {
     router.push("/timer");
   };
 
+  // The journey planner, leaving from this stop
+  const planFrom = () => {
+    const code = stop?.CodeNat;
+    if (!stop || !code) return;
+    const first = stop.Coordinates[0];
+    journeySearchStore.set((search) => ({
+      ...search,
+      from: {
+        id: code,
+        name: stop.Label,
+        icon: "bus",
+        ...(first ? { position: { lat: first.Lat, lon: first.Lon } } : {}),
+      },
+    }));
+    router.push("/tragitto");
+  };
+
   return (
     <main className="flex flex-1 flex-col">
       <PageHeader
@@ -102,29 +120,40 @@ export function FermataView({ fermata }: { fermata: string[] }) {
         subtitle={stop && town(stop.Label)}
         actions={
           stop && (
-            <button
-              type="button"
-              onClick={() =>
-                toggleFavorite({
-                  name: stop.Name,
-                  label: stop.Label,
-                  identifiers: fermata,
-                })
-              }
-              className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
-              aria-pressed={currentIsFavorite}
-              aria-label={
-                currentIsFavorite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"
-              }>
-              <Star
-                className={cn(
-                  "size-5 transition-colors",
-                  currentIsFavorite
-                    ? "fill-favorite text-favorite"
-                    : "text-muted-foreground"
-                )}
-              />
-            </button>
+            <>
+              {stop.CodeNat && (
+                <button
+                  type="button"
+                  onClick={planFrom}
+                  className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
+                  aria-label="Tragitto da qui">
+                  <Route className="size-5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() =>
+                  toggleFavorite({
+                    name: stop.Name,
+                    label: stop.Label,
+                    identifiers: fermata,
+                  })
+                }
+                className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
+                aria-pressed={currentIsFavorite}
+                aria-label={
+                  currentIsFavorite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"
+                }>
+                <Star
+                  className={cn(
+                    "size-5 transition-colors",
+                    currentIsFavorite
+                      ? "fill-favorite text-favorite"
+                      : "text-muted-foreground"
+                  )}
+                />
+              </button>
+            </>
           )
         }
       />
