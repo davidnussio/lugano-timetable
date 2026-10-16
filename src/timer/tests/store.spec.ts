@@ -10,6 +10,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  nextTimerDeparture,
   planAlerts,
   timerEndsAt,
 } from "../store";
@@ -148,6 +149,57 @@ describe("findTimerDeparture of a followed bus", () => {
     expect(findTimerDeparture(followed(), later, false)?.Uid).toBe(2);
     expect(findTimerDeparture(followed(), later, true)).toBeUndefined();
     expect(findTimerDeparture(followed(), [departure("3", 10, 1)], true)?.Uid).toBe(1);
+  });
+});
+
+describe("nextTimerDeparture", () => {
+  // A single departure of line 3 at 10 min, followed by trip id
+  const single = (patch: Partial<ActiveTimer> = {}): ActiveTimer => ({
+    ...timer({ target: "13", route: "21", dir: "2", routing: "700", uid: 1, departureAt: 10 * MIN }),
+    journey: undefined,
+    ...patch,
+  });
+
+  it("takes the first later run of the line", () => {
+    const departures = [departure("3", 10, 1), departure("3", 30, 3), departure("3", 18, 2)];
+    expect(nextTimerDeparture(single(), departures, 11 * MIN)?.Uid).toBe(2);
+  });
+
+  it("skips other lines and the other direction", () => {
+    const departures = [
+      { ...departure("4", 14, 2), Route: "22" },
+      { ...departure("3", 15, 3), Dir: "1" },
+      departure("3", 22, 4),
+    ];
+    expect(nextTimerDeparture(single(), departures, 11 * MIN)?.Uid).toBe(4);
+  });
+
+  it("takes it from another platform or variant of the line", () => {
+    const departures = [{ ...departure("3", 16, 2), Target: "12", Routing: "701" }];
+    expect(nextTimerDeparture(single(), departures, 11 * MIN)?.Uid).toBe(2);
+  });
+
+  it("is never the bus of the timer itself", () => {
+    // Delayed past its last known time, by trip id or without one
+    expect(nextTimerDeparture(single(), [departure("3", 13, 1)], 0)).toBeUndefined();
+    const anonymous = { ...departure("3", 10.5, 2), Uid: undefined };
+    expect(nextTimerDeparture(single({ uid: undefined }), [anonymous], 0)).toBeUndefined();
+  });
+
+  it("only offers a bus that can still be caught", () => {
+    const departures = [departure("3", 15, 2), departure("3", 25, 3)];
+    expect(nextTimerDeparture(single(), departures, 16 * MIN)?.Uid).toBe(3);
+    expect(nextTimerDeparture(single(), departures, 26 * MIN)).toBeUndefined();
+  });
+
+  it("skips departures without a real-time time", () => {
+    const departures = [{ ...departure("3", 15, 2), DepartureAt: undefined }];
+    expect(nextTimerDeparture(single(), departures, 0)).toBeUndefined();
+  });
+
+  it("leaves journeys to their later plans", () => {
+    const followed = timer({ route: "21", dir: "2", routing: "700", uid: 1 });
+    expect(nextTimerDeparture(followed, [departure("3", 20, 2)], 0)).toBeUndefined();
   });
 });
 

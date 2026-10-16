@@ -25,6 +25,7 @@ import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 import { JourneySection, LaterSuggestion } from "./journey-view";
+import { NextBusCard } from "./next-bus-card";
 import { NotificationsCard } from "./notifications-card";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
@@ -394,6 +395,13 @@ function ActiveTimerView({
             : `, a ${nextAlert} min ${walking === undefined ? "dalla partenza" : "dall'uscita"}`}
         </p>
       )}
+
+      {/* Missed, or too late to make it: offer the next bus of the line */}
+      {!active.journey &&
+        (tone === "gone" ||
+          (walking !== undefined && countdown.leaveMs < 0 && stage !== "arrived")) && (
+          <NextBusCard now={now} />
+        )}
 
       {active.journey && (
         <>
