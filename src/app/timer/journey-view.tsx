@@ -168,7 +168,7 @@ function FallbackCard() {
 
 // A later departure arriving at the same time, while still at home
 export function LaterSuggestion({ leaving }: { leaving: boolean }) {
-  const { timer, legs, settings, startJourney } = useTimer();
+  const { timer, legs, settings, speeds, startJourney } = useTimer();
   const targets = useTargets();
   const journey = timer?.journey;
   const { data: plans } = useSWR<ReadonlyArray<Connection>>(
@@ -179,7 +179,7 @@ export function LaterSuggestion({ leaving }: { leaving: boolean }) {
     { refreshInterval: 120_000 }
   );
   if (!journey || !legs || !plans || leaving) return null;
-  const plan = laterPlan(plans, { legs }, { pace: settings.pace });
+  const plan = laterPlan(plans, { legs }, { speed: speeds[settings.pace] });
   if (!plan) return null;
   const first = plan.legs[0];
   const arrival = expected(plan.legs[plan.legs.length - 1].arrival);

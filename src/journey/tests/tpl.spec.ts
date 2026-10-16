@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { InTimeStatus, type Departure, type Target } from "~/timetable/models";
 import { formatTime } from "~/timer/journey";
-import { closestPlatform, findLegDeparture, isTplLeg, tplStop } from "../tpl";
+import type { StationDeparture } from "../models";
+import {
+  closestPlatform,
+  findLegDeparture,
+  isTplLeg,
+  tplBoard,
+  tplStop,
+} from "../tpl";
 
 const MIN = 60_000;
 
@@ -103,5 +110,56 @@ describe("findLegDeparture", () => {
 
   it("compares line names loosely", () => {
     expect(findLegDeparture([departure("n1 ", 5)], "N1", { scheduled: 5 * MIN })).toBeDefined();
+  });
+});
+
+describe("tplBoard", () => {
+  const now = Date.UTC(2026, 9, 11, 18, 0);
+  const board = (
+    line: string,
+    minutes: number,
+    operator = "TPL",
+    category = "B",
+    late = 0
+  ): StationDeparture => ({
+    trip: `00${line}`,
+    line,
+    category,
+    ...(operator ? { operator } : {}),
+    destination: "Paradiso",
+    departure: {
+      scheduled: now + minutes * MIN,
+      ...(late ? { estimated: now + (minutes + late) * MIN } : {}),
+    },
+  });
+
+  it("keeps the buses of TPL, soonest first by forecast", () => {
+    const departures = [
+      board("2", 4, "TPL", "B", 3),
+      board("442", 5, "ARL"),
+      board("5", 6),
+      board("S10", 2, "SBB", "S"),
+    ];
+    expect(tplBoard(departures, now).map((departure) => departure.line)).toEqual([
+      "5",
+      "2",
+    ]);
+  });
+
+  it("keeps the buses of other operators when there is no TPL bus", () => {
+    const departures = [
+      board("S10", 2, "SBB", "S"),
+      board("442", 5, "ARL"),
+      board("N1", 7, "", "BN"),
+    ];
+    expect(tplBoard(departures, now).map((departure) => departure.line)).toEqual([
+      "442",
+      "N1",
+    ]);
+  });
+
+  it("drops the buses already gone, keeping those of the current minute", () => {
+    const departures = [board("2", -3), board("3", -3, "TPL", "B", 3), board("5", -2)];
+    expect(tplBoard(departures, now).map((departure) => departure.line)).toEqual(["3"]);
   });
 });

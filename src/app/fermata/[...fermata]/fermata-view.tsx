@@ -31,6 +31,7 @@ import {
   withLines,
 } from "~/timetable/line-filter";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
+import { FallbackDepartures, ServiceUnavailable } from "./fallback-departures";
 
 const noLines: ReadonlyArray<FilterLine> = [];
 
@@ -75,11 +76,13 @@ export function FermataView({ fermata }: { fermata: string[] }) {
     stop?.Coordinates.find((c) => c.Id === departure.Target) ??
     stop?.Coordinates[0];
   const nearest = position && stop && nearestPlatform(stop, position);
-  // The walk slows down uphill, as in the timer
+  // The walk slows down uphill, as in the timer, at the normal pace of the
+  // user (learned from the walks of the timer)
   const climb = useClimb(nearest && position, nearest?.position);
   const climbLabel = formatClimb(climb);
   const walkMinutes =
-    nearest && Math.max(1, Math.round(walkingSeconds(nearest.meters, "normal", climb) / 60));
+    nearest &&
+    Math.max(1, Math.round(walkingSeconds(nearest.meters, timer.speeds.normal, climb) / 60));
 
   const startTimer = (departure: Departure) => {
     if (!stop || !isScheduled(departure)) return;
@@ -148,10 +151,13 @@ export function FermataView({ fermata }: { fermata: string[] }) {
         />
       )}
 
+      {/* The timetable of opendata stands in until the TPL list is back */}
       {isError && data.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-          Servizio non disponibile, nuovo tentativo in corso…
-        </p>
+        stop?.CodeNat ? (
+          <FallbackDepartures stationId={stop.CodeNat} now={now} />
+        ) : (
+          <ServiceUnavailable />
+        )
       ) : isLoading ? (
         <SkeletonList />
       ) : (
