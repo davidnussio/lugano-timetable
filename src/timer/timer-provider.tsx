@@ -21,7 +21,7 @@ import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useClimb, useStopHeights } from "~/terrain/use-climb";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
-import type { Coordinates, Departure, Target } from "~/timetable/models";
+import type { Coordinates, Departure, RoutingStop, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
 import {
   notificationPermission,
@@ -29,6 +29,15 @@ import {
   requestNotifications,
   unlockAudio,
 } from "./alerts";
+import {
+  clockAt,
+  dueGetOffAlert,
+  followRide,
+  type GetOff,
+  getOffMessage,
+  type Ride,
+  rideState,
+} from "./get-off";
 import {
   type Alternative,
   expected,
@@ -74,8 +83,12 @@ import {
   timerStore,
 } from "./store";
 
-// The timer is gone this long after the departure (the arrival of a journey)
+// The timer is gone this long after the departure (the arrival of a journey,
+// or at the stop to get off)
 const EXPIRES_AFTER_MS = 10 * 60_000;
+// The ride is followed from shortly before the departure: earlier, the
+// routing of the line may show the run before
+const BOARDING_MS = 60_000;
 // The forecasts of the timetable change about every minute
 const JOURNEY_REFRESH_MS = 30_000;
 
@@ -103,6 +116,9 @@ export interface TimerContextValue {
   readonly journey: JourneyState | undefined;
   // The way to fall back on when a connection is lost, from its stop
   readonly fallback: { readonly index: number; readonly plan: Connection } | undefined;
+  // A single bus with a stop to get off: where it is on the way there, once
+  // followed with the routing
+  readonly ride: Ride | undefined;
   start(
     departure: ScheduledDeparture,
     stop: ActiveTimer["stop"],
@@ -116,6 +132,11 @@ export interface TimerContextValue {
   ): void;
   // Continues the journey after the leg `index` with another plan
   reroute(index: number, plan: Connection): void;
+  // Sets the stop to get off a single bus, with its time in the routing, or
+  // clears it
+  chooseGetOff(
+    stop: (Pick<GetOff, "target" | "name" | "position"> & { readonly time: string }) | undefined
+  ): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
   enableNotifications(): Promise<void>;
@@ -376,6 +397,56 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     return plan && { index: lostIndex, plan };
   }, [lostIndex, legs, plans, settings.pace, heightOf]);
 
+  // Follow the ride to the stop to get off: same polling (and SWR cache) as
+  // the line page
+  const getOff = timer?.journey === undefined ? timer?.getOff : undefined;
+  const boarding = !!timer && now >= timer.departureAt - BOARDING_MS;
+  const { data: routingStops, isError: routingError } = useMonitored<RoutingStop>(
+    "/api/timetable/routing",
+    "routing",
+    timer && getOff && boarding && timer.routing !== ""
+      ? [timer.target, timer.route, timer.dir, timer.routing]
+      : null
+  );
+  // Data kept from before an error would show the bus standing still
+  const mine = timer?.target;
+  const getOffTarget = getOff?.target;
+  const getOffLeft = getOff?.left;
+  const ride = useMemo(
+    () =>
+      mine !== undefined && getOffTarget !== undefined && boarding && !routingError
+        ? rideState(routingStops, mine, { target: getOffTarget, left: getOffLeft })
+        : undefined,
+    [mine, getOffTarget, getOffLeft, boarding, routingError, routingStops]
+  );
+  useEffect(() => {
+    if (ride === undefined) return;
+    timerStore.set((current) => {
+      if (!current?.getOff) return current;
+      const next = followRide(current.getOff, ride, Date.now());
+      return next === current.getOff ? current : { ...current, getOff: next };
+    });
+  }, [ride]);
+  // Without the routing, how close the bus is to the stop by the GPS
+  const getOffDistance =
+    getOff?.position && fix ? distanceMeters(fix, getOff.position) : undefined;
+
+  // Tell when the stop to get off is next, then when it is reached
+  useEffect(() => {
+    const stored = timerStore.get();
+    const getOff = stored?.journey === undefined ? stored?.getOff : undefined;
+    if (!stored || !getOff) return;
+    const due = dueGetOffAlert(ride, getOffDistance, getOff.alerted, departed);
+    if (due === undefined) return;
+    const message = getOffMessage(due, getOff, stored.line, stored.destination);
+    timerStore.set({
+      ...stored,
+      getOff: { ...getOff, alerted: [...getOff.alerted, due] },
+      lastAlert: { ...message, at: Date.now() },
+    });
+    void notify(message);
+  }, [ride, getOffDistance, departed]);
+
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
   useEffect(() => {
@@ -491,6 +562,24 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const chooseGetOff = useCallback<TimerContextValue["chooseGetOff"]>((stop) => {
+    timerStore.set(
+      (current) =>
+        current && {
+          ...current,
+          // Whether the bus has left is about the ride, whatever the stop
+          getOff: stop && {
+            target: stop.target,
+            name: stop.name,
+            position: stop.position,
+            arrivalAt: clockAt(stop.time, Date.now()),
+            left: current.getOff?.left,
+            alerted: [],
+          },
+        }
+    );
+  }, []);
+
   const cancel = useCallback(() => timerStore.set(null), []);
 
   const updateSettings = useCallback((patch: Partial<TimerSettings>) => {
@@ -523,9 +612,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     legs,
     journey,
     fallback,
+    ride,
     start,
     startJourney,
     reroute,
+    chooseGetOff,
     cancel,
     updateSettings,
     enableNotifications,

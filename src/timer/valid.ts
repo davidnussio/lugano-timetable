@@ -1,6 +1,7 @@
 // Checks of the timer and of the favorite rides read back from localStorage:
 // a value saved by an older version of the app, or corrupted, must not reach
 // the components.
+import type { GetOffAlert } from "./get-off";
 import type { FavoriteRide } from "./rides";
 import type { ActiveTimer } from "./store";
 
@@ -11,6 +12,7 @@ const isObject = (value: unknown): value is Shape =>
 const isString = (value: unknown): value is string => typeof value === "string";
 const isNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
+const isBoolean = (value: unknown): value is boolean => typeof value === "boolean";
 const isArrayOf = <A>(value: unknown, item: (value: unknown) => value is A): value is A[] =>
   Array.isArray(value) && value.every(item);
 const isOptional = <A>(value: unknown, check: (value: unknown) => value is A) =>
@@ -45,6 +47,20 @@ const isJourney = (value: unknown): value is Shape =>
   isOptional(value.walkAfterMs, isNumber) &&
   isArrayOf(value.alerted, isString);
 
+const isGetOffAlert = (value: unknown): value is GetOffAlert =>
+  value === "next" || value === "now";
+
+// The stop to get off: added later, absent from the timers of before
+const isGetOff = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isString(value.target) &&
+  isString(value.name) &&
+  isOptional(value.position, isPosition) &&
+  isOptional(value.arrivalAt, isNumber) &&
+  isOptional(value.left, isBoolean) &&
+  isOptional(value.arrivedAt, isNumber) &&
+  isArrayOf(value.alerted, isGetOffAlert);
+
 const isStop = (value: unknown): value is Shape =>
   isObject(value) &&
   isString(value.name) &&
@@ -71,7 +87,8 @@ export function isActiveTimer(value: unknown): value is ActiveTimer {
     isArrayOf(value.fired, isNumber) &&
     typeof value.plannedWithWalk === "boolean" &&
     isOptional(value.journey, isJourney) &&
-    isOptional(value.approach, isObject)
+    isOptional(value.approach, isObject) &&
+    isOptional(value.getOff, isGetOff)
   );
 }
 
