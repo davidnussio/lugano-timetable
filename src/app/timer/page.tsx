@@ -45,6 +45,9 @@ function LazyWalkMap(props: ComponentProps<typeof WalkMap>) {
   );
 }
 
+// Below this the climb is within the error of the heights: not worth showing
+const MIN_CLIMB_SHOWN = 5;
+
 const paces: ReadonlyArray<{ value: Pace; label: string }> = [
   { value: "slow", label: "Con calma" },
   { value: "normal", label: "Normale" },
@@ -227,6 +230,7 @@ function ActiveTimerView({
   const {
     settings,
     distance,
+    climb,
     far,
     geolocation,
     stage,
@@ -365,7 +369,13 @@ function ActiveTimerView({
                   ? "—"
                   : `${Math.max(1, Math.round(walking / 60_000))} min`
             }
-            hint={stage === "arrived" || meters === undefined ? undefined : formatDistance(meters)}
+            hint={
+              stage === "arrived" || meters === undefined
+                ? undefined
+                : climb !== undefined && climb >= MIN_CLIMB_SHOWN && far === undefined
+                  ? `${formatDistance(meters)} · ↑ ${Math.round(climb)} m`
+                  : formatDistance(meters)
+            }
           />
           <Stat
             label="Margine"

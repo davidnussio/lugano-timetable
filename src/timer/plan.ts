@@ -34,8 +34,17 @@ export const PACE_SPEED: Record<Pace, number> = {
 // Streets are never a straight line, especially on Lugano's hills
 const DETOUR_FACTOR = 1.35;
 
-export function walkingSeconds(meters: number, pace: Pace = "normal"): number {
-  return (meters * DETOUR_FACTOR) / PACE_SPEED[pace];
+// Steepest mean slope counted: a few meters of error of the heights over a
+// short walk would make it a wall
+const MAX_GRADE = 0.25;
+
+// With `climb`, the meters to go up to the stop: uphill the pace slows down
+// as in Tobler's hiking function, by e^(3.5 × slope) on the way of the
+// streets. Downhill is left as on the flat.
+export function walkingSeconds(meters: number, pace: Pace = "normal", climb = 0): number {
+  const path = meters * DETOUR_FACTOR;
+  const grade = path > 0 ? Math.min(MAX_GRADE, Math.max(0, climb) / path) : 0;
+  return (path / PACE_SPEED[pace]) * Math.exp(3.5 * grade);
 }
 
 // Meters per second by which the distance shrinks when the walking time drops

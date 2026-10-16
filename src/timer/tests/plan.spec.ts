@@ -74,6 +74,20 @@ describe("walking", () => {
     expect(walkingSeconds(1300)).toBeCloseTo(1350);
     expect(walkingSeconds(1000, "slow")).toBeCloseTo(1350);
   });
+
+  it("walks slower uphill, as on the flat downhill", () => {
+    // 500 m to the stop, 1350 × 500 / 1300 seconds on the flat
+    const flat = walkingSeconds(500);
+    // 35 m up over 675 m of streets: about a fifth more
+    expect(walkingSeconds(500, "normal", 35) / flat).toBeCloseTo(Math.exp((3.5 * 35) / 675));
+    expect(walkingSeconds(500, "normal", 35) - flat).toBeGreaterThan(90);
+    expect(walkingSeconds(500, "normal", -35)).toBeCloseTo(flat);
+  });
+
+  it("caps the slope of a short walk", () => {
+    expect(walkingSeconds(20, "normal", 30)).toBeCloseTo(walkingSeconds(20) * Math.exp(3.5 * 0.25));
+    expect(walkingSeconds(0, "normal", 10)).toBe(0);
+  });
 });
 
 describe("countdown", () => {

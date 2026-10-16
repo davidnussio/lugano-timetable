@@ -1,12 +1,16 @@
 import { type Config, Layer, ManagedRuntime } from "effect";
 import { Opendata } from "~/journey/opendata-client";
+import { Swisstopo } from "~/terrain/swisstopo-client";
 import { Timetable } from "./timetable";
 
 declare global {
   // Next.js bundles pages and route handlers separately (and reloads modules
   // in development): keep a single runtime per server process.
   var serverRuntime:
-    | ManagedRuntime.ManagedRuntime<Timetable | Opendata, Config.ConfigError>
+    | ManagedRuntime.ManagedRuntime<
+        Timetable | Opendata | Swisstopo,
+        Config.ConfigError
+      >
     | undefined;
 }
 
@@ -14,5 +18,5 @@ declare global {
 // components, so the stop cache and the in-memory sessions are shared between
 // requests.
 export const runtime = (globalThis.serverRuntime ??= ManagedRuntime.make(
-  Layer.mergeAll(Timetable.layer, Opendata.layer)
+  Layer.mergeAll(Timetable.layer, Opendata.layer, Swisstopo.layer)
 ));

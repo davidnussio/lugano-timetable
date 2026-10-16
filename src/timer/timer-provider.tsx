@@ -19,6 +19,7 @@ import useSWR from "swr";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
+import { useClimb } from "~/terrain/use-climb";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import type { Coordinates, Departure, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
@@ -84,6 +85,8 @@ export interface TimerContextValue {
   readonly settings: Required<TimerSettings>;
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
+  // Meters to go up to the stop (negative downhill), when known
+  readonly climb: number | undefined;
   // Meters from the stop when too far to walk there: the countdown is then
   // the bus, without a time to leave
   readonly far: number | undefined;
@@ -301,6 +304,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     // pace, instead of holding it back as GPS noise
     walkingRelease(settings.pace) * (stage === "walking" ? 3 : 1)
   );
+  // The walk to the stop slows down uphill
+  const climb = useClimb(
+    distance !== undefined && stage !== "arrived" ? fix : undefined,
+    timer?.coordinates
+  );
   // Without a usable position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
   const walkSource: WalkSource | undefined =
@@ -313,7 +321,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     stage === "arrived"
       ? 0
       : distance !== undefined
-        ? walkingSeconds(distance, settings.pace)
+        ? walkingSeconds(distance, settings.pace, climb)
         : plannedWalk === undefined
           ? undefined
           : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
@@ -488,6 +496,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     settings,
     countdown: current,
     distance,
+    climb,
     far,
     geolocation,
     stage,

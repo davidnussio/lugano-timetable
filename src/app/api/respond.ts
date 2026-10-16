@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { Opendata, OpendataError } from "~/journey/opendata-client";
+import type { Swisstopo, SwisstopoError } from "~/terrain/swisstopo-client";
 import type { RtpiError } from "~/timetable/rtpi-client";
 import { runtime } from "~/timetable/runtime";
 import type { Timetable } from "~/timetable/timetable";
@@ -10,12 +11,12 @@ import type { Timetable } from "~/timetable/timetable";
 export function respond<A>(
   program: Effect.Effect<
     A,
-    RtpiError | OpendataError | Schema.SchemaError,
-    Timetable | Opendata
+    RtpiError | OpendataError | SwisstopoError | Schema.SchemaError,
+    Timetable | Opendata | Swisstopo
   >,
   cacheControl?: string | ((body: A) => string)
 ): Promise<Response> {
-  const upstreamError = (error: RtpiError | OpendataError) =>
+  const upstreamError = (error: RtpiError | OpendataError | SwisstopoError) =>
     Effect.as(
       Effect.logError(`${error._tag} request failed`, error),
       Response.json({ error: "Upstream error" }, { status: 502 })
@@ -38,6 +39,7 @@ export function respond<A>(
           ),
         RtpiError: upstreamError,
         OpendataError: upstreamError,
+        SwisstopoError: upstreamError,
       })
     )
   );
