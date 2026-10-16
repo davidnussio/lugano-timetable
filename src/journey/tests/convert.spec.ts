@@ -7,13 +7,14 @@ import {
   toConnection,
   toLegUpdate,
   toStation,
+  toStationDeparture,
 } from "../convert";
 import {
   ConnectionsResponse,
   LocationsResponse,
   StationboardResponse,
 } from "../schema";
-import { connection, locations, stationboard } from "./fixtures";
+import { centroBoard, connection, locations, stationboard } from "./fixtures";
 
 const decode = <S extends Schema.Top>(schema: S, value: unknown): S["Type"] =>
   Schema.decodeUnknownSync(schema as never)(value) as S["Type"];
@@ -134,5 +135,40 @@ describe("toLegUpdate", () => {
   it("returns null when the trip or the stop is missing", () => {
     expect(toLegUpdate(entries, "009999", "8575286")).toBeNull();
     expect(toLegUpdate(entries, "005250", "8575286")).toBeNull();
+  });
+});
+
+describe("toStationDeparture", () => {
+  const entries = decode(StationboardResponse, centroBoard).stationboard;
+  const departures = entries.map(toStationDeparture);
+
+  it("keeps line, operator and forecast", () => {
+    expect(departures[0]).toEqual({
+      trip: "002118",
+      line: "2",
+      category: "B",
+      operator: "TPL",
+      destination: "Paradiso, Geretta",
+      departure: { scheduled: at(20, 5), estimated: at(20, 8) },
+      platform: "B",
+    });
+    expect(departures[1]).toMatchObject({ line: "442", operator: "ARL" });
+  });
+
+  it("names the destination after the last stop when missing", () => {
+    expect(departures[2]).toMatchObject({
+      destination: "Manno, Uovo di Manno",
+      departure: { scheduled: at(20, 9) },
+    });
+    expect(departures[2]?.departure.estimated).toBeUndefined();
+    expect(departures[2]?.platform).toBeUndefined();
+  });
+
+  it("prefers the platform of the forecast", () => {
+    expect(departures[3]?.platform).toBe("A");
+  });
+
+  it("drops the runs without a scheduled time", () => {
+    expect(departures[4]).toBeUndefined();
   });
 });

@@ -9,8 +9,14 @@ import {
   toConnection,
   toLegUpdate,
   toStation,
+  toStationDeparture,
 } from "./convert";
-import type { Connection, LegUpdate, Station } from "./models";
+import type {
+  Connection,
+  LegUpdate,
+  Station,
+  StationDeparture,
+} from "./models";
 import {
   ConnectionsResponse,
   LocationsResponse,
@@ -66,6 +72,11 @@ export class Opendata extends Context.Service<
     ): Effect.Effect<ReadonlyArray<Connection>, OpendataError>;
     // Latest timings of planned legs: `null` for the legs not found
     legs(legs: ReadonlyArray<LegQuery>): Effect.Effect<ReadonlyArray<LegUpdate>>;
+    // The next `limit` departures of a stop, of every operator and means
+    stationboard(
+      id: string,
+      limit: number
+    ): Effect.Effect<ReadonlyArray<StationDeparture>, OpendataError>;
   }
 >()("lugano-timetable/journey/Opendata") {
   static readonly layerNoDeps = Layer.effect(
@@ -136,6 +147,15 @@ export class Opendata extends Context.Service<
             )
           ),
         legs: (legs) => Effect.forEach(legs, leg, { concurrency: "unbounded" }),
+        stationboard: (id, limit) =>
+          request("stationboard", StationboardResponse, {
+            id,
+            limit: String(limit),
+          }).pipe(
+            Effect.map((response) =>
+              response.stationboard.map(toStationDeparture).filter(isDefined)
+            )
+          ),
       });
     })
   );

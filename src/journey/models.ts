@@ -34,3 +34,16 @@ export type LegUpdate = {
   readonly departure: Timing;
   readonly arrival: Timing;
 } | null;
+
+// A departure of a stop, from the stationboard of transport.opendata.ch
+export interface StationDeparture {
+  // Trip number in the timetable ("003376")
+  readonly trip: string;
+  readonly line: string;
+  // "B" (bus), "S", "RE", "IR", "EC"…
+  readonly category: string;
+  readonly operator?: string;
+  readonly destination: string;
+  readonly departure: Timing;
+  readonly platform?: string;
+}
