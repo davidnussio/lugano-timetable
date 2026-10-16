@@ -27,7 +27,7 @@ import { learnedSpeed, MIN_WALKS } from "~/timer/pace";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
-import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
+import { type Tone, timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 import { JourneySection, LaterSuggestion } from "./journey-view";
 import { NextBusCard } from "./next-bus-card";
 import { NotificationsCard } from "./notifications-card";
@@ -118,6 +118,11 @@ function PaceLearning() {
   );
 }
 
+// Once the bus has left there is nothing to cancel: the timer is just over
+function cancelLabel(tone: Tone): string {
+  return tone === "gone" ? "Termina timer" : "Annulla timer";
+}
+
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
   if (walkingMs === undefined) return "—";
   return leaveMs < 0
@@ -135,7 +140,22 @@ export default function TimerPage() {
   return (
     <main className="flex flex-1 flex-col">
       <div ref={header} className="sticky top-0 z-20">
-        <PageHeader back="/" title="Timer" />
+        <PageHeader
+          back="/"
+          title="Timer"
+          actions={
+            active &&
+            countdown && (
+              <button
+                type="button"
+                onClick={timer.cancel}
+                aria-label={cancelLabel(timerTone(countdown, timer.stage))}
+                className="grid size-10 place-items-center rounded-full text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/10">
+                <TimerOff className="size-5" />
+              </button>
+            )
+          }
+        />
         {active && countdown && (
           <CompactCountdown active={active} countdown={countdown} show={compact} />
         )}
@@ -321,8 +341,8 @@ function ActiveTimerView({
   return (
     <div className="space-y-3 px-4 pb-8 pt-3">
       <AlertBanner />
-      {/* The bus */}
-      <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
+      {/* The bus: where it is, once known */}
+      <BusCard href={active.routing !== "" ? routingHref : undefined}>
         <TimerBadge timer={active} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{active.destination}</p>
@@ -338,7 +358,10 @@ function ActiveTimerView({
           )}>
           {live ? "Live" : "Ultimo dato"}
         </span>
-      </section>
+        {active.routing !== "" && (
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        )}
+      </BusCard>
 
       {/* Countdown */}
       <section className="flex flex-col items-center rounded-3xl border border-border bg-card px-4 py-6 shadow-sm">
@@ -546,10 +569,24 @@ function ActiveTimerView({
           onClick={cancel}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-destructive/10 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/15">
           <TimerOff className="size-4" />
-          {tone === "gone" ? "Chiudi" : "Annulla timer"}
+          {cancelLabel(tone)}
         </button>
       </div>
     </div>
+  );
+}
+
+function BusCard({ href, children }: { href: string | undefined; children: React.ReactNode }) {
+  const className =
+    "flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm";
+  return href === undefined ? (
+    <section className={className}>{children}</section>
+  ) : (
+    <Link
+      href={href}
+      className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
+      {children}
+    </Link>
   );
 }
 
