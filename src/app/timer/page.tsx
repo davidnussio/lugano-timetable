@@ -2,11 +2,9 @@
 
 import {
   Bell,
-  BellOff,
   Bus,
   Footprints,
   LocateFixed,
-  Smartphone,
   TimerOff,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -27,6 +25,7 @@ import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { timerHeadline, timerTone, toneBackground, toneText } from "~/timer/tone";
 import { JourneySection, LaterSuggestion } from "./journey-view";
+import { NotificationsCard } from "./notifications-card";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
 const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkMap), {
@@ -457,36 +456,10 @@ function ActiveTimerView({
         )}
       </section>
 
-      {/* Notifications */}
-      <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        {notifications === "granted" ? (
-          <Bell className="size-5 shrink-0 text-primary" />
-        ) : notifications === "unsupported" ? (
-          <Smartphone className="size-5 shrink-0 text-muted-foreground" />
-        ) : (
-          <BellOff className="size-5 shrink-0 text-muted-foreground" />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">Notifiche</p>
-          <p className="text-xs text-muted-foreground">
-            {notifications === "granted"
-              ? "Avvisi sempre più frequenti man mano che si avvicina l'ora"
-              : notifications === "denied"
-                ? "Bloccate: riattivale dalle impostazioni del browser"
-                : notifications === "unsupported"
-                  ? "Su iPhone aggiungi l'app alla schermata Home per riceverle"
-                  : "Ricevi un avviso anche con l'app in secondo piano"}
-          </p>
-        </div>
-        {notifications === "default" && (
-          <button
-            type="button"
-            onClick={() => void enableNotifications()}
-            className="h-9 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground">
-            Attiva
-          </button>
-        )}
-      </section>
+      <NotificationsCard
+        permission={notifications}
+        onEnable={() => void enableNotifications()}
+      />
 
       <p className="px-2 text-center text-xs text-muted-foreground">
         Tieni aperta l&apos;app: lo schermo resta acceso e gli avvisi arrivano

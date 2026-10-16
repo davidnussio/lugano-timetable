@@ -446,23 +446,20 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("pointerdown", unlockAudio);
   }, [active]);
 
-  const start = useCallback<TimerContextValue["start"]>(
-    (departure, stop, coordinates) => {
-      unlockAudio();
-      timerStore.set(createTimer(departure, stop, coordinates, Date.now()));
-      // Asked right away, while handling the click
-      void requestNotifications().then(() => rerender());
-    },
-    [rerender]
-  );
+  // The notifications are asked only from their button on the timer page:
+  // Chrome blocks a site for a week once its request is dismissed three
+  // times, as when asked on every start of a timer
+  const start = useCallback<TimerContextValue["start"]>((departure, stop, coordinates) => {
+    unlockAudio();
+    timerStore.set(createTimer(departure, stop, coordinates, Date.now()));
+  }, []);
 
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
     (connection, from, to, targets) => {
       unlockAudio();
       timerStore.set(createJourneyTimer(connection, from, to, targets, Date.now()));
-      void requestNotifications().then(() => rerender());
     },
-    [rerender]
+    []
   );
 
   const reroute = useCallback<TimerContextValue["reroute"]>((index, plan) => {
