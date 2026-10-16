@@ -10,7 +10,6 @@ import {
   distanceMeters,
   minutesLeft,
   PACE_SPEED,
-  type Pace,
   type Position,
   walkingSeconds,
 } from "./plan";
@@ -35,7 +34,8 @@ export interface Leg {
   readonly to: JourneyStop;
   readonly departure: Timing;
   readonly arrival: Timing;
-  // Walk before boarding as planned by the timetable, at a normal pace
+  // Walk before boarding as planned by the timetable, at the default normal
+  // pace
   readonly walkBeforeMs?: number;
 }
 
@@ -53,7 +53,8 @@ export interface Transfer {
 }
 
 export interface TransferOptions {
-  readonly pace?: Pace;
+  // Walking speed of the user in meters per second, as of `paceSpeeds`
+  readonly speed?: number;
   // Getting off, finding the platform: added to every transfer without a
   // walk planned by the timetable
   readonly minimumMs?: number;
@@ -97,12 +98,12 @@ export function stopClimb(
 export function transferWalkingMs(
   from: JourneyStop,
   to: JourneyStop,
-  pace: Pace = "normal",
+  speed = PACE_SPEED.normal,
   climb = 0
 ): number {
   if (from.position === undefined || to.position === undefined) return 0;
   return (
-    walkingSeconds(distanceMeters(from.position, to.position), pace, climb) * 1000
+    walkingSeconds(distanceMeters(from.position, to.position), speed, climb) * 1000
   );
 }
 
@@ -125,7 +126,7 @@ export function transfer(
   arriving: Leg,
   departing: Leg,
   {
-    pace = "normal",
+    speed = PACE_SPEED.normal,
     minimumMs = MINIMUM_TRANSFER_MS,
     tightMs = TIGHT_TRANSFER_MS,
     heightOf,
@@ -143,8 +144,8 @@ export function transfer(
   // make the connection impossible
   const walkingMs =
     planned === undefined
-      ? transferWalkingMs(arriving.to, departing.from, pace, climb)
-      : ((planned * PACE_SPEED.normal) / PACE_SPEED[pace]) * uphill;
+      ? transferWalkingMs(arriving.to, departing.from, speed, climb)
+      : ((planned * PACE_SPEED.normal) / speed) * uphill;
   const neededMs = walkingMs + (planned === undefined ? minimumMs : 0);
   const toleranceMs = planned === undefined ? 0 : Math.max(walkingMs - planned, 0);
   const slackMs =

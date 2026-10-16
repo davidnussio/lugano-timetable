@@ -15,7 +15,7 @@ import {
   transferMessage,
   transferWalkingMs,
 } from "../journey";
-import { climbFactor, distanceMeters } from "../plan";
+import { climbFactor, distanceMeters, PACE_SPEED } from "../plan";
 
 const MIN = 60_000;
 
@@ -70,7 +70,7 @@ describe("transferWalkingMs", () => {
     const ms = transferWalkingMs(bellavista, centro);
     expect(ms).toBeGreaterThan(5 * MIN);
     expect(ms).toBeLessThan(6 * MIN);
-    expect(transferWalkingMs(bellavista, centro, "fast")).toBeLessThan(ms);
+    expect(transferWalkingMs(bellavista, centro, PACE_SPEED.fast)).toBeLessThan(ms);
   });
 
   it("assumes no walk without positions", () => {
@@ -138,7 +138,7 @@ describe("transfer", () => {
     const departing = { ...toParadiso(15, 25), walkBeforeMs: 2 * MIN };
     expect(transfer(leg("2", 0, 10), departing).walkingMs).toBe(2 * MIN);
     expect(transfer(leg("2", 0, 10), departing).status).toBe("ok");
-    expect(transfer(leg("2", 0, 10), departing, { pace: "slow" }).walkingMs).toBeCloseTo(
+    expect(transfer(leg("2", 0, 10), departing, { speed: PACE_SPEED.slow }).walkingMs).toBeCloseTo(
       2.6 * MIN
     );
   });
@@ -205,15 +205,15 @@ describe("transfer", () => {
     });
 
     it("follows the pace of the user", () => {
-      const slow = transfer(leg("S10", 0, 10), departing, { pace: "slow" });
+      const slow = transfer(leg("S10", 0, 10), departing, { speed: PACE_SPEED.slow });
       expect(slow.slackMs).toBeCloseTo(-1.2 * MIN);
       expect(slow.status).toBe("tight");
       const slowLate = transfer(leg("S10", 0, 10, { arrival: 1 }), departing, {
-        pace: "slow",
+        speed: PACE_SPEED.slow,
       });
       expect(slowLate.status).toBe("missed");
       const fast = transfer(leg("S10", 0, 10, { arrival: 0.5 }), departing, {
-        pace: "fast",
+        speed: PACE_SPEED.fast,
       });
       expect(fast.status).toBe("tight");
     });
