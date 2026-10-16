@@ -21,10 +21,11 @@ import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
 import { useReliability } from "~/hooks/use-reliability";
-import { formatClimb, formatClock, formatDistance } from "~/lib/format";
+import { formatClimb, formatClock, formatDistance, formatSpeed } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { formatTime, journeyHeadline } from "~/timer/journey";
+import { learnedSpeed, MIN_WALKS } from "~/timer/pace";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
 import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
@@ -88,6 +89,35 @@ function useHeadline(countdown: Countdown) {
     travel: travel !== undefined,
     now,
   };
+}
+
+// The pace learned from the walks to the stop, or how far it is from it
+function PaceLearning() {
+  const { learnedPace, resetPace } = useTimer();
+  const speed = learnedSpeed(learnedPace);
+  return (
+    <div className="flex items-center gap-2 px-4 pb-3 pl-12 text-xs text-muted-foreground">
+      <p className="min-w-0 flex-1">
+        {speed === undefined ? (
+          `Sto imparando il tuo passo (${learnedPace.speeds.length}/${MIN_WALKS})`
+        ) : (
+          <>
+            Passo misurato:{" "}
+            <span className="font-medium text-foreground">{formatSpeed(speed)}</span> ·{" "}
+            {learnedPace.count} percorsi
+          </>
+        )}
+      </p>
+      {learnedPace.count > 0 && (
+        <button
+          type="button"
+          onClick={resetPace}
+          className="shrink-0 rounded-md px-2 py-1 font-medium text-primary transition-colors hover:bg-muted">
+          Azzera
+        </button>
+      )}
+    </div>
+  );
 }
 
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
@@ -479,6 +509,7 @@ function ActiveTimerView({
             </div>
           </div>
         )}
+        {settings.useLocation && active.coordinates && !geolocation.error && <PaceLearning />}
         {settings.useLocation && active.coordinates && !geolocation.error && (
           <LazyWalkMap stop={active.coordinates} position={geolocation.position} />
         )}
