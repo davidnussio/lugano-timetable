@@ -10,6 +10,7 @@ import { cn } from "~/lib/utils";
 import { distanceMeters, type Position } from "~/timer/plan";
 import type { Target } from "~/timetable/models";
 import { StopsHeader } from "./components/stops-header";
+import { NowRides } from "./now-rides";
 
 function bySearchValue(search: string): (target: Target) => boolean {
   if (search === "") return () => true;
@@ -75,6 +76,7 @@ export function FiltrableListTargets({
   return (
     <div className="flex flex-col pb-6">
       <StopsHeader title="Fermate" current="/" />
+      <NowRides targets={targets} />
 
       <div className="sticky top-0 z-20 space-y-2.5 bg-background/85 px-4 pb-3 pt-2 backdrop-blur-xl">
         <label className="relative block">

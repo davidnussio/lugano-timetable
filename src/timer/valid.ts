@@ -1,5 +1,7 @@
-// Checks of the timer read back from localStorage: a value saved by an older
-// version of the app, or corrupted, must not reach the components.
+// Checks of the timer and of the favorite rides read back from localStorage:
+// a value saved by an older version of the app, or corrupted, must not reach
+// the components.
+import type { FavoriteRide } from "./rides";
 import type { ActiveTimer } from "./store";
 
 type Shape = Record<string, unknown>;
@@ -75,3 +77,22 @@ export function isActiveTimer(value: unknown): value is ActiveTimer {
 
 export const isStoredTimer = (value: unknown): value is ActiveTimer | null =>
   value === null || isActiveTimer(value);
+
+const isHistogram = (value: unknown): value is number[] =>
+  isArrayOf(value, isNumber) && value.length === 24;
+
+export function isFavoriteRide(value: unknown): value is FavoriteRide {
+  return (
+    isObject(value) &&
+    isStop(value.stop) &&
+    isString(value.route) &&
+    isString(value.line) &&
+    isString(value.img) &&
+    isString(value.dir) &&
+    isString(value.destination) &&
+    isHistogram(value.hours)
+  );
+}
+
+export const isStoredRides = (value: unknown): value is FavoriteRide[] =>
+  isArrayOf(value, isFavoriteRide);

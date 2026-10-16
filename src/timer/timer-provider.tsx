@@ -56,6 +56,7 @@ import {
   walkingRelease,
   walkingSeconds,
 } from "./plan";
+import { recordStart, ridesStore } from "./rides";
 import {
   type ActiveTimer,
   applyLegUpdates,
@@ -451,7 +452,16 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   // times, as when asked on every start of a timer
   const start = useCallback<TimerContextValue["start"]>((departure, stop, coordinates) => {
     unlockAudio();
-    timerStore.set(createTimer(departure, stop, coordinates, Date.now()));
+    const now = Date.now();
+    timerStore.set(createTimer(departure, stop, coordinates, now));
+    // The hour of the start puts the favorite ride first around that time
+    ridesStore.set((rides) =>
+      recordStart(
+        rides,
+        { identifiers: stop.identifiers, route: departure.Route, dir: departure.Dir },
+        new Date(now).getHours()
+      )
+    );
   }, []);
 
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
