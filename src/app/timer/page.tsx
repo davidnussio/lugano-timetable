@@ -17,7 +17,7 @@ import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
-import { formatClimb, formatClock, formatDistance } from "~/lib/format";
+import { formatClimb, formatClock, formatDistance, formatWeather } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
@@ -227,6 +227,7 @@ function ActiveTimerView({
     settings,
     distance,
     climb,
+    weather,
     far,
     geolocation,
     stage,
@@ -368,7 +369,11 @@ function ActiveTimerView({
             hint={
               stage === "arrived" || meters === undefined
                 ? undefined
-                : [formatDistance(meters), far === undefined ? formatClimb(climb) : undefined]
+                : [
+                    formatDistance(meters),
+                    far === undefined ? formatClimb(climb) : undefined,
+                    formatWeather(weather),
+                  ]
                     .filter(Boolean)
                     .join(" · ")
             }
