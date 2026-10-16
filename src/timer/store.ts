@@ -18,7 +18,8 @@ import {
   type Pace,
   type WalkSource,
 } from "./plan";
-import { isStoredTimer } from "./valid";
+import { type LearnedPace, NO_PACE, type WalkTrack } from "./pace";
+import { isLearnedPace, isStoredTimer } from "./valid";
 
 // A journey with transfers planned with transport.opendata.ch. The timer
 // counts down to its first leg.
@@ -67,6 +68,8 @@ export interface ActiveTimer {
   readonly journey?: ActiveJourney;
   // How far the user is on the way to the stop, followed with the GPS
   readonly approach?: Approach;
+  // The walk to the stop, measured to learn the pace of the user
+  readonly walk?: WalkTrack;
 }
 
 export interface TimerSettings {
@@ -85,6 +88,13 @@ export const timerStore = createLocalStore<ActiveTimer | null>(
 export const settingsStore = createLocalStore<TimerSettings>(
   "lugano-timetable-timer-settings",
   { pace: "normal" }
+);
+
+// Kept apart from the settings: measured, not chosen
+export const paceStore = createLocalStore<LearnedPace>(
+  "lugano-timetable-pace",
+  NO_PACE,
+  isLearnedPace
 );
 
 export type ScheduledDeparture = Departure & { readonly DepartureAt: number };

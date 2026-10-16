@@ -57,6 +57,14 @@ import {
   walkingSeconds,
 } from "./plan";
 import {
+  followWalk,
+  type LearnedPace,
+  learnPace,
+  NO_PACE,
+  type PaceSpeeds,
+  paceSpeeds,
+} from "./pace";
+import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
@@ -65,6 +73,7 @@ import {
   findTimerDeparture,
   legsQuery,
   liveLegs,
+  paceStore,
   planAlerts,
   type ScheduledDeparture,
   settingsStore,
@@ -83,6 +92,10 @@ const defaultSettings: TimerSettings = { pace: "normal" };
 export interface TimerContextValue {
   readonly timer: ActiveTimer | null;
   readonly settings: Required<TimerSettings>;
+  // The walks measured so far, and the walking speed of each pace in meters
+  // per second: the learned one once there are enough walks
+  readonly learnedPace: LearnedPace;
+  readonly speeds: PaceSpeeds;
   readonly countdown: Countdown | undefined;
   readonly distance: number | undefined;
   // Meters to go up to the stop (negative downhill), when known
@@ -117,6 +130,8 @@ export interface TimerContextValue {
   reroute(index: number, plan: Connection): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
+  // Forgets the walks measured: back to the default paces
+  resetPace(): void;
   enableNotifications(): Promise<void>;
   dismissAlert(): void;
 }
@@ -192,6 +207,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     ...stored,
     useLocation: stored.useLocation ?? granted,
   };
+  const learnedPace = paceStore.useValue() ?? NO_PACE;
+  const speeds = useMemo(() => paceSpeeds(learnedPace), [learnedPace]);
+  const speed = speeds[settings.pace];
   const active = timer !== null && timer !== undefined;
   const now = useNow(active);
   const geolocation = useGeolocation(active && settings.useLocation);
@@ -282,14 +300,6 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const rawDistance =
     timer?.coordinates && fix ? distanceMeters(fix, timer.coordinates) : undefined;
   const accuracy = fix?.accuracy;
-  useEffect(() => {
-    if (rawDistance === undefined || accuracy === undefined) return;
-    timerStore.set((current) => {
-      if (!current) return current;
-      const next = approach(current.approach, rawDistance, accuracy);
-      return next === current.approach ? current : { ...current, approach: next };
-    });
-  }, [rawDistance, accuracy]);
   const stage = timer?.approach?.stage ?? "away";
   // Too far to walk to the stop (on another bus, in another town): the walk
   // of the GPS would make the user hours late
@@ -304,13 +314,36 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     timer?.startedAt,
     // On the way the distance really shrinks: follow it, faster than any
     // pace, instead of holding it back as GPS noise
-    walkingRelease(settings.pace) * (stage === "walking" ? 3 : 1)
+    walkingRelease(speed) * (stage === "walking" ? 3 : 1)
   );
   // The walk to the stop slows down uphill
   const climb = useClimb(
     distance !== undefined && stage !== "arrived" ? fix : undefined,
     timer?.coordinates
   );
+
+  // Move forward on the way to the stop, and measure the walk there to learn
+  // the pace of the user. Runs again with the same fix when the climb or the
+  // pace change: both steps then return what they had.
+  const fixAt = fix?.at;
+  const pace = settings.pace;
+  useEffect(() => {
+    if (rawDistance === undefined || accuracy === undefined || fixAt === undefined) return;
+    const current = timerStore.get();
+    if (!current) return;
+    const next = approach(current.approach, rawDistance, accuracy);
+    const { walk, speed: walked } = followWalk(current.walk, current.approach, next, {
+      meters: rawDistance,
+      accuracy,
+      at: fixAt,
+      climb,
+      pace,
+    });
+    if (next !== current.approach || walk !== current.walk) {
+      timerStore.set({ ...current, approach: next, walk });
+    }
+    if (walked !== undefined) paceStore.set((learned) => learnPace(learned, walked));
+  }, [rawDistance, accuracy, fixAt, climb, pace]);
   // Without a usable position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
   const walkSource: WalkSource | undefined =
@@ -319,14 +352,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       : plannedWalk === undefined
         ? undefined
         : "timetable";
+  // The timetable plans its walks at the default normal pace
   const walk =
     stage === "arrived"
       ? 0
       : distance !== undefined
-        ? walkingSeconds(distance, settings.pace, climb)
+        ? walkingSeconds(distance, speed, climb)
         : plannedWalk === undefined
           ? undefined
-          : (plannedWalk / 1000) * (PACE_SPEED.normal / PACE_SPEED[settings.pace]);
+          : (plannedWalk / 1000) * (PACE_SPEED.normal / speed);
   // Far away there is no time to leave yet: count down to the bus
   const current =
     timer && now > 0
@@ -346,9 +380,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const journey = useMemo(
     () =>
       legs && legs.length > 1
-        ? journeyState(legs, now, walk, { pace: settings.pace, heightOf })
+        ? journeyState(legs, now, walk, { speed, heightOf })
         : undefined,
-    [legs, now, walk, settings.pace, heightOf]
+    [legs, now, walk, speed, heightOf]
   );
 
   // A lost connection: look for another way from the stop of the transfer
@@ -369,11 +403,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const fallback = useMemo(() => {
     if (lostIndex === undefined || !legs || !plans) return undefined;
     const plan = fallbackPlan(plans, legs[lostIndex], legs[lostIndex + 1], {
-      pace: settings.pace,
+      speed,
       heightOf,
     });
     return plan && { index: lostIndex, plan };
-  }, [lostIndex, legs, plans, settings.pace, heightOf]);
+  }, [lostIndex, legs, plans, speed, heightOf]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
@@ -487,6 +521,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     settingsStore.set((s) => ({ ...s, ...patch }));
   }, []);
 
+  const resetPace = useCallback(() => paceStore.set(NO_PACE), []);
+
   const enableNotifications = useCallback(async () => {
     await requestNotifications();
     rerender();
@@ -500,6 +536,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const value: TimerContextValue = {
     timer: timer ?? null,
     settings,
+    learnedPace,
+    speeds,
     countdown: current,
     distance,
     climb,
@@ -518,6 +556,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     reroute,
     cancel,
     updateSettings,
+    resetPace,
     enableNotifications,
     dismissAlert,
   };
