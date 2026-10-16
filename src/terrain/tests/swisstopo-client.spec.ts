@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
-import { HEIGHT_URL, Swisstopo, toLv95 } from "../swisstopo-client";
+import { HEIGHT_URL, IDENTIFY_URL, Swisstopo, toLv95 } from "../swisstopo-client";
 
 // HttpClient answering with `respond(url)`, recording the requested URLs
 const fakeHttp = (respond: (url: URL) => Response, requested: Array<URL>) =>
@@ -53,4 +53,44 @@ describe("Swisstopo", () => {
       )
     )
   );
+
+  it.effect("lists every stop in boxes, without their platforms", () => {
+    const requested: Array<URL> = [];
+    const feature = (id: number | string, name: string, means: string | null, lon: number, lat: number) => ({
+      id,
+      geometry: { type: "MultiPoint", coordinates: [[lon, lat]] },
+      properties: { name, verkehrsmittel_de: means },
+    });
+    // 500 bus stops and their platforms around Lugano, too many for a box
+    // of the grid, and a few other stops
+    const features = [
+      ...Array.from({ length: 500 }, (_, i) => [
+        feature(8500000 + i, `Stop ${i}`, "Bus", 8.9 + (i % 25) * 0.004, 46 + Math.floor(i / 25) * 0.004),
+        feature(`ch:1:sloid:${i}:0:1`, `Stop ${i}`, null, 8.9 + (i % 25) * 0.004, 46 + Math.floor(i / 25) * 0.004),
+      ]).flat(),
+      feature(8505000, "Bellinzona", "Zug", 9.0293, 46.1955),
+      feature(8505001, "Without service", "", 9.03, 46.2),
+      feature(8575302, "Monte Brè", "Standseilbahn", 8.9707, 46.0109),
+    ];
+    // The features in the box, at most 200 and in no stable order
+    const identify = (url: URL) => {
+      const [west, south, east, north] = (url.searchParams.get("geometry") ?? "").split(",").map(Number);
+      const inside = features.filter(({ geometry: { coordinates: [[lon, lat]] } }) =>
+        lon >= west && lon <= east && lat >= south && lat <= north
+      );
+      return Response.json({ results: inside.sort(() => Math.random() - 0.5).slice(0, 200) });
+    };
+    return Effect.gen(function* () {
+      const client = yield* Swisstopo;
+      const stops = yield* client.stops();
+      assert.strictEqual(stops.length, 502);
+      assert.deepStrictEqual(
+        stops.find((stop) => stop.id === "8505000"),
+        { id: "8505000", name: "Bellinzona", position: { lat: 46.1955, lon: 9.0293 }, icon: "train" }
+      );
+      assert.strictEqual(stops.find((stop) => stop.id === "8575302")?.icon, "cableway");
+      assert.strictEqual(`${requested[0].origin}${requested[0].pathname}`, IDENTIFY_URL);
+      assert.strictEqual(requested[0].searchParams.get("layers"), "all:ch.bav.haltestellen-oev");
+    }).pipe(Effect.provide(swisstopo(identify, requested)));
+  });
 });
