@@ -18,6 +18,7 @@ import {
   type Pace,
   type WalkSource,
 } from "./plan";
+import type { GetOff } from "./get-off";
 import { type LearnedPace, NO_PACE, type WalkTrack } from "./pace";
 import { isLearnedPace, isStoredTimer } from "./valid";
 
@@ -70,6 +71,8 @@ export interface ActiveTimer {
   readonly approach?: Approach;
   // The walk to the stop, measured to learn the pace of the user
   readonly walk?: WalkTrack;
+  // Where the user gets off a single bus: the timer then follows the ride
+  readonly getOff?: GetOff;
 }
 
 export interface TimerSettings {
@@ -307,11 +310,36 @@ export function liveLegs(
   ];
 }
 
-// When the timer is over: the departure, or the arrival of a journey
+// The timer of a single bus on this trip of the line page: the stop to get
+// off can be chosen there
+export function followsTrip(
+  timer: ActiveTimer,
+  trip: {
+    readonly target: string;
+    readonly route: string;
+    readonly dir: string;
+    readonly routing: string;
+  }
+): boolean {
+  return (
+    timer.journey === undefined &&
+    timer.target === trip.target &&
+    timer.route === trip.route &&
+    timer.dir === trip.dir &&
+    timer.routing === trip.routing
+  );
+}
+
+// When the timer is over: the departure, the arrival at the stop to get off,
+// or the arrival of a journey
 export function timerEndsAt(
   timer: ActiveTimer,
   legs: ReadonlyArray<PlannedLeg> | undefined = timer.journey?.legs
 ): number {
+  const { getOff } = timer;
+  if (getOff !== undefined && timer.journey === undefined) {
+    return getOff.arrivedAt ?? Math.max(timer.departureAt, getOff.arrivalAt ?? 0);
+  }
   const last = legs?.at(-1);
   return last === undefined
     ? timer.departureAt
