@@ -22,6 +22,43 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Usual journeys (push notifications)
+
+In the journey planner a journey can be saved as a "tragitto abituale": on
+the chosen days the app sends a push notification about 20 minutes before
+it is time to leave home, an update when a delay moves the leave time by 2
+minutes or more (or a transfer is lost), and "Esci ora" at the leave time,
+also with the app closed. The feature stays hidden until it is configured.
+
+1. Redis: the same Upstash database as the RTPI sessions
+   (`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or the
+   `KV_REST_API_URL` and `KV_REST_API_TOKEN` of the Vercel Marketplace).
+2. VAPID keys, generated once with `npx web-push generate-vapid-keys`:
+
+   ```bash
+   VAPID_PUBLIC_KEY=<public key>
+   NEXT_PUBLIC_VAPID_PUBLIC_KEY=<the same public key>
+   VAPID_PRIVATE_KEY=<private key>
+   VAPID_SUBJECT=mailto:you@example.com
+   ```
+
+   `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is read at build time: redeploy after
+   setting it. Changing the keys later makes the browsers subscribe again
+   the next time the app is opened.
+3. `CRON_SECRET`: a long random string (`openssl rand -hex 32`).
+4. A scheduler calling `/api/routines/tick` every minute with the header
+   `Authorization: Bearer <CRON_SECRET>` (GET or POST). Vercel Cron is not
+   used: the Hobby plan only allows daily jobs. For example an
+   [Upstash QStash](https://upstash.com/docs/qstash) schedule with cron
+   `* * * * *`, destination `https://<your app>/api/routines/tick` and the
+   header `Authorization: Bearer <CRON_SECRET>` (through the QStash API it
+   is passed as `Upstash-Forward-Authorization`), or a job on
+   [cron-job.org](https://cron-job.org) with the same header.
+
+Without Redis or the VAPID keys `/api/routines` answers 503 and the app
+hides the feature; without `CRON_SECRET` the tick answers 503. On iPhone,
+push notifications need the app added to the home screen (iOS 16.4+).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

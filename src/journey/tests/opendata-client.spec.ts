@@ -65,6 +65,24 @@ describe("Opendata", () => {
     );
   });
 
+  it.effect("plans connections arriving by a given time", () => {
+    const requested: Array<URL> = [];
+    return Effect.gen(function* () {
+      const client = yield* Opendata;
+      yield* client.connections("8591577", "8505213", Date.UTC(2026, 9, 12, 5, 55), {
+        arrival: true,
+      });
+      const params = requested[0].searchParams;
+      assert.strictEqual(params.get("datetime"), "2026-10-12 07:55");
+      assert.strictEqual(params.get("isArrivalTime"), "1");
+      // Departures by default, as before
+      yield* client.connections("8591577", "8505213", Date.UTC(2026, 9, 12, 5, 55));
+      assert.isNull(requested[1].searchParams.get("isArrivalTime"));
+    }).pipe(
+      Effect.provide(opendata(json({ connections: [connection] }), requested))
+    );
+  });
+
   it.effect("refreshes legs from the departures of their stop", () => {
     const requested: Array<URL> = [];
     return Effect.gen(function* () {

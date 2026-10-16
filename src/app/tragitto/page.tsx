@@ -11,9 +11,11 @@ import { useTargets } from "~/hooks/use-targets";
 import type { Connection, Station } from "~/journey/models";
 import { journeySearchStore, rememberJourney } from "~/journey/search-store";
 import { cn } from "~/lib/utils";
+import type { Routine } from "~/routines/models";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
 import { ConnectionCard, sameStart } from "./connection-card";
+import { Routines } from "./routines";
 import { StationPicker } from "./station-picker";
 
 type Field = "from" | "to";
@@ -98,6 +100,11 @@ export default function JourneyPage() {
     timer.startJourney(connection, from, to, targets);
     journeySearchStore.set((s) => rememberJourney(s, from, to));
     router.push("/timer");
+  };
+
+  const pickRoutine = (routine: Routine) => {
+    journeySearchStore.set((s) => ({ ...s, from: routine.from, to: routine.to }));
+    setPages([]);
   };
 
   const timed = timer.timer?.journey?.legs[0];
@@ -243,33 +250,46 @@ export default function JourneyPage() {
             Orari e ritardi da transport.opendata.ch. Tocca la campanella per
             seguire il tragitto con il timer.
           </p>
-        </section>
-      ) : search.recent.length > 0 ? (
-        <section className="px-4 pt-1">
-          <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <History className="size-3.5" />
-            Recenti
-          </h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            {search.recent.map((journey) => (
-              <li key={`${journey.from.id}-${journey.to.id}`}>
-                <button
-                  type="button"
-                  onClick={() => journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to }))}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted">
-                  <span className="min-w-0 flex-1 truncate font-medium">{journey.from.name}</span>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-right font-medium">{journey.to.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="pt-3">
+            <Routines
+              from={from}
+              to={to}
+              connection={pages.length === 0 ? data?.[0] : undefined}
+              onPick={pickRoutine}
+            />
+          </div>
         </section>
       ) : (
-        <p className="px-8 py-10 text-center text-sm text-muted-foreground">
-          Scegli partenza e destinazione: anche con cambi, treni e bus regionali.
-          Il timer ti dirà quando uscire e se le coincidenze reggono.
-        </p>
+        <div className="space-y-5 px-4 pt-1">
+          <Routines onPick={pickRoutine} />
+          {search.recent.length > 0 ? (
+            <section>
+              <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <History className="size-3.5" />
+                Recenti
+              </h2>
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                {search.recent.map((journey) => (
+                  <li key={`${journey.from.id}-${journey.to.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to }))}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted">
+                      <span className="min-w-0 flex-1 truncate font-medium">{journey.from.name}</span>
+                      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-right font-medium">{journey.to.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : (
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+              Scegli partenza e destinazione: anche con cambi, treni e bus regionali.
+              Il timer ti dirà quando uscire e se le coincidenze reggono.
+            </p>
+          )}
+        </div>
       )}
     </main>
   );

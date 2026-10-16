@@ -1,5 +1,7 @@
 import { type Config, Layer, ManagedRuntime } from "effect";
 import { Opendata } from "~/journey/opendata-client";
+import { RoutineStore } from "~/routines/store";
+import { WebPush } from "~/routines/web-push-client";
 import { Swisstopo } from "~/terrain/swisstopo-client";
 import { Timetable } from "./timetable";
 
@@ -8,7 +10,7 @@ declare global {
   // in development): keep a single runtime per server process.
   var serverRuntime:
     | ManagedRuntime.ManagedRuntime<
-        Timetable | Opendata | Swisstopo,
+        Timetable | Opendata | Swisstopo | RoutineStore | WebPush,
         Config.ConfigError
       >
     | undefined;
@@ -18,5 +20,11 @@ declare global {
 // components, so the stop cache and the in-memory sessions are shared between
 // requests.
 export const runtime = (globalThis.serverRuntime ??= ManagedRuntime.make(
-  Layer.mergeAll(Timetable.layer, Opendata.layer, Swisstopo.layer)
+  Layer.mergeAll(
+    Timetable.layer,
+    Opendata.layer,
+    Swisstopo.layer,
+    RoutineStore.layer,
+    WebPush.layer
+  )
 ));

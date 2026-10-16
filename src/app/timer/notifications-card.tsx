@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 
 type Device = "android" | "ios" | "desktop";
 
-function currentDevice(): Device {
+export function currentDevice(): Device {
   const agent = navigator.userAgent;
   if (/Android/i.test(agent)) return "android";
   // iPadOS tells it is a Mac, with a touch screen
@@ -16,7 +16,7 @@ function currentDevice(): Device {
   return "desktop";
 }
 
-const installed = () => window.matchMedia("(display-mode: standalone)").matches;
+export const installed = () => window.matchMedia("(display-mode: standalone)").matches;
 
 // Once denied, a site cannot ask again: only the user can allow it from the
 // settings, which are hard to find. The steps for the device in use.
