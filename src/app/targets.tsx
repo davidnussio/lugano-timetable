@@ -2,7 +2,7 @@
 
 import { ChevronRight, LocateFixed, Search, Star, X } from "lucide-react";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState, useSyncExternalStore } from "react";
 import { useFavorites } from "~/hooks/use-favorites";
 import { useGeolocation } from "~/hooks/use-geolocation";
 import { formatDistance, town } from "~/lib/format";
@@ -33,6 +33,20 @@ function targetDistance(target: Target, position: Position): number | undefined 
   return nearest;
 }
 
+// The "Vicino a me" shortcut of the installed app opens /?vicino=1. Read from
+// the address on the client: useSearchParams would leave the list out of the
+// static HTML, rendered only in the browser below a Suspense boundary.
+const noSubscribe = () => () => {};
+const fromShortcut = () =>
+  new URLSearchParams(window.location.search).has("vicino");
+
+function dropShortcutParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("vicino")) return;
+  url.searchParams.delete("vicino");
+  window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+}
+
 interface Row {
   readonly target: Target;
   readonly distance: number | undefined;
@@ -46,7 +60,11 @@ export function FiltrableListTargets({
   targets,
 }: FiltrableListTargetsProps): React.JSX.Element {
   const [search, setSearch] = useState<string>("");
-  const [nearby, setNearby] = useState(false);
+  // Until the user picks, follow the shortcut (off on the server and during
+  // hydration, so the static HTML still matches)
+  const [choice, setChoice] = useState<boolean>();
+  const shortcut = useSyncExternalStore(noSubscribe, fromShortcut, () => false);
+  const nearby = choice ?? shortcut;
   const deferredSearch = useDeferredValue(search);
   const { isLoaded, isFavorite } = useFavorites();
   const { position, error } = useGeolocation(nearby);
@@ -100,7 +118,11 @@ export function FiltrableListTargets({
           <button
             type="button"
             aria-pressed={nearby}
-            onClick={() => setNearby((value) => !value)}
+            onClick={() => {
+              setChoice(!nearby);
+              // Otherwise a reload turns it back on after the user switched it off
+              dropShortcutParam();
+            }}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
               nearby
