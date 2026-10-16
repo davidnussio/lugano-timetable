@@ -1,4 +1,4 @@
-import { minutesLeft } from "~/timer/plan";
+import { minutesLeft, type WeatherDelay } from "~/timer/plan";
 
 // "7 min", "ora" or the clock time when the departure is more than an hour away
 export function formatDeparture(ms: number, time: string): string {
@@ -44,6 +44,11 @@ const MIN_CLIMB_SHOWN = 5;
 // "↑ 35 m" for a walk going up, undefined when flat or downhill
 export function formatClimb(climb: number | undefined): string | undefined {
   return climb !== undefined && climb >= MIN_CLIMB_SHOWN ? `↑ ${Math.round(climb)} m` : undefined;
+}
+
+// "Pioggia +2 min" for what the weather adds to a walk
+export function formatWeather(weather: WeatherDelay | undefined): string | undefined {
+  return weather && `${weather.label} +${weather.minutes} min`;
 }
 
 // Minutes from `now` to an "HH:mm" time of the RTPI server (local time),

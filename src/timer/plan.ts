@@ -2,6 +2,8 @@
 // stop, when to leave and when to alert. Kept free of browser APIs so that it
 // can be unit tested.
 
+import type { CurrentWeather } from "~/weather/open-meteo-client";
+
 export interface Position {
   readonly lat: number;
   readonly lon: number;
@@ -57,6 +59,61 @@ export function walkingSeconds(
   climb = 0
 ): number {
   return ((meters * DETOUR_FACTOR) / speed) * climbFactor(meters, climb);
+}
+
+export interface WeatherWalk {
+  // How much longer the walk takes
+  readonly factor: number;
+  // What slows it down, undefined when dry
+  readonly label?: string;
+}
+
+const DRY: WeatherWalk = { factor: 1 };
+
+// Below this a drizzle does not change the walk; from the second a downpour
+// (WMO "heavy" rain), in millimeters per hour
+const RAIN_MM_PER_HOUR = 0.3;
+const HEAVY_RAIN_MM_PER_HOUR = 4;
+
+// WMO weather codes: rain, rain showers and thunderstorms; their heavy kinds;
+// snow, snow grains and snow showers; freezing drizzle and freezing rain
+const RAIN_CODES = new Set([61, 63, 65, 80, 81, 82, 95, 96, 99]);
+const HEAVY_RAIN_CODES = new Set([65, 82]);
+const SNOW_CODES = new Set([71, 73, 75, 77, 85, 86]);
+const ICE_CODES = new Set([56, 57, 66, 67]);
+
+// How the weather now slows down the walk. Wet stairs and steep sidewalks,
+// the umbrella in the crowd and the puddles at the crossings make it about
+// 10% longer in the rain, 15% under a downpour. Snow and ice are slippery
+// like a winter hike: about 30% longer, the same for both.
+export function weatherWalk(weather: CurrentWeather | undefined): WeatherWalk {
+  if (weather === undefined) return DRY;
+  const { precipitation, snowfall, code } = weather;
+  if (ICE_CODES.has(code)) return { factor: 1.3, label: "Ghiaccio" };
+  if (snowfall > 0 || SNOW_CODES.has(code)) return { factor: 1.3, label: "Neve" };
+  if (precipitation >= HEAVY_RAIN_MM_PER_HOUR || HEAVY_RAIN_CODES.has(code)) {
+    return { factor: 1.15, label: "Pioggia forte" };
+  }
+  if (precipitation >= RAIN_MM_PER_HOUR || RAIN_CODES.has(code)) {
+    return { factor: 1.1, label: "Pioggia" };
+  }
+  return DRY;
+}
+
+export interface WeatherDelay {
+  readonly label: string;
+  readonly minutes: number;
+}
+
+// The minutes the weather adds to a walk of `seconds` (already slowed down
+// by it): worth telling from one minute up
+export function weatherDelay(
+  seconds: number,
+  { factor, label }: WeatherWalk
+): WeatherDelay | undefined {
+  if (label === undefined) return undefined;
+  const minutes = Math.round((seconds - seconds / factor) / 60);
+  return minutes >= 1 ? { label, minutes } : undefined;
 }
 
 // Meters per second by which the distance shrinks when the walking time drops
@@ -257,10 +314,12 @@ export interface AlertMessage {
   readonly body: string;
 }
 
+// With `weather`, what slows down the walk (e.g. "Pioggia")
 export function alertMessage(
   line: string,
   destination: string,
-  { departureMs, leaveMs, walkingMs }: Countdown
+  { departureMs, leaveMs, walkingMs }: Countdown,
+  weather?: string
 ): AlertMessage {
   const bus = `Linea ${line} per ${destination}`;
   const departs = minutesLeft(departureMs);
@@ -273,16 +332,17 @@ export function alertMessage(
 
   const leave = minutesLeft(leaveMs);
   const walk = Math.max(1, Math.round(walkingMs / 60_000));
+  const onFoot = `${walk} min a piedi${weather ? ` (${weather.toLowerCase()})` : ""}`;
   if (leave > 0) {
     return {
       title: `Esci tra ${leave} min`,
-      body: `${bus} · ${departsIn.toLowerCase()}, ${walk} min a piedi`,
+      body: `${bus} · ${departsIn.toLowerCase()}, ${onFoot}`,
     };
   }
   if (leave === 0) {
     return {
       title: "Esci ora",
-      body: `${bus} · ${departsIn.toLowerCase()}, ${walk} min a piedi`,
+      body: `${bus} · ${departsIn.toLowerCase()}, ${onFoot}`,
     };
   }
   return {

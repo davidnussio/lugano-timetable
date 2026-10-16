@@ -23,6 +23,7 @@ import { useClimb, useStopHeights } from "~/terrain/use-climb";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import type { Coordinates, Departure, RoutingStop, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
+import { useWeather } from "~/weather/use-weather";
 import {
   notificationPermission,
   notify,
@@ -62,8 +63,11 @@ import {
   reliableFix,
   type Stage,
   type WalkSource,
+  type WeatherDelay,
   walkingRelease,
   walkingSeconds,
+  weatherDelay,
+  weatherWalk,
 } from "./plan";
 import { recordStart, ridesStore } from "./rides";
 import {
@@ -115,6 +119,9 @@ export interface TimerContextValue {
   readonly distance: number | undefined;
   // Meters to go up to the stop (negative downhill), when known
   readonly climb: number | undefined;
+  // What the rain or the snow add to the walk measured with the GPS, from a
+  // minute up
+  readonly weather: WeatherDelay | undefined;
   // Meters from the stop when too far to walk there: the countdown is then
   // the bus, without a time to leave
   readonly far: number | undefined;
@@ -342,17 +349,17 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     // pace, instead of holding it back as GPS noise
     walkingRelease(speed) * (stage === "walking" ? 3 : 1)
   );
-  // The walk to the stop slows down uphill
-  const climb = useClimb(
-    distance !== undefined && stage !== "arrived" ? fix : undefined,
-    timer?.coordinates
-  );
+  // The walk to the stop slows down uphill, and in the rain or the snow
+  const walkingFix = distance !== undefined && stage !== "arrived" ? fix : undefined;
+  const climb = useClimb(walkingFix, timer?.coordinates);
+  const weatherNow = weatherWalk(useWeather(walkingFix));
 
   // Move forward on the way to the stop, and measure the walk there to learn
-  // the pace of the user. Runs again with the same fix when the climb or the
-  // pace change: both steps then return what they had.
+  // the pace of the user. Runs again with the same fix when the climb, the
+  // pace or the weather change: both steps then return what they had.
   const fixAt = fix?.at;
   const pace = settings.pace;
+  const weatherFactor = weatherNow.factor;
   useEffect(() => {
     if (rawDistance === undefined || accuracy === undefined || fixAt === undefined) return;
     const current = timerStore.get();
@@ -368,8 +375,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (next !== current.approach || walk !== current.walk) {
       timerStore.set({ ...current, approach: next, walk });
     }
-    if (walked !== undefined) paceStore.set((learned) => learnPace(learned, walked));
-  }, [rawDistance, accuracy, fixAt, climb, pace]);
+    // A walk in the rain is slower than the pace of the user: learn it as dry
+    if (walked !== undefined) {
+      paceStore.set((learned) => learnPace(learned, walked * weatherFactor));
+    }
+  }, [rawDistance, accuracy, fixAt, climb, pace, weatherFactor]);
   // Without a usable position, a journey counts on the walk of the timetable
   const plannedWalk = timer?.journey?.legs[0].walkBeforeMs;
   const walkSource: WalkSource | undefined =
@@ -383,10 +393,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     stage === "arrived"
       ? 0
       : distance !== undefined
-        ? walkingSeconds(distance, speed, climb)
+        ? walkingSeconds(distance, speed, climb) * weatherNow.factor
         : plannedWalk === undefined
           ? undefined
           : (plannedWalk / 1000) * (PACE_SPEED.normal / speed);
+  // Without the GPS the weather is not asked: the walk stays as dry
+  const weather = walk === undefined ? undefined : weatherDelay(walk, weatherNow);
   // Far away there is no time to leave yet: count down to the bus
   const current =
     timer && now > 0
@@ -512,7 +524,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     const message =
       due === undefined
         ? undefined
-        : alertMessage(next.line, next.destination, current);
+        : alertMessage(next.line, next.destination, current, weather?.label);
     if (due !== undefined && message !== undefined) {
       next = {
         ...next,
@@ -523,7 +535,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walkSource, far, legs, stage]);
+  }, [current, walkSource, far, legs, stage, weather?.label]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -650,6 +662,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     countdown: current,
     distance,
     climb,
+    weather,
     far,
     geolocation,
     stage,
