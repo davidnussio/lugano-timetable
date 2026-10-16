@@ -33,6 +33,14 @@ export function formatDistance(meters: number): string {
     : `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
 }
 
+// Below this a climb is within the error of the heights: not worth showing
+const MIN_CLIMB_SHOWN = 5;
+
+// "↑ 35 m" for a walk going up, undefined when flat or downhill
+export function formatClimb(climb: number | undefined): string | undefined {
+  return climb !== undefined && climb >= MIN_CLIMB_SHOWN ? `↑ ${Math.round(climb)} m` : undefined;
+}
+
 // Minutes from `now` to an "HH:mm" time of the RTPI server (local time),
 // assuming the nearest day: 23:58 → 00:03 is 5 minutes.
 export function minutesUntilClock(time: string, now: Date): number | undefined {

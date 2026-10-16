@@ -4,6 +4,7 @@
 
 import {
   type AlertMessage,
+  climbFactor,
   type Countdown,
   countdown,
   distanceMeters,
@@ -44,6 +45,8 @@ export interface Transfer {
   readonly at: JourneyStop;
   // Walk from the stop where the previous leg ends to the next platform
   readonly walkingMs: number;
+  // Meters to go up on the way (negative downhill), when the heights are known
+  readonly climb?: number;
   // Time to spare at the next platform: negative when the connection is lost
   readonly slackMs: number;
   readonly status: ConnectionStatus;
@@ -56,7 +59,11 @@ export interface TransferOptions {
   readonly minimumMs?: number;
   // Below this slack the connection is tight
   readonly tightMs?: number;
+  // Height above the sea of a stop, when known: the walk slows down uphill
+  readonly heightOf?: HeightOf;
 }
+
+export type HeightOf = (position: Position) => number | undefined;
 
 const MINIMUM_TRANSFER_MS = 60_000;
 const TIGHT_TRANSFER_MS = 2 * 60_000;
@@ -71,16 +78,31 @@ export function delayMs(timing: Timing): number {
   return expected(timing) - timing.scheduled;
 }
 
+// Meters to go up from a stop to another, when both heights are known
+export function stopClimb(
+  from: JourneyStop,
+  to: JourneyStop,
+  heightOf: HeightOf | undefined
+): number | undefined {
+  if (heightOf === undefined || from.position === undefined || to.position === undefined) {
+    return undefined;
+  }
+  const start = heightOf(from.position);
+  const end = heightOf(to.position);
+  return start === undefined || end === undefined ? undefined : end - start;
+}
+
 // Walk between the stop where a leg ends and where the next one starts.
 // Platforms of the same stop without a position are assumed to be close.
 export function transferWalkingMs(
   from: JourneyStop,
   to: JourneyStop,
-  pace: Pace = "normal"
+  pace: Pace = "normal",
+  climb = 0
 ): number {
   if (from.position === undefined || to.position === undefined) return 0;
   return (
-    walkingSeconds(distanceMeters(from.position, to.position), pace) * 1000
+    walkingSeconds(distanceMeters(from.position, to.position), pace, climb) * 1000
   );
 }
 
@@ -106,16 +128,23 @@ export function transfer(
     pace = "normal",
     minimumMs = MINIMUM_TRANSFER_MS,
     tightMs = TIGHT_TRANSFER_MS,
+    heightOf,
   }: TransferOptions = {}
 ): Transfer {
   const planned = departing.walkBeforeMs;
+  const climb = stopClimb(arriving.to, departing.from, heightOf);
+  // The walk of the timetable is a fixed time: slow it down uphill as ours
+  const uphill =
+    climb === undefined || arriving.to.position === undefined || departing.from.position === undefined
+      ? 1
+      : climbFactor(distanceMeters(arriving.to.position, departing.from.position), climb);
   // The walk of the timetable is already its minimum transfer time: no
-  // margin on top, and a slower pace leaves no slack but does not make the
-  // connection impossible
+  // margin on top, and a slower pace or a climb leaves no slack but does not
+  // make the connection impossible
   const walkingMs =
     planned === undefined
-      ? transferWalkingMs(arriving.to, departing.from, pace)
-      : (planned * PACE_SPEED.normal) / PACE_SPEED[pace];
+      ? transferWalkingMs(arriving.to, departing.from, pace, climb)
+      : ((planned * PACE_SPEED.normal) / PACE_SPEED[pace]) * uphill;
   const neededMs = walkingMs + (planned === undefined ? minimumMs : 0);
   const toleranceMs = planned === undefined ? 0 : Math.max(walkingMs - planned, 0);
   const slackMs =
@@ -125,6 +154,7 @@ export function transfer(
   return {
     at: arriving.to,
     walkingMs,
+    ...(climb === undefined ? {} : { climb }),
     slackMs,
     status: connectionStatus(slackMs, tightMs, plannedSlackMs, toleranceMs),
   };

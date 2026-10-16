@@ -6,6 +6,7 @@ import {
   fallbackPlan,
   feasible,
   formatTime,
+  type HeightOf,
   journeyHeadline,
   journeyState,
   laterPlan,
@@ -14,6 +15,7 @@ import {
   transferMessage,
   transferWalkingMs,
 } from "../journey";
+import { climbFactor, distanceMeters } from "../plan";
 
 const MIN = 60_000;
 
@@ -139,6 +141,44 @@ describe("transfer", () => {
     expect(transfer(leg("2", 0, 10), departing, { pace: "slow" }).walkingMs).toBeCloseTo(
       2.6 * MIN
     );
+  });
+
+  describe("uphill", () => {
+    // Centro 25 m above Bellavista
+    const heightOf: HeightOf = (position) =>
+      position === bellavista.position ? 275 : position === centro.position ? 300 : undefined;
+    const stops = { from: cornaredo, to: bellavista };
+    const arriving = leg("2", 0, 10, undefined, stops);
+
+    it("walks slower going up", () => {
+      const flat = transfer(arriving, toParadiso(20, 30));
+      const up = transfer(arriving, toParadiso(20, 30), { heightOf });
+      expect(up.climb).toBe(25);
+      expect(up.walkingMs).toBeCloseTo(
+        flat.walkingMs * climbFactor(distanceMeters(bellavista.position, centro.position), 25)
+      );
+      expect(up.walkingMs - flat.walkingMs).toBeGreaterThan(MIN);
+      expect(up.slackMs).toBeCloseTo(flat.slackMs - (up.walkingMs - flat.walkingMs));
+    });
+
+    it("walks as on the flat going down or without heights", () => {
+      const back = leg("5", 20, 30, undefined, { from: bellavista, to: paradiso });
+      const down = transfer(leg("2", 0, 10), back, { heightOf });
+      expect(down.climb).toBe(-25);
+      expect(down.walkingMs).toBeCloseTo(transfer(leg("2", 0, 10), back).walkingMs);
+      expect(transfer(arriving, toParadiso(20, 30), { heightOf: () => undefined })).not.toHaveProperty(
+        "climb"
+      );
+    });
+
+    it("slows down the walk of the timetable, without losing the connection", () => {
+      // Planned by SBB with no slack: the climb eats into it, but tight only
+      const departing = { ...toParadiso(14, 25), walkBeforeMs: 4 * MIN };
+      const change = transfer(arriving, departing, { heightOf });
+      expect(change.walkingMs).toBeGreaterThan(4 * MIN);
+      expect(change.slackMs).toBeLessThan(0);
+      expect(change.status).toBe("tight");
+    });
   });
 
   // S10 arriving in Lugano, then a 4 min walk to the bus 6, as planned by SBB

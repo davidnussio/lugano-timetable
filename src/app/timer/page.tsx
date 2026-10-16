@@ -19,7 +19,7 @@ import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
-import { formatClock, formatDistance } from "~/lib/format";
+import { formatClimb, formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { journeyHeadline } from "~/timer/journey";
 import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
@@ -44,9 +44,6 @@ function LazyWalkMap(props: ComponentProps<typeof WalkMap>) {
     </div>
   );
 }
-
-// Below this the climb is within the error of the heights: not worth showing
-const MIN_CLIMB_SHOWN = 5;
 
 const paces: ReadonlyArray<{ value: Pace; label: string }> = [
   { value: "slow", label: "Con calma" },
@@ -372,9 +369,9 @@ function ActiveTimerView({
             hint={
               stage === "arrived" || meters === undefined
                 ? undefined
-                : climb !== undefined && climb >= MIN_CLIMB_SHOWN && far === undefined
-                  ? `${formatDistance(meters)} · ↑ ${Math.round(climb)} m`
-                  : formatDistance(meters)
+                : [formatDistance(meters), far === undefined ? formatClimb(climb) : undefined]
+                    .filter(Boolean)
+                    .join(" · ")
             }
           />
           <Stat

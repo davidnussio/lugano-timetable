@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import useSWR from "swr";
 import { fetcher } from "~/utils/fetcher";
 
@@ -44,4 +45,32 @@ export function useClimb(user: Point | undefined, stop: Point | undefined): numb
     return undefined;
   }
   return stopHeight.height - userHeight.height;
+}
+
+const pointKey = ({ lat, lon }: Point) => heightKey(lat, lon);
+
+// Heights of a few stops at once, those that fail left out
+async function fetchHeights(keys: ReadonlyArray<string>): Promise<Record<string, number>> {
+  const heights = await Promise.allSettled(
+    keys.map((key) => fetcher(key) as Promise<{ height: number }>)
+  );
+  return Object.fromEntries(
+    heights.flatMap((result, index) =>
+      result.status === "fulfilled" ? [[keys[index], result.value.height]] : []
+    )
+  );
+}
+
+// Height of the stops, from the terrain model of swisstopo: undefined for
+// a stop not among `stops` or whose height is not known (yet)
+export function useStopHeights(
+  stops: ReadonlyArray<Point>
+): (stop: Point) => number | undefined {
+  const keys = [...new Set(stops.map(pointKey))].sort();
+  const { data } = useSWR(
+    keys.length > 0 ? ["heights", ...keys] : null,
+    ([, ...keys]) => fetchHeights(keys),
+    options
+  );
+  return useCallback((stop: Point) => data?.[pointKey(stop)], [data]);
 }

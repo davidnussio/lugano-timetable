@@ -7,6 +7,7 @@ import { Time } from "~/app/components/leg-time";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useTargets } from "~/hooks/use-targets";
 import type { Connection } from "~/journey/models";
+import { formatClimb } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import {
   type ConnectionStatus,
@@ -92,7 +93,8 @@ export function JourneySection({ now }: { now: number }) {
                       {change.walkingMs > 0 && (
                         <>
                           <Footprints className="size-3.5" />
-                          {Math.max(1, Math.round(change.walkingMs / 60_000))} min a piedi ·
+                          {Math.max(1, Math.round(change.walkingMs / 60_000))} min a piedi
+                          {formatClimb(change.climb) && ` ${formatClimb(change.climb)}`} ·
                         </>
                       )}{" "}
                       {slackLabel(change)}

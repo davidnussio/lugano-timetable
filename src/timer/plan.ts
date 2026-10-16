@@ -38,13 +38,19 @@ const DETOUR_FACTOR = 1.35;
 // short walk would make it a wall
 const MAX_GRADE = 0.25;
 
-// With `climb`, the meters to go up to the stop: uphill the pace slows down
-// as in Tobler's hiking function, by e^(3.5 × slope) on the way of the
-// streets. Downhill is left as on the flat.
-export function walkingSeconds(meters: number, pace: Pace = "normal", climb = 0): number {
+// How much longer a walk of `meters` as the crow flies takes going up
+// `climb` meters: uphill the pace slows down as in Tobler's hiking function,
+// by e^(3.5 × slope) on the way of the streets. Downhill is left as on the
+// flat.
+export function climbFactor(meters: number, climb: number): number {
   const path = meters * DETOUR_FACTOR;
   const grade = path > 0 ? Math.min(MAX_GRADE, Math.max(0, climb) / path) : 0;
-  return (path / PACE_SPEED[pace]) * Math.exp(3.5 * grade);
+  return Math.exp(3.5 * grade);
+}
+
+// With `climb`, the meters to go up to the stop
+export function walkingSeconds(meters: number, pace: Pace = "normal", climb = 0): number {
+  return ((meters * DETOUR_FACTOR) / PACE_SPEED[pace]) * climbFactor(meters, climb);
 }
 
 // Meters per second by which the distance shrinks when the walking time drops

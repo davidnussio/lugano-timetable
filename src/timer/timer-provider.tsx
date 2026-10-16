@@ -19,7 +19,7 @@ import useSWR from "swr";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
-import { useClimb } from "~/terrain/use-climb";
+import { useClimb, useStopHeights } from "~/terrain/use-climb";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import type { Coordinates, Departure, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
@@ -130,6 +130,8 @@ export function useTimer(): TimerContextValue {
 }
 
 const noop = () => () => {};
+
+const isDefined = <A,>(value: A | undefined): value is A => value !== undefined;
 
 interface DistanceSample {
   readonly raw: number;
@@ -335,12 +337,18 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     () => (timer && now > 0 ? liveLegs(timer, now) : undefined),
     [timer, now]
   );
+  // The stops of the transfers, for the climb of the walks between them
+  const heightOf = useStopHeights(
+    (timer?.journey?.legs ?? []).flatMap((leg, index, all) =>
+      index === 0 ? [] : [all[index - 1].to.position, leg.from.position].filter(isDefined)
+    )
+  );
   const journey = useMemo(
     () =>
       legs && legs.length > 1
-        ? journeyState(legs, now, walk, { pace: settings.pace })
+        ? journeyState(legs, now, walk, { pace: settings.pace, heightOf })
         : undefined,
-    [legs, now, walk, settings.pace]
+    [legs, now, walk, settings.pace, heightOf]
   );
 
   // A lost connection: look for another way from the stop of the transfer
@@ -362,9 +370,10 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (lostIndex === undefined || !legs || !plans) return undefined;
     const plan = fallbackPlan(plans, legs[lostIndex], legs[lostIndex + 1], {
       pace: settings.pace,
+      heightOf,
     });
     return plan && { index: lostIndex, plan };
-  }, [lostIndex, legs, plans, settings.pace]);
+  }, [lostIndex, legs, plans, settings.pace, heightOf]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
