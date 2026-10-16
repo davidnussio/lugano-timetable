@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useNow } from "~/hooks/use-now";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
+import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { journeyHeadline } from "~/timer/journey";
 import { timerHeadline, timerTone, toneText } from "~/timer/tone";
 import { useTimer } from "~/timer/timer-provider";
@@ -12,21 +13,32 @@ import { AlertBanner } from "./alert-banner";
 import { PhaseIcon } from "./phase-icon";
 import { TimerBadge } from "./timer-badge";
 
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, far, geolocation, legs, stage } = useTimer();
+  const { timer, countdown, distance, far, geolocation, legs, stage, ride } = useTimer();
   const pathname = usePathname();
   const now = useNow(timer !== null);
 
   if (!timer || !countdown || pathname === "/timer") return null;
 
   const tone = timerTone(countdown, stage);
-  // Once on board of a journey: the next transfer or the arrival
-  const travel = legs && now > 0 ? journeyHeadline(legs, now) : undefined;
+  // Once on board of a journey: the next transfer or the arrival. Of a
+  // single bus: the stop to get off.
+  const getOff = timer.journey === undefined ? timer.getOff : undefined;
+  const travel =
+    now === 0
+      ? undefined
+      : legs
+        ? journeyHeadline(legs, now)
+        : getOff && getOffHeadline(getOff, ride, now >= timer.departureAt, now);
   const headline = travel ?? timerHeadline(countdown, stage);
   const accuracy = geolocation.position?.accuracy;
   const where = travel
-    ? `verso ${timer.journey?.to.name ?? timer.destination}`
+    ? getOff
+      ? lowerFirst(rideSummary(getOff, ride))
+      : `verso ${timer.journey?.to.name ?? timer.destination}`
     : stage === "arrived"
       ? `alla fermata ${timer.stop.name}`
       : far !== undefined
