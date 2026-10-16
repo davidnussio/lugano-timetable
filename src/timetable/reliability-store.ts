@@ -140,7 +140,7 @@ export class Reliability extends Context.Service<
           const now = yield* Clock.currentTimeMillis;
           const day = serviceDay(departure.time, now);
           if (day === undefined) return { samples: 0 };
-          const samples = yield* store.get(delayKey(departure, day.dayType));
+          const samples = yield* store.get(delayKey(departure, day));
           return delayStats(recentSamples(samples, day.date));
         }),
       });

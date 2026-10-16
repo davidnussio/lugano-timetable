@@ -72,15 +72,31 @@ describe("serviceDay", () => {
     expect(serviceDay("07:42", at("2026-10-16T05:00:00Z"))).toEqual({
       date: "2026-10-16",
       dayType: "weekday",
+      timetable: 2026,
     });
     expect(serviceDay("07:42", at("2026-10-17T05:00:00Z"))).toEqual({
       date: "2026-10-17",
       dayType: "saturday",
+      timetable: 2026,
     });
     expect(serviceDay("07:42", at("2026-10-18T05:00:00Z"))).toEqual({
       date: "2026-10-18",
       dayType: "sunday",
+      timetable: 2026,
     });
+  });
+
+  it("runs the holidays of Ticino as Sundays", () => {
+    // Corpus Domini, a Thursday
+    expect(serviceDay("07:42", at("2026-06-04T05:00:00Z"))?.dayType).toBe("sunday");
+    // Good Friday is a working day in Ticino
+    expect(serviceDay("07:42", at("2026-04-03T05:00:00Z"))?.dayType).toBe("weekday");
+  });
+
+  it("starts a new timetable in December", () => {
+    // Saturday 12 and Sunday 13 December 2026, winter time (UTC+1)
+    expect(serviceDay("07:42", at("2026-12-12T06:00:00Z"))?.timetable).toBe(2026);
+    expect(serviceDay("07:42", at("2026-12-13T06:00:00Z"))?.timetable).toBe(2027);
   });
 
   it("uses the day of the timetable, not of UTC", () => {
@@ -88,11 +104,13 @@ describe("serviceDay", () => {
     expect(serviceDay("00:30", at("2026-10-16T22:20:00Z"))).toEqual({
       date: "2026-10-17",
       dayType: "saturday",
+      timetable: 2026,
     });
     // The Friday 23:58 bus late after midnight stays a Friday
     expect(serviceDay("23:58", at("2026-10-16T22:05:00Z"))).toEqual({
       date: "2026-10-16",
       dayType: "weekday",
+      timetable: 2026,
     });
   });
 });
@@ -102,7 +120,7 @@ describe("observeDelay", () => {
 
   it("keeps the delay of a bus about to leave", () => {
     expect(observeDelay(departure("07:42", at("2026-10-16T05:44:35Z")), now)).toEqual({
-      key: "weekday:486:12:1:07:42",
+      key: "2026:weekday:486:12:1:07:42",
       sample: { date: "2026-10-16", delay: 155 },
     });
     // Early
@@ -123,10 +141,13 @@ describe("observeDelay", () => {
 });
 
 describe("delayKey", () => {
-  it("keys by platform, line, direction, time and type of day", () => {
+  it("keys by timetable, type of day, platform, line, direction and time", () => {
     expect(
-      delayKey({ target: "486", route: "12", dir: "2", time: "18:05" }, "saturday")
-    ).toBe("saturday:486:12:2:18:05");
+      delayKey(
+        { target: "486", route: "12", dir: "2", time: "18:05" },
+        { dayType: "saturday", timetable: 2027 }
+      )
+    ).toBe("2027:saturday:486:12:2:18:05");
   });
 });
 

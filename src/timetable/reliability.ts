@@ -1,6 +1,7 @@
 // How late a departure usually leaves, learned from the real-time data the
 // server already fetches: the delay of every bus about to leave is kept, one
 // value per day, for the same stop, line, direction and timetable time.
+import { isTicinoHoliday, timetableYear } from "./calendar";
 import type { Departure } from "./models";
 
 // Days a delay is kept: about two months of the same timetable
@@ -16,7 +17,7 @@ const MAX_DELAY_S = 60 * 60;
 // A bus leaving later than this is counted as late
 export const LATE_S = 120;
 
-// Timetables differ between weekdays, Saturdays and Sundays
+// Timetables differ between weekdays, Saturdays and Sundays (and holidays)
 export type DayType = "weekday" | "saturday" | "sunday";
 
 export interface DelaySample {
@@ -101,15 +102,24 @@ export function scheduledInstant(time: string, at: number): number | undefined {
   return candidate + local.offset - zurichTime(candidate).offset;
 }
 
-// The day of the timetable of `time` around `at`, and its type
-export function serviceDay(
-  time: string,
-  at: number
-): { readonly date: string; readonly dayType: DayType } | undefined {
+export interface ServiceDay {
+  readonly date: string;
+  readonly dayType: DayType;
+  // The yearly timetable in force: its runs are not the ones of the year before
+  readonly timetable: number;
+}
+
+// The day of the timetable of `time` around `at`, and its type. On the
+// holidays of Ticino the buses run as on Sundays.
+export function serviceDay(time: string, at: number): ServiceDay | undefined {
   const scheduled = scheduledInstant(time, at);
   if (scheduled === undefined) return undefined;
   const local = zurichTime(scheduled);
-  return { date: local.date, dayType: dayType(local.weekday) };
+  return {
+    date: local.date,
+    dayType: isTicinoHoliday(local.date) ? "sunday" : dayType(local.weekday),
+    timetable: timetableYear(local.date),
+  };
 }
 
 export interface DepartureKey {
@@ -119,9 +129,12 @@ export interface DepartureKey {
   readonly time: string;
 }
 
-// Same platform, line, direction, timetable time and type of day
-export function delayKey(key: DepartureKey, day: DayType): string {
-  return `${day}:${key.target}:${key.route}:${key.dir}:${key.time}`;
+// Same yearly timetable, type of day, platform, line, direction and time
+export function delayKey(
+  key: DepartureKey,
+  day: Pick<ServiceDay, "dayType" | "timetable">
+): string {
+  return `${day.timetable}:${day.dayType}:${key.target}:${key.route}:${key.dir}:${key.time}`;
 }
 
 export interface Observation {
@@ -154,7 +167,7 @@ export function observeDelay(
         dir: departure.Dir,
         time: departure.Time,
       },
-      day.dayType
+      day
     ),
     sample: { date: day.date, delay },
   };

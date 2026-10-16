@@ -58,7 +58,7 @@ describe("Reliability", () => {
       yield* service.record([departure(NOW + 110_000)]);
       assert.deepStrictEqual(writes, [40, 50]);
 
-      const stored = yield* DelayStore.use((store) => store.get("weekday:486:12:1:07:42"));
+      const stored = yield* DelayStore.use((store) => store.get("2026:weekday:486:12:1:07:42"));
       assert.deepStrictEqual(stored, [{ date: "2026-10-16", delay: 50 }]);
     }).pipe(Effect.provide(reliability(writes)));
   });
@@ -70,11 +70,11 @@ describe("Reliability", () => {
       yield* TestClock.setTime(NOW);
       yield* DelayStore.use((store) =>
         Effect.forEach([0, 60, 120, 180, 240], (delay, day) =>
-          store.add("weekday:486:12:1:07:42", { date: `2026-10-0${day + 5}`, delay })
+          store.add("2026:weekday:486:12:1:07:42", { date: `2026-10-0${day + 5}`, delay })
         )
       );
       yield* DelayStore.use((store) =>
-        store.add("saturday:486:12:1:07:42", { date: "2026-10-10", delay: 600 })
+        store.add("2026:saturday:486:12:1:07:42", { date: "2026-10-10", delay: 600 })
       );
 
       const stats = yield* Reliability.use((service) => service.stats(KEY));
