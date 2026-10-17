@@ -45,7 +45,7 @@ const DETOUR_FACTOR = 1.35;
 // path of BRouter on OpenStreetMap, October 2026): about 1.10 + 4.0 × slope
 // along the shortest path. A little longer here, as the shortest path takes
 // every alley but nobody knows them all; capped, as the steepest climbs have
-// few points to tell.
+// few points to tell. The routes and the fit are in scripts/walk-detour.
 const DETOUR_FLAT = 1.15;
 const DETOUR_PER_GRADE = 4.5;
 const MAX_DETOUR = 3;

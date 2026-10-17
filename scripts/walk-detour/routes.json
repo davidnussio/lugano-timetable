@@ -1,0 +1,4295 @@
+[
+ {
+  "from": {
+   "name": "Cassarate, Lanchetta",
+   "lat": 46.00601444,
+   "lon": 8.96589333
+  },
+  "to": {
+   "name": "Albonago, Paese",
+   "lat": 46.01132611,
+   "lon": 8.97491278
+  },
+  "straight": 913.2700623613102,
+  "climb": 174.60000000000002,
+  "valhalla": {
+   "meters": 2519,
+   "seconds": 2463.008
+  },
+  "osrm": {
+   "meters": 1717.4,
+   "seconds": 1393.7
+  },
+  "brouter": {
+   "meters": 1711,
+   "seconds": 1777,
+   "ascend": 178
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Domenico Fontana",
+   "lat": 45.99425306,
+   "lon": 8.94603417
+  },
+  "to": {
+   "name": "Paradiso, la Sguancia",
+   "lat": 45.98742444,
+   "lon": 8.93928917
+  },
+  "straight": 920.9125743770761,
+  "climb": 38.5,
+  "valhalla": {
+   "meters": 1120,
+   "seconds": 925.577
+  },
+  "osrm": {
+   "meters": 1087.6,
+   "seconds": 869.9
+  },
+  "brouter": {
+   "meters": 1060,
+   "seconds": 848,
+   "ascend": 39
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Campus Universitario",
+   "lat": 46.01126389,
+   "lon": 8.9609525
+  },
+  "to": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "straight": 972.5055441596439,
+  "climb": 43.099999999999966,
+  "valhalla": {
+   "meters": 1060,
+   "seconds": 912.841
+  },
+  "osrm": {
+   "meters": 1087.6,
+   "seconds": 869.9
+  },
+  "brouter": {
+   "meters": 1060,
+   "seconds": 853,
+   "ascend": 43
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Manzoni",
+   "lat": 46.00382417,
+   "lon": 8.95288278
+  },
+  "to": {
+   "name": "Cortivallo, Casa Anziani",
+   "lat": 46.00234944,
+   "lon": 8.93396667
+  },
+  "straight": 1470.2194524957765,
+  "climb": 76.90000000000003,
+  "valhalla": {
+   "meters": 2059,
+   "seconds": 1664.113
+  },
+  "osrm": {
+   "meters": 2035.6,
+   "seconds": 1630.5
+  },
+  "brouter": {
+   "meters": 2023,
+   "seconds": 1708,
+   "ascend": 100
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Manzoni",
+   "lat": 46.00382417,
+   "lon": 8.95288278
+  },
+  "to": {
+   "name": "Cortivallo, Paese",
+   "lat": 46.00328333,
+   "lon": 8.93545111
+  },
+  "straight": 1347.7214853485325,
+  "climb": 86.80000000000001,
+  "valhalla": {
+   "meters": 1864,
+   "seconds": 1535.279
+  },
+  "osrm": {
+   "meters": 1850.1,
+   "seconds": 1482
+  },
+  "brouter": {
+   "meters": 1830,
+   "seconds": 1586,
+   "ascend": 100
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Balestra",
+   "lat": 46.00828389,
+   "lon": 8.95576944
+  },
+  "to": {
+   "name": "Lugano, Via Brentani",
+   "lat": 46.018436109999996,
+   "lon": 8.962159719999999
+  },
+  "straight": 1232.024340287463,
+  "climb": 14,
+  "valhalla": {
+   "meters": 1447,
+   "seconds": 1095.154
+  },
+  "osrm": {
+   "meters": 1551.6,
+   "seconds": 1247.5
+  },
+  "brouter": {
+   "meters": 1424,
+   "seconds": 1050,
+   "ascend": 14
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Sacro Cuore",
+   "lat": 46.01043889,
+   "lon": 8.95540306
+  },
+  "to": {
+   "name": "Cassarate, Lido",
+   "lat": 46.00610444,
+   "lon": 8.96257778
+  },
+  "straight": 734.392442110316,
+  "climb": -4.300000000000011,
+  "valhalla": {
+   "meters": 990,
+   "seconds": 702.474
+  },
+  "osrm": {
+   "meters": 1008,
+   "seconds": 808.7
+  },
+  "brouter": {
+   "meters": 981,
+   "seconds": 692,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, Sassa",
+   "lat": 46.01264639,
+   "lon": 8.94982139
+  },
+  "to": {
+   "name": "Lugano, Scuole Molino Nuovo",
+   "lat": 46.01486056,
+   "lon": 8.956455559999998
+  },
+  "straight": 568.4018209529562,
+  "climb": -59.80000000000001,
+  "valhalla": {
+   "meters": 1628,
+   "seconds": 1167.322
+  },
+  "osrm": {
+   "meters": 1668,
+   "seconds": 1340.5
+  },
+  "brouter": {
+   "meters": 831,
+   "seconds": 562,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Moncucco Scuole",
+   "lat": 46.00536194,
+   "lon": 8.94218306
+  },
+  "to": {
+   "name": "Breganzona, Camara Medi",
+   "lat": 46.00975806,
+   "lon": 8.93027
+  },
+  "straight": 1041.8624617069331,
+  "climb": 64.39999999999998,
+  "valhalla": {
+   "meters": 1560,
+   "seconds": 1320.224
+  },
+  "osrm": {
+   "meters": 1547.9,
+   "seconds": 1257.4
+  },
+  "brouter": {
+   "meters": 1457,
+   "seconds": 1242,
+   "ascend": 80
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Studio Radio",
+   "lat": 46.00909972,
+   "lon": 8.93987139
+  },
+  "to": {
+   "name": "Massagno, Praccio",
+   "lat": 46.01340694,
+   "lon": 8.94408333
+  },
+  "straight": 578.9542476185252,
+  "climb": 11.899999999999977,
+  "valhalla": {
+   "meters": 813,
+   "seconds": 657.981
+  },
+  "osrm": {
+   "meters": 815.7,
+   "seconds": 652.5
+  },
+  "brouter": {
+   "meters": 815,
+   "seconds": 611,
+   "ascend": 17
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Università",
+   "lat": 46.01147611,
+   "lon": 8.95789806
+  },
+  "to": {
+   "name": "Lugano, Centro",
+   "lat": 46.00590472,
+   "lon": 8.95204944
+  },
+  "straight": 766.6927446159182,
+  "climb": -6.099999999999966,
+  "valhalla": {
+   "meters": 972,
+   "seconds": 688.541
+  },
+  "osrm": {
+   "meters": 993.8,
+   "seconds": 807.3
+  },
+  "brouter": {
+   "meters": 935,
+   "seconds": 655,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, al Sole",
+   "lat": 46.01276444,
+   "lon": 8.94638972
+  },
+  "to": {
+   "name": "Savosa, Crocifisso",
+   "lat": 46.01836778,
+   "lon": 8.93979028
+  },
+  "straight": 804.930820188876,
+  "climb": 19,
+  "valhalla": {
+   "meters": 904,
+   "seconds": 714.149
+  },
+  "osrm": {
+   "meters": 910.1,
+   "seconds": 730.4
+  },
+  "brouter": {
+   "meters": 901,
+   "seconds": 678,
+   "ascend": 17
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Scuola Media",
+   "lat": 46.01419306,
+   "lon": 8.96189944
+  },
+  "to": {
+   "name": "Cassarate, Monte Brè",
+   "lat": 46.00562528,
+   "lon": 8.96871
+  },
+  "straight": 1088.24172447763,
+  "climb": -12.199999999999989,
+  "valhalla": {
+   "meters": 1389,
+   "seconds": 984.262
+  },
+  "osrm": {
+   "meters": 1423.3,
+   "seconds": 1138.8
+  },
+  "brouter": {
+   "meters": 1366,
+   "seconds": 946,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Cadempino, Municipio",
+   "lat": 46.03579472,
+   "lon": 8.93441722
+  },
+  "to": {
+   "name": "Comano, Studio TV",
+   "lat": 46.03307111,
+   "lon": 8.951071109999999
+  },
+  "straight": 1320.7775271031455,
+  "climb": 134,
+  "valhalla": {
+   "meters": 2045.9999999999998,
+   "seconds": 1976.894
+  },
+  "osrm": {
+   "meters": 1584.2,
+   "seconds": 1377
+  },
+  "brouter": {
+   "meters": 1580,
+   "seconds": 1517,
+   "ascend": 133
+  }
+ },
+ {
+  "from": {
+   "name": "Breganzona, Prevagno",
+   "lat": 45.998928060000004,
+   "lon": 8.92601111
+  },
+  "to": {
+   "name": "Lugano, Santa Birgitta",
+   "lat": 45.9937375,
+   "lon": 8.942870280000001
+  },
+  "straight": 1424.4939404367478,
+  "climb": -83.69999999999999,
+  "valhalla": {
+   "meters": 3181,
+   "seconds": 2289.325
+  },
+  "osrm": {
+   "meters": 2974.4,
+   "seconds": 2385
+  },
+  "brouter": {
+   "meters": 2495,
+   "seconds": 1762,
+   "ascend": 34
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Meridiana",
+   "lat": 46.014415,
+   "lon": 8.96544389
+  },
+  "to": {
+   "name": "Aldesago, Arcate",
+   "lat": 46.01006306,
+   "lon": 8.98042972
+  },
+  "straight": 1254.3862682568242,
+  "climb": 355.5,
+  "valhalla": {
+   "meters": 3533,
+   "seconds": 3734.575
+  },
+  "osrm": {
+   "meters": 2671.8,
+   "seconds": 2157.8
+  },
+  "brouter": {
+   "meters": 2846,
+   "seconds": 3213,
+   "ascend": 356
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Brentani",
+   "lat": 46.018436109999996,
+   "lon": 8.962159719999999
+  },
+  "to": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "straight": 1127.2700830003346,
+  "climb": 73.89999999999998,
+  "valhalla": {
+   "meters": 1674,
+   "seconds": 1522.092
+  },
+  "osrm": {
+   "meters": 1655.5,
+   "seconds": 1328.2
+  },
+  "brouter": {
+   "meters": 1626,
+   "seconds": 1347,
+   "ascend": 80
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "to": {
+   "name": "Pregassona, Fola",
+   "lat": 46.01718917,
+   "lon": 8.96455278
+  },
+  "straight": 1102.002944996401,
+  "climb": 18.30000000000001,
+  "valhalla": {
+   "meters": 1198,
+   "seconds": 902.82
+  },
+  "osrm": {
+   "meters": 1204.4,
+   "seconds": 963.3
+  },
+  "brouter": {
+   "meters": 1197,
+   "seconds": 899,
+   "ascend": 18
+  }
+ },
+ {
+  "from": {
+   "name": "Breganzona, Pianazzo",
+   "lat": 46.01254278,
+   "lon": 8.93061722
+  },
+  "to": {
+   "name": "Cremignone, Paese",
+   "lat": 46.00171333,
+   "lon": 8.931728889999999
+  },
+  "straight": 1207.2367902626445,
+  "climb": -40.39999999999998,
+  "valhalla": {
+   "meters": 1792,
+   "seconds": 1259.706
+  },
+  "osrm": {
+   "meters": 1795.8,
+   "seconds": 1437
+  },
+  "brouter": {
+   "meters": 1793,
+   "seconds": 1352,
+   "ascend": 34
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Palazzo Congressi",
+   "lat": 46.00564028,
+   "lon": 8.95498583
+  },
+  "to": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "straight": 490.29006635002173,
+  "climb": 3.8000000000000114,
+  "valhalla": {
+   "meters": 536,
+   "seconds": 397.105
+  },
+  "osrm": {
+   "meters": 553.4,
+   "seconds": 444.8
+  },
+  "brouter": {
+   "meters": 536,
+   "seconds": 391,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, Villa Favorita",
+   "lat": 46.00359194,
+   "lon": 8.97135167
+  },
+  "to": {
+   "name": "Aldesago, Ronchée",
+   "lat": 46.00916111,
+   "lon": 8.97993944
+  },
+  "straight": 907.4175959421096,
+  "climb": 341.70000000000005,
+  "valhalla": {
+   "meters": 3040,
+   "seconds": 3326.547
+  },
+  "osrm": {
+   "meters": 2381,
+   "seconds": 1904.8
+  },
+  "brouter": {
+   "meters": 2373,
+   "seconds": 2834,
+   "ascend": 345
+  }
+ },
+ {
+  "from": {
+   "name": "Ruvigliana, Paese",
+   "lat": 46.00385472,
+   "lon": 8.97781444
+  },
+  "to": {
+   "name": "Castagnola, S. Michele",
+   "lat": 46.00349333,
+   "lon": 8.9739825
+  },
+  "straight": 298.6844721234812,
+  "climb": -79.59999999999997,
+  "valhalla": {
+   "meters": 747,
+   "seconds": 568
+  },
+  "osrm": {
+   "meters": 666.9,
+   "seconds": 533.3
+  },
+  "brouter": {
+   "meters": 663,
+   "seconds": 502,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Autosilo",
+   "lat": 46.00828167,
+   "lon": 8.95459444
+  },
+  "to": {
+   "name": "Lugano, Piazza Luini",
+   "lat": 45.99954139,
+   "lon": 8.94953667
+  },
+  "straight": 1047.4472677324293,
+  "climb": -4.399999999999977,
+  "valhalla": {
+   "meters": 1178,
+   "seconds": 869.521
+  },
+  "osrm": {
+   "meters": 1197.4,
+   "seconds": 960.3
+  },
+  "brouter": {
+   "meters": 1191,
+   "seconds": 841,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, Serenella",
+   "lat": 46.00268389,
+   "lon": 8.97330139
+  },
+  "to": {
+   "name": "Albonago, Paese",
+   "lat": 46.01132611,
+   "lon": 8.97491278
+  },
+  "straight": 968.9961827840964,
+  "climb": 157.10000000000002,
+  "valhalla": {
+   "meters": 2315,
+   "seconds": 2250.435
+  },
+  "osrm": {
+   "meters": 1736,
+   "seconds": 1388.4
+  },
+  "brouter": {
+   "meters": 1736,
+   "seconds": 1725,
+   "ascend": 175
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, Vicolo Vecchio",
+   "lat": 46.01048528,
+   "lon": 8.94726944
+  },
+  "to": {
+   "name": "Lugano, Moncucco Scuole",
+   "lat": 46.00536194,
+   "lon": 8.94218306
+  },
+  "straight": 691.9972246206235,
+  "climb": 4.899999999999977,
+  "valhalla": {
+   "meters": 859,
+   "seconds": 655.96
+  },
+  "osrm": {
+   "meters": 878,
+   "seconds": 706.2
+  },
+  "brouter": {
+   "meters": 856,
+   "seconds": 618,
+   "ascend": 22
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Gerra",
+   "lat": 46.02270111,
+   "lon": 8.95948889
+  },
+  "to": {
+   "name": "Lugano, Pista Ghiaccio",
+   "lat": 46.02620639,
+   "lon": 8.96507583
+  },
+  "straight": 581.369238127152,
+  "climb": 5.800000000000011,
+  "valhalla": {
+   "meters": 657,
+   "seconds": 499.613
+  },
+  "osrm": {
+   "meters": 659.7,
+   "seconds": 527.8
+  },
+  "brouter": {
+   "meters": 659,
+   "seconds": 485,
+   "ascend": 6
+  }
+ },
+ {
+  "from": {
+   "name": "Pregassona, Boschina",
+   "lat": 46.02077444,
+   "lon": 8.965556939999999
+  },
+  "to": {
+   "name": "Lugano, Campus Universitario",
+   "lat": 46.01126389,
+   "lon": 8.9609525
+  },
+  "straight": 1115.6964564532796,
+  "climb": -24.5,
+  "valhalla": {
+   "meters": 1331,
+   "seconds": 915.522
+  },
+  "osrm": {
+   "meters": 1368.7,
+   "seconds": 1097.2
+  },
+  "brouter": {
+   "meters": 1315,
+   "seconds": 885,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Meridiana",
+   "lat": 46.014415,
+   "lon": 8.96544389
+  },
+  "to": {
+   "name": "Castagnola, Villa Favorita",
+   "lat": 46.00359194,
+   "lon": 8.97135167
+  },
+  "straight": 1287.0544973058918,
+  "climb": -9.600000000000023,
+  "valhalla": {
+   "meters": 1449,
+   "seconds": 1074.73
+  },
+  "osrm": {
+   "meters": 1387.5,
+   "seconds": 1109.8
+  },
+  "brouter": {
+   "meters": 1376,
+   "seconds": 961,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Ginevra",
+   "lat": 46.00810083,
+   "lon": 8.952639719999999
+  },
+  "to": {
+   "name": "Lugano, Piazza Molino Nuovo",
+   "lat": 46.01260917,
+   "lon": 8.95592806
+  },
+  "straight": 561.9589528566631,
+  "climb": 5.199999999999989,
+  "valhalla": {
+   "meters": 618,
+   "seconds": 467.633
+  },
+  "osrm": {
+   "meters": 612.7,
+   "seconds": 492.3
+  },
+  "brouter": {
+   "meters": 613,
+   "seconds": 450,
+   "ascend": 5
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, Praccio",
+   "lat": 46.01340694,
+   "lon": 8.94408333
+  },
+  "to": {
+   "name": "Savosa, Crocifisso",
+   "lat": 46.01836778,
+   "lon": 8.93979028
+  },
+  "straight": 643.5714293644696,
+  "climb": 11.899999999999977,
+  "valhalla": {
+   "meters": 709,
+   "seconds": 576.098
+  },
+  "osrm": {
+   "meters": 709.7,
+   "seconds": 570
+  },
+  "brouter": {
+   "meters": 707,
+   "seconds": 525,
+   "ascend": 12
+  }
+ },
+ {
+  "from": {
+   "name": "Canobbio, Ganna",
+   "lat": 46.04070639,
+   "lon": 8.96731556
+  },
+  "to": {
+   "name": "Canobbio, Cioss",
+   "lat": 46.03336056,
+   "lon": 8.964306939999998
+  },
+  "straight": 849.1923641977693,
+  "climb": -48.5,
+  "valhalla": {
+   "meters": 974,
+   "seconds": 702.425
+  },
+  "osrm": {
+   "meters": 1047.4,
+   "seconds": 837.6
+  },
+  "brouter": {
+   "meters": 979,
+   "seconds": 677,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Sorengo, Moncucchetto",
+   "lat": 46.00509,
+   "lon": 8.93627528
+  },
+  "to": {
+   "name": "Lugano, Autosilo",
+   "lat": 46.00828167,
+   "lon": 8.95459444
+  },
+  "straight": 1458.6784366299262,
+  "climb": -85.80000000000001,
+  "valhalla": {
+   "meters": 2181,
+   "seconds": 1548.639
+  },
+  "osrm": {
+   "meters": 2024.1,
+   "seconds": 1621.1
+  },
+  "brouter": {
+   "meters": 1984,
+   "seconds": 1359,
+   "ascend": 6
+  }
+ },
+ {
+  "from": {
+   "name": "Canobbio, Ganna",
+   "lat": 46.04070639,
+   "lon": 8.96731556
+  },
+  "to": {
+   "name": "Canobbio, Mercato Resega",
+   "lat": 46.02773861,
+   "lon": 8.96752111
+  },
+  "straight": 1442.0386462233234,
+  "climb": -115.69999999999999,
+  "valhalla": {
+   "meters": 1945,
+   "seconds": 1375.415
+  },
+  "osrm": {
+   "meters": 1913.8,
+   "seconds": 1531
+  },
+  "brouter": {
+   "meters": 1874,
+   "seconds": 1353,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, Vallée",
+   "lat": 46.00243667,
+   "lon": 8.97623806
+  },
+  "to": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "straight": 1433.946025588436,
+  "climb": -60.400000000000034,
+  "valhalla": {
+   "meters": 1776,
+   "seconds": 1489.131
+  },
+  "osrm": {
+   "meters": 1777,
+   "seconds": 1421.8
+  },
+  "brouter": {
+   "meters": 1773,
+   "seconds": 1309,
+   "ascend": 25
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cinque Vie",
+   "lat": 46.01041639,
+   "lon": 8.93558194
+  },
+  "to": {
+   "name": "Lugano, Tassino",
+   "lat": 45.99895556,
+   "lon": 8.94492444
+  },
+  "straight": 1464.4907473869869,
+  "climb": -74.30000000000001,
+  "valhalla": {
+   "meters": 1954,
+   "seconds": 1384.862
+  },
+  "osrm": {
+   "meters": 2082.3,
+   "seconds": 1669.8
+  },
+  "brouter": {
+   "meters": 1950,
+   "seconds": 1276,
+   "ascend": 8
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Stazione Piazza Besso",
+   "lat": 46.00590139,
+   "lon": 8.94423806
+  },
+  "to": {
+   "name": "Lugano, Moncucco Clinica",
+   "lat": 46.00456667,
+   "lon": 8.93976
+  },
+  "straight": 376.3621769408002,
+  "climb": 27.30000000000001,
+  "valhalla": {
+   "meters": 408,
+   "seconds": 392.849
+  },
+  "osrm": {
+   "meters": 412.3,
+   "seconds": 331.9
+  },
+  "brouter": {
+   "meters": 407,
+   "seconds": 342,
+   "ascend": 28
+  }
+ },
+ {
+  "from": {
+   "name": "Comano, Studio TV",
+   "lat": 46.03307111,
+   "lon": 8.951071109999999
+  },
+  "to": {
+   "name": "Canobbio, Paese",
+   "lat": 46.035984719999995,
+   "lon": 8.963204719999998
+  },
+  "straight": 991.0935064942184,
+  "climb": -47.299999999999955,
+  "valhalla": {
+   "meters": 1474,
+   "seconds": 1069.185
+  },
+  "osrm": {
+   "meters": 1475.8,
+   "seconds": 1180.5
+  },
+  "brouter": {
+   "meters": 1478,
+   "seconds": 1034,
+   "ascend": 20
+  }
+ },
+ {
+  "from": {
+   "name": "Cortivallo, Paese",
+   "lat": 46.00328333,
+   "lon": 8.93545111
+  },
+  "to": {
+   "name": "Lugano, Moncucco Scuole",
+   "lat": 46.00536194,
+   "lon": 8.94218306
+  },
+  "straight": 569.0092244360046,
+  "climb": -8.699999999999989,
+  "valhalla": {
+   "meters": 683,
+   "seconds": 543.917
+  },
+  "osrm": {
+   "meters": 709.1,
+   "seconds": 567.3
+  },
+  "brouter": {
+   "meters": 685,
+   "seconds": 502,
+   "ascend": 13
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Ciani/Cornaredo",
+   "lat": 46.02254944,
+   "lon": 8.963384999999999
+  },
+  "to": {
+   "name": "Lugano, Casa Serena",
+   "lat": 46.01479889,
+   "lon": 8.961012219999999
+  },
+  "straight": 881.082036814503,
+  "climb": -10.100000000000023,
+  "valhalla": {
+   "meters": 885,
+   "seconds": 629.476
+  },
+  "osrm": {
+   "meters": 909.8,
+   "seconds": 729.7
+  },
+  "brouter": {
+   "meters": 886,
+   "seconds": 610,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Tesserete",
+   "lat": 46.01497444,
+   "lon": 8.950647779999999
+  },
+  "to": {
+   "name": "Lugano, Università",
+   "lat": 46.01147611,
+   "lon": 8.95789806
+  },
+  "straight": 681.7635929779121,
+  "climb": -74.19999999999999,
+  "valhalla": {
+   "meters": 1729,
+   "seconds": 1247.599
+  },
+  "osrm": {
+   "meters": 1822.6,
+   "seconds": 1466
+  },
+  "brouter": {
+   "meters": 1248,
+   "seconds": 854,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Noranco, Asilo Bagion",
+   "lat": 45.98753972,
+   "lon": 8.93061889
+  },
+  "to": {
+   "name": "Breganzona, Via Casale",
+   "lat": 46.00067111,
+   "lon": 8.92891167
+  },
+  "straight": 1466.0878992855849,
+  "climb": 16.5,
+  "valhalla": {
+   "meters": 2472,
+   "seconds": 2043.043
+  },
+  "osrm": {
+   "meters": 2478.7,
+   "seconds": 1984.4
+  },
+  "brouter": {
+   "meters": 2471,
+   "seconds": 1857,
+   "ascend": 60
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Balestra",
+   "lat": 46.00828389,
+   "lon": 8.95576944
+  },
+  "to": {
+   "name": "Albonago, Gradinata",
+   "lat": 46.00926917,
+   "lon": 8.97202722
+  },
+  "straight": 1260.3628872099937,
+  "climb": 100.89999999999998,
+  "valhalla": {
+   "meters": 2483,
+   "seconds": 2207.321
+  },
+  "osrm": {
+   "meters": 2091.7,
+   "seconds": 1673.4
+  },
+  "brouter": {
+   "meters": 2044,
+   "seconds": 1746,
+   "ascend": 103
+  }
+ },
+ {
+  "from": {
+   "name": "Brè, S. Antonio",
+   "lat": 46.00781417,
+   "lon": 8.99086361
+  },
+  "to": {
+   "name": "Castagnola, Roncaccio",
+   "lat": 46.00318444,
+   "lon": 8.98601972
+  },
+  "straight": 636.384372802736,
+  "climb": -362,
+  "valhalla": {
+   "meters": 3107,
+   "seconds": 2438.491
+  },
+  "osrm": {
+   "meters": 2902.5,
+   "seconds": 2321.9
+  },
+  "brouter": {
+   "meters": 2759,
+   "seconds": 2240,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Piano Stampa, Farera",
+   "lat": 46.04161444,
+   "lon": 8.97464083
+  },
+  "to": {
+   "name": "Canobbio, Paese",
+   "lat": 46.035984719999995,
+   "lon": 8.963204719999998
+  },
+  "straight": 1082.1693730794511,
+  "climb": 71.60000000000002,
+  "valhalla": {
+   "meters": 2161,
+   "seconds": 1890.708
+  },
+  "osrm": {
+   "meters": 2381.1,
+   "seconds": 1905
+  },
+  "brouter": {
+   "meters": 2081,
+   "seconds": 1714,
+   "ascend": 87
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "to": {
+   "name": "Lugano, Via Tesserete",
+   "lat": 46.01497444,
+   "lon": 8.950647779999999
+  },
+  "straight": 702.1010767046979,
+  "climb": 76.69999999999999,
+  "valhalla": {
+   "meters": 1625,
+   "seconds": 1437.381
+  },
+  "osrm": {
+   "meters": 1661.5,
+   "seconds": 1331.5
+  },
+  "brouter": {
+   "meters": 1333,
+   "seconds": 1156,
+   "ascend": 75
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cappuccine",
+   "lat": 46.00654861,
+   "lon": 8.95032417
+  },
+  "to": {
+   "name": "Viganello, Meridiana",
+   "lat": 46.014415,
+   "lon": 8.96544389
+  },
+  "straight": 1458.9526325841343,
+  "climb": 9.5,
+  "valhalla": {
+   "meters": 1926,
+   "seconds": 1400.228
+  },
+  "osrm": {
+   "meters": 1976.1,
+   "seconds": 1583.2
+  },
+  "brouter": {
+   "meters": 1925,
+   "seconds": 1392,
+   "ascend": 10
+  }
+ },
+ {
+  "from": {
+   "name": "Cortivallo, Casa Anziani",
+   "lat": 46.00234944,
+   "lon": 8.93396667
+  },
+  "to": {
+   "name": "Lugano, ai Frati",
+   "lat": 46.00855333,
+   "lon": 8.94911417
+  },
+  "straight": 1358.1540752385192,
+  "climb": -38.19999999999999,
+  "valhalla": {
+   "meters": 1633,
+   "seconds": 1236.324
+  },
+  "osrm": {
+   "meters": 1620.4,
+   "seconds": 1302.3
+  },
+  "brouter": {
+   "meters": 1599,
+   "seconds": 1135,
+   "ascend": 24
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "to": {
+   "name": "Lugano, Scuole Molino Nuovo",
+   "lat": 46.01486056,
+   "lon": 8.956455559999998
+  },
+  "straight": 1157.024642867105,
+  "climb": -40.39999999999998,
+  "valhalla": {
+   "meters": 1636,
+   "seconds": 1114.906
+  },
+  "osrm": {
+   "meters": 1578.1,
+   "seconds": 1228.4
+  },
+  "brouter": {
+   "meters": 1575,
+   "seconds": 1048,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Cureglia, Rotonda",
+   "lat": 46.0345625,
+   "lon": 8.944524170000001
+  },
+  "to": {
+   "name": "Vezia, Paese",
+   "lat": 46.02417583,
+   "lon": 8.93740556
+  },
+  "straight": 1279.0316946196713,
+  "climb": -53.5,
+  "valhalla": {
+   "meters": 1555,
+   "seconds": 1207.037
+  },
+  "osrm": {
+   "meters": 1583.9,
+   "seconds": 1267.6
+  },
+  "brouter": {
+   "meters": 1555,
+   "seconds": 1034,
+   "ascend": 9
+  }
+ },
+ {
+  "from": {
+   "name": "Pambio, S. Pietro Chiesa",
+   "lat": 45.98672472,
+   "lon": 8.93710167
+  },
+  "to": {
+   "name": "Lugano, Santa Birgitta",
+   "lat": 45.9937375,
+   "lon": 8.942870280000001
+  },
+  "straight": 898.1529639335374,
+  "climb": -10.300000000000011,
+  "valhalla": {
+   "meters": 986,
+   "seconds": 821.592
+  },
+  "osrm": {
+   "meters": 1001.8,
+   "seconds": 801.2
+  },
+  "brouter": {
+   "meters": 976,
+   "seconds": 667,
+   "ascend": 9
+  }
+ },
+ {
+  "from": {
+   "name": "Pazzallo, Scuole Fano",
+   "lat": 45.98283,
+   "lon": 8.93837583
+  },
+  "to": {
+   "name": "Noranco, Furnas",
+   "lat": 45.98274722,
+   "lon": 8.928371669999999
+  },
+  "straight": 773.0413387724017,
+  "climb": -73.30000000000001,
+  "valhalla": {
+   "meters": 963,
+   "seconds": 715.991
+  },
+  "osrm": {
+   "meters": 970.2,
+   "seconds": 776.3
+  },
+  "brouter": {
+   "meters": 968,
+   "seconds": 646,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "to": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "straight": 518.9886969188258,
+  "climb": -89,
+  "valhalla": {
+   "meters": 1722,
+   "seconds": 1163.351
+  },
+  "osrm": {
+   "meters": 1214.1,
+   "seconds": 971.2
+  },
+  "brouter": {
+   "meters": 1210,
+   "seconds": 855,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "to": {
+   "name": "Aldesago, Paese",
+   "lat": 46.00756694,
+   "lon": 8.97939083
+  },
+  "straight": 1149.1198820335615,
+  "climb": 245.80000000000007,
+  "valhalla": {
+   "meters": 2248,
+   "seconds": 2382.631
+  },
+  "osrm": {
+   "meters": 1913.7,
+   "seconds": 1531.3
+  },
+  "brouter": {
+   "meters": 1797,
+   "seconds": 2088,
+   "ascend": 247
+  }
+ },
+ {
+  "from": {
+   "name": "Vezia, Villa Negroni",
+   "lat": 46.02742861,
+   "lon": 8.93702972
+  },
+  "to": {
+   "name": "Comano, Studio TV",
+   "lat": 46.03307111,
+   "lon": 8.951071109999999
+  },
+  "straight": 1252.4798869538195,
+  "climb": 99.19999999999999,
+  "valhalla": {
+   "meters": 1739,
+   "seconds": 1677.422
+  },
+  "osrm": {
+   "meters": 1723.7,
+   "seconds": 1384
+  },
+  "brouter": {
+   "meters": 1720,
+   "seconds": 1493,
+   "ascend": 100
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Tesserete",
+   "lat": 46.01497444,
+   "lon": 8.950647779999999
+  },
+  "to": {
+   "name": "Lugano, Via Balestra",
+   "lat": 46.00828389,
+   "lon": 8.95576944
+  },
+  "straight": 842.5619573854381,
+  "climb": -78.59999999999997,
+  "valhalla": {
+   "meters": 1694,
+   "seconds": 1192.106
+  },
+  "osrm": {
+   "meters": 1653.6,
+   "seconds": 1325.3
+  },
+  "brouter": {
+   "meters": 1326,
+   "seconds": 922,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Lanchetta",
+   "lat": 46.00601444,
+   "lon": 8.96589333
+  },
+  "to": {
+   "name": "Lugano, Casa Serena",
+   "lat": 46.01479889,
+   "lon": 8.961012219999999
+  },
+  "straight": 1046.9999391611268,
+  "climb": 12.199999999999989,
+  "valhalla": {
+   "meters": 1292,
+   "seconds": 965.277
+  },
+  "osrm": {
+   "meters": 1271,
+   "seconds": 980.9
+  },
+  "brouter": {
+   "meters": 1267,
+   "seconds": 932,
+   "ascend": 11
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Paese",
+   "lat": 46.01132611,
+   "lon": 8.97491278
+  },
+  "to": {
+   "name": "Albonago, ai Ronchi",
+   "lat": 46.01508167,
+   "lon": 8.97332667
+  },
+  "straight": 435.19178356648035,
+  "climb": -69.5,
+  "valhalla": {
+   "meters": 689,
+   "seconds": 466.707
+  },
+  "osrm": {
+   "meters": 686.7,
+   "seconds": 549.5
+  },
+  "brouter": {
+   "meters": 685,
+   "seconds": 473,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Breganzona, Camara Scuole",
+   "lat": 46.01142056,
+   "lon": 8.93041861
+  },
+  "to": {
+   "name": "Lugano, Stazione Via Basilea",
+   "lat": 46.00415222,
+   "lon": 8.94652667
+  },
+  "straight": 1483.5280436989258,
+  "climb": -66.80000000000001,
+  "valhalla": {
+   "meters": 1881,
+   "seconds": 1318.29
+  },
+  "osrm": {
+   "meters": 1792.1,
+   "seconds": 1436.1
+  },
+  "brouter": {
+   "meters": 1755,
+   "seconds": 1138,
+   "ascend": 5
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Monte Brè",
+   "lat": 46.00562528,
+   "lon": 8.96871
+  },
+  "to": {
+   "name": "Lugano, Piazza Manzoni",
+   "lat": 46.00382417,
+   "lon": 8.95288278
+  },
+  "straight": 1238.726562666145,
+  "climb": -1.2000000000000455,
+  "valhalla": {
+   "meters": 1416,
+   "seconds": 1032.384
+  },
+  "osrm": {
+   "meters": 1506.2,
+   "seconds": 1208.4
+  },
+  "brouter": {
+   "meters": 1480,
+   "seconds": 1056,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Loreto",
+   "lat": 45.99763028,
+   "lon": 8.94443611
+  },
+  "to": {
+   "name": "Lugano, Bellavista",
+   "lat": 46.00374167,
+   "lon": 8.94762556
+  },
+  "straight": 722.8333307067181,
+  "climb": 26.69999999999999,
+  "valhalla": {
+   "meters": 816,
+   "seconds": 687.065
+  },
+  "osrm": {
+   "meters": 852.6,
+   "seconds": 681.9
+  },
+  "brouter": {
+   "meters": 813,
+   "seconds": 636,
+   "ascend": 25
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Moncucco Clinica",
+   "lat": 46.00456667,
+   "lon": 8.93976
+  },
+  "to": {
+   "name": "Cortivallo, Casa Anziani",
+   "lat": 46.00234944,
+   "lon": 8.93396667
+  },
+  "straight": 510.889086699894,
+  "climb": -20.399999999999977,
+  "valhalla": {
+   "meters": 670,
+   "seconds": 441.708
+  },
+  "osrm": {
+   "meters": 685.8,
+   "seconds": 548.8
+  },
+  "brouter": {
+   "meters": 669,
+   "seconds": 446,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "to": {
+   "name": "Pregassona, Bozzoreda",
+   "lat": 46.02217167,
+   "lon": 8.96669361
+  },
+  "straight": 1334.4335851505452,
+  "climb": -57.80000000000001,
+  "valhalla": {
+   "meters": 1640,
+   "seconds": 1158.798
+  },
+  "osrm": {
+   "meters": 1666.9,
+   "seconds": 1333.3
+  },
+  "brouter": {
+   "meters": 1647,
+   "seconds": 1101,
+   "ascend": 11
+  }
+ },
+ {
+  "from": {
+   "name": "Davesco, Ponte di Valle",
+   "lat": 46.03128778,
+   "lon": 8.97250306
+  },
+  "to": {
+   "name": "Canobbio, Mercato Resega",
+   "lat": 46.02773861,
+   "lon": 8.96752111
+  },
+  "straight": 551.067563713616,
+  "climb": -9,
+  "valhalla": {
+   "meters": 587,
+   "seconds": 399.239
+  },
+  "osrm": {
+   "meters": 589.4,
+   "seconds": 471.4
+  },
+  "brouter": {
+   "meters": 591,
+   "seconds": 406,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Brentani",
+   "lat": 46.018436109999996,
+   "lon": 8.962159719999999
+  },
+  "to": {
+   "name": "Cassarate, Lanchetta",
+   "lat": 46.00601444,
+   "lon": 8.96589333
+  },
+  "straight": 1411.0000376748308,
+  "climb": -17.100000000000023,
+  "valhalla": {
+   "meters": 1709,
+   "seconds": 1208.57
+  },
+  "osrm": {
+   "meters": 1700.6,
+   "seconds": 1360.6
+  },
+  "brouter": {
+   "meters": 1683,
+   "seconds": 1163,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Pregassona, Ronco Villa",
+   "lat": 46.01980361,
+   "lon": 8.97804417
+  },
+  "to": {
+   "name": "Aldesago, Narbostra",
+   "lat": 46.00845444,
+   "lon": 8.97765972
+  },
+  "straight": 1262.3192910349694,
+  "climb": 126.30000000000007,
+  "valhalla": {
+   "meters": 2068,
+   "seconds": 2138.911
+  },
+  "osrm": {
+   "meters": 2050.1,
+   "seconds": 1640.2
+  },
+  "brouter": {
+   "meters": 2033,
+   "seconds": 1935,
+   "ascend": 168
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, ai Ronchi",
+   "lat": 46.01508167,
+   "lon": 8.97332667
+  },
+  "to": {
+   "name": "Viganello, la Santa",
+   "lat": 46.01160056,
+   "lon": 8.964654999999999
+  },
+  "straight": 773.4834076768842,
+  "climb": -95.80000000000001,
+  "valhalla": {
+   "meters": 1557,
+   "seconds": 1053.645
+  },
+  "osrm": {
+   "meters": 1025.8,
+   "seconds": 820.6
+  },
+  "brouter": {
+   "meters": 1022,
+   "seconds": 746,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Bellavista",
+   "lat": 46.00374167,
+   "lon": 8.94762556
+  },
+  "to": {
+   "name": "Lugano, Via Domenico Fontana",
+   "lat": 45.99425306,
+   "lon": 8.94603417
+  },
+  "straight": 1062.2219952582404,
+  "climb": -61.80000000000001,
+  "valhalla": {
+   "meters": 1402,
+   "seconds": 1035.363
+  },
+  "osrm": {
+   "meters": 1454.1,
+   "seconds": 1163.5
+  },
+  "brouter": {
+   "meters": 1392,
+   "seconds": 954,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Rezzonico",
+   "lat": 46.00283556,
+   "lon": 8.95077667
+  },
+  "to": {
+   "name": "Paradiso, Via Cattori",
+   "lat": 45.99255944,
+   "lon": 8.94418028
+  },
+  "straight": 1251.1148465107387,
+  "climb": 5.800000000000011,
+  "valhalla": {
+   "meters": 1427,
+   "seconds": 1082.547
+  },
+  "osrm": {
+   "meters": 1407.7,
+   "seconds": 1126.4
+  },
+  "brouter": {
+   "meters": 1358,
+   "seconds": 977,
+   "ascend": 6
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, Villa Favorita",
+   "lat": 46.00359194,
+   "lon": 8.97135167
+  },
+  "to": {
+   "name": "Castagnola, Roncaccio",
+   "lat": 46.00318444,
+   "lon": 8.98601972
+  },
+  "straight": 1133.8330442462088,
+  "climb": 105,
+  "valhalla": {
+   "meters": 1500,
+   "seconds": 1437.147
+  },
+  "osrm": {
+   "meters": 1503,
+   "seconds": 1202.9
+  },
+  "brouter": {
+   "meters": 1466,
+   "seconds": 1344,
+   "ascend": 109
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cinque Vie",
+   "lat": 46.01041639,
+   "lon": 8.93558194
+  },
+  "to": {
+   "name": "Lugano, Autosilo",
+   "lat": 46.00828167,
+   "lon": 8.95459444
+  },
+  "straight": 1487.3875386833536,
+  "climb": -111.5,
+  "valhalla": {
+   "meters": 2294,
+   "seconds": 1551.369
+  },
+  "osrm": {
+   "meters": 2183.1,
+   "seconds": 1752.7
+  },
+  "brouter": {
+   "meters": 2050,
+   "seconds": 1386,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Balestra",
+   "lat": 46.00828389,
+   "lon": 8.95576944
+  },
+  "to": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "straight": 1242.7114968748779,
+  "climb": 87.89999999999998,
+  "valhalla": {
+   "meters": 2322,
+   "seconds": 2011.992
+  },
+  "osrm": {
+   "meters": 1931,
+   "seconds": 1544.9
+  },
+  "brouter": {
+   "meters": 1882,
+   "seconds": 1594,
+   "ascend": 94
+  }
+ },
+ {
+  "from": {
+   "name": "Pazzallo, Senago",
+   "lat": 45.98322333,
+   "lon": 8.93654111
+  },
+  "to": {
+   "name": "Paradiso, Via Calprino",
+   "lat": 45.988110830000004,
+   "lon": 8.94247028
+  },
+  "straight": 710.7828706988312,
+  "climb": -30.599999999999966,
+  "valhalla": {
+   "meters": 966,
+   "seconds": 806.299
+  },
+  "osrm": {
+   "meters": 992.9,
+   "seconds": 794.7
+  },
+  "brouter": {
+   "meters": 957,
+   "seconds": 693,
+   "ascend": 14
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Centro",
+   "lat": 46.00590472,
+   "lon": 8.95204944
+  },
+  "to": {
+   "name": "Lugano, Scuole Molino Nuovo",
+   "lat": 46.01486056,
+   "lon": 8.956455559999998
+  },
+  "straight": 1052.3748531802592,
+  "climb": 10.399999999999977,
+  "valhalla": {
+   "meters": 1157,
+   "seconds": 854.229
+  },
+  "osrm": {
+   "meters": 1113.7,
+   "seconds": 901.1
+  },
+  "brouter": {
+   "meters": 1115,
+   "seconds": 821,
+   "ascend": 10
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Università",
+   "lat": 46.01147611,
+   "lon": 8.95789806
+  },
+  "to": {
+   "name": "Lugano, Cappuccine",
+   "lat": 46.00654861,
+   "lon": 8.95032417
+  },
+  "straight": 801.4690846825649,
+  "climb": -2.099999999999966,
+  "valhalla": {
+   "meters": 1022.9999999999999,
+   "seconds": 733.417
+  },
+  "osrm": {
+   "meters": 1038.8,
+   "seconds": 837
+  },
+  "brouter": {
+   "meters": 1021,
+   "seconds": 725,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Ginevra",
+   "lat": 46.00810083,
+   "lon": 8.952639719999999
+  },
+  "to": {
+   "name": "Lugano, Stazione Via Basilea",
+   "lat": 46.00415222,
+   "lon": 8.94652667
+  },
+  "straight": 644.7400903649979,
+  "climb": 57.89999999999998,
+  "valhalla": {
+   "meters": 1368,
+   "seconds": 1159.094
+  },
+  "osrm": {
+   "meters": 936,
+   "seconds": 754.6
+  },
+  "brouter": {
+   "meters": 946,
+   "seconds": 840,
+   "ascend": 59
+  }
+ },
+ {
+  "from": {
+   "name": "Pregassona, Boschina",
+   "lat": 46.02077444,
+   "lon": 8.965556939999999
+  },
+  "to": {
+   "name": "Lugano, Via Beltramina",
+   "lat": 46.01671306,
+   "lon": 8.961840559999999
+  },
+  "straight": 535.0663047953168,
+  "climb": -18.80000000000001,
+  "valhalla": {
+   "meters": 664,
+   "seconds": 450.436
+  },
+  "osrm": {
+   "meters": 751.1,
+   "seconds": 602.9
+  },
+  "brouter": {
+   "meters": 651,
+   "seconds": 430,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Gerra",
+   "lat": 46.02270111,
+   "lon": 8.95948889
+  },
+  "to": {
+   "name": "Canobbio, Mercato Resega",
+   "lat": 46.02773861,
+   "lon": 8.96752111
+  },
+  "straight": 835.6689501911777,
+  "climb": 8.300000000000011,
+  "valhalla": {
+   "meters": 911,
+   "seconds": 686.701
+  },
+  "osrm": {
+   "meters": 923.5,
+   "seconds": 738.9
+  },
+  "brouter": {
+   "meters": 909,
+   "seconds": 668,
+   "ascend": 9
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, Santa Lucia",
+   "lat": 46.0106825,
+   "lon": 8.94665528
+  },
+  "to": {
+   "name": "Viganello, Bottogno",
+   "lat": 46.01186444,
+   "lon": 8.96577278
+  },
+  "straight": 1482.2204651090271,
+  "climb": -68.30000000000001,
+  "valhalla": {
+   "meters": 2013.9999999999998,
+   "seconds": 1451.36
+  },
+  "osrm": {
+   "meters": 2087.7,
+   "seconds": 1676.5
+  },
+  "brouter": {
+   "meters": 2008,
+   "seconds": 1401,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Molino Nuovo",
+   "lat": 46.01260917,
+   "lon": 8.95592806
+  },
+  "to": {
+   "name": "Lugano, Palazzo Congressi",
+   "lat": 46.00564028,
+   "lon": 8.95498583
+  },
+  "straight": 778.3143945635551,
+  "climb": -7.600000000000023,
+  "valhalla": {
+   "meters": 898,
+   "seconds": 638.247
+  },
+  "osrm": {
+   "meters": 920,
+   "seconds": 742.3
+  },
+  "brouter": {
+   "meters": 880,
+   "seconds": 612,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Cortivallo, Casa Anziani",
+   "lat": 46.00234944,
+   "lon": 8.93396667
+  },
+  "to": {
+   "name": "Lugano, Conservatorio",
+   "lat": 46.00574889,
+   "lon": 8.93813972
+  },
+  "straight": 496.76048850558095,
+  "climb": 19.80000000000001,
+  "valhalla": {
+   "meters": 608,
+   "seconds": 529.761
+  },
+  "osrm": {
+   "meters": 609.6,
+   "seconds": 487.9
+  },
+  "brouter": {
+   "meters": 606,
+   "seconds": 471,
+   "ascend": 20
+  }
+ },
+ {
+  "from": {
+   "name": "Breganzona, Via Casale",
+   "lat": 46.00067111,
+   "lon": 8.92891167
+  },
+  "to": {
+   "name": "Lugano, Stazione Via Basilea",
+   "lat": 46.00415222,
+   "lon": 8.94652667
+  },
+  "straight": 1414.558271655736,
+  "climb": -27.30000000000001,
+  "valhalla": {
+   "meters": 1869,
+   "seconds": 1410.968
+  },
+  "osrm": {
+   "meters": 1864.5,
+   "seconds": 1493.9
+  },
+  "brouter": {
+   "meters": 1848,
+   "seconds": 1288,
+   "ascend": 19
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "to": {
+   "name": "Lugano, Campus Universitario",
+   "lat": 46.01126389,
+   "lon": 8.9609525
+  },
+  "straight": 753.5641462934002,
+  "climb": -22.599999999999966,
+  "valhalla": {
+   "meters": 815,
+   "seconds": 563.354
+  },
+  "osrm": {
+   "meters": 836.1,
+   "seconds": 668.7
+  },
+  "brouter": {
+   "meters": 816,
+   "seconds": 538,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cappuccine",
+   "lat": 46.00654861,
+   "lon": 8.95032417
+  },
+  "to": {
+   "name": "Lugano, Palazzo Studi",
+   "lat": 46.00579056,
+   "lon": 8.95918611
+  },
+  "straight": 689.6127954701957,
+  "climb": -3.8000000000000114,
+  "valhalla": {
+   "meters": 703,
+   "seconds": 531.191
+  },
+  "osrm": {
+   "meters": 706.6,
+   "seconds": 577.4
+  },
+  "brouter": {
+   "meters": 706,
+   "seconds": 495,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "to": {
+   "name": "Lugano, Vignola",
+   "lat": 46.01737806,
+   "lon": 8.95657722
+  },
+  "straight": 824.3419127864736,
+  "climb": 10.100000000000023,
+  "valhalla": {
+   "meters": 918,
+   "seconds": 689.114
+  },
+  "osrm": {
+   "meters": 929.8,
+   "seconds": 748
+  },
+  "brouter": {
+   "meters": 918,
+   "seconds": 680,
+   "ascend": 10
+  }
+ },
+ {
+  "from": {
+   "name": "Suvigliana, Funicolare",
+   "lat": 46.00704472,
+   "lon": 8.97284278
+  },
+  "to": {
+   "name": "Lugano, Palazzo Congressi",
+   "lat": 46.00564028,
+   "lon": 8.95498583
+  },
+  "straight": 1387.970570905141,
+  "climb": -114.70000000000005,
+  "valhalla": {
+   "meters": 3092,
+   "seconds": 2144.22
+  },
+  "osrm": {
+   "meters": 2530.5,
+   "seconds": 2032.4
+  },
+  "brouter": {
+   "meters": 2514,
+   "seconds": 1828,
+   "ascend": 13
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, al Sole",
+   "lat": 46.01276444,
+   "lon": 8.94638972
+  },
+  "to": {
+   "name": "Cortivallo, Paese",
+   "lat": 46.00328333,
+   "lon": 8.93545111
+  },
+  "straight": 1350.9766082431902,
+  "climb": -11.699999999999989,
+  "valhalla": {
+   "meters": 1913,
+   "seconds": 1396.612
+  },
+  "osrm": {
+   "meters": 1790.6,
+   "seconds": 1434.4
+  },
+  "brouter": {
+   "meters": 1786,
+   "seconds": 1257,
+   "ascend": 21
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Lanchetta",
+   "lat": 46.00601444,
+   "lon": 8.96589333
+  },
+  "to": {
+   "name": "Aldesago, Arcate",
+   "lat": 46.01006306,
+   "lon": 8.98042972
+  },
+  "straight": 1209.5624670949398,
+  "climb": 370.40000000000003,
+  "valhalla": {
+   "meters": 4202,
+   "seconds": 4270.732
+  },
+  "osrm": {
+   "meters": 3018.3,
+   "seconds": 2414.2
+  },
+  "brouter": {
+   "meters": 3101,
+   "seconds": 3438,
+   "ascend": 375
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Roccolo",
+   "lat": 46.00745528,
+   "lon": 8.97637917
+  },
+  "to": {
+   "name": "Pregassona, Ronco Villa",
+   "lat": 46.01980361,
+   "lon": 8.97804417
+  },
+  "straight": 1379.0786094750865,
+  "climb": -62.10000000000002,
+  "valhalla": {
+   "meters": 2182,
+   "seconds": 1769.308
+  },
+  "osrm": {
+   "meters": 1917.2,
+   "seconds": 1533.8
+  },
+  "brouter": {
+   "meters": 1863,
+   "seconds": 1436,
+   "ascend": 56
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Centro",
+   "lat": 46.00590472,
+   "lon": 8.95204944
+  },
+  "to": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "straight": 1142.0252700587823,
+  "climb": 0.5999999999999659,
+  "valhalla": {
+   "meters": 1269,
+   "seconds": 944.864
+  },
+  "osrm": {
+   "meters": 1283.8,
+   "seconds": 1041.4
+  },
+  "brouter": {
+   "meters": 1270,
+   "seconds": 908,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Genzana",
+   "lat": 46.00912444,
+   "lon": 8.94678
+  },
+  "to": {
+   "name": "Lugano, Palazzo Studi",
+   "lat": 46.00579056,
+   "lon": 8.95918611
+  },
+  "straight": 1027.3640992678525,
+  "climb": -64.39999999999998,
+  "valhalla": {
+   "meters": 1222,
+   "seconds": 936.133
+  },
+  "osrm": {
+   "meters": 1172.7,
+   "seconds": 950.1
+  },
+  "brouter": {
+   "meters": 1172,
+   "seconds": 824,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Zurigo",
+   "lat": 46.0111875,
+   "lon": 8.954610279999999
+  },
+  "to": {
+   "name": "Lugano, Casa Serena",
+   "lat": 46.01479889,
+   "lon": 8.961012219999999
+  },
+  "straight": 636.925587557393,
+  "climb": 5.399999999999977,
+  "valhalla": {
+   "meters": 878,
+   "seconds": 632.28
+  },
+  "osrm": {
+   "meters": 907,
+   "seconds": 727.6
+  },
+  "brouter": {
+   "meters": 864,
+   "seconds": 627,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "to": {
+   "name": "Albonago, Paese",
+   "lat": 46.01132611,
+   "lon": 8.97491278
+  },
+  "straight": 771.8748467343437,
+  "climb": 172.60000000000002,
+  "valhalla": {
+   "meters": 2273,
+   "seconds": 2281.079
+  },
+  "osrm": {
+   "meters": 1471.6,
+   "seconds": 1197
+  },
+  "brouter": {
+   "meters": 1465,
+   "seconds": 1596,
+   "ascend": 176
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "to": {
+   "name": "Cassarate, Lido",
+   "lat": 46.00610444,
+   "lon": 8.96257778
+  },
+  "straight": 347.6150924112129,
+  "climb": 0.19999999999998863,
+  "valhalla": {
+   "meters": 451,
+   "seconds": 309.398
+  },
+  "osrm": {
+   "meters": 452.5,
+   "seconds": 362.1
+  },
+  "brouter": {
+   "meters": 452,
+   "seconds": 323,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Breganzona, Medi",
+   "lat": 46.00924278,
+   "lon": 8.93114694
+  },
+  "to": {
+   "name": "Massagno, Santa Lucia",
+   "lat": 46.0106825,
+   "lon": 8.94665528
+  },
+  "straight": 1208.3388971787479,
+  "climb": -59.89999999999998,
+  "valhalla": {
+   "meters": 1478,
+   "seconds": 1009.891
+  },
+  "osrm": {
+   "meters": 1501.5,
+   "seconds": 1200.5
+  },
+  "brouter": {
+   "meters": 1442,
+   "seconds": 942,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "to": {
+   "name": "Lugano, Palazzo Studi",
+   "lat": 46.00579056,
+   "lon": 8.95918611
+  },
+  "straight": 519.0776694766192,
+  "climb": -3.3999999999999773,
+  "valhalla": {
+   "meters": 722,
+   "seconds": 524.295
+  },
+  "osrm": {
+   "meters": 702.1,
+   "seconds": 563.5
+  },
+  "brouter": {
+   "meters": 682,
+   "seconds": 479,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Aldesago, Pontaccio",
+   "lat": 46.00819333,
+   "lon": 8.97700694
+  },
+  "to": {
+   "name": "Pregassona, Viarnetto",
+   "lat": 46.01980056,
+   "lon": 8.96902944
+  },
+  "straight": 1430.1500211145392,
+  "climb": -187.39999999999998,
+  "valhalla": {
+   "meters": 2156,
+   "seconds": 1562.391
+  },
+  "osrm": {
+   "meters": 1919.1,
+   "seconds": 1535.6
+  },
+  "brouter": {
+   "meters": 1917,
+   "seconds": 1382,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Max Frisch",
+   "lat": 46.01339667,
+   "lon": 8.97152333
+  },
+  "to": {
+   "name": "Castagnola, Vallée",
+   "lat": 46.00243667,
+   "lon": 8.97623806
+  },
+  "straight": 1271.9308866388055,
+  "climb": 23.19999999999999,
+  "valhalla": {
+   "meters": 1618,
+   "seconds": 1451.784
+  },
+  "osrm": {
+   "meters": 1429.1,
+   "seconds": 1142.7
+  },
+  "brouter": {
+   "meters": 1430,
+   "seconds": 1153,
+   "ascend": 61
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Olgiati",
+   "lat": 46.01203056,
+   "lon": 8.953471669999999
+  },
+  "to": {
+   "name": "Lugano, Piazza Rezzonico",
+   "lat": 46.00283556,
+   "lon": 8.95077667
+  },
+  "straight": 1043.4081738116934,
+  "climb": -8.600000000000023,
+  "valhalla": {
+   "meters": 1333,
+   "seconds": 961.662
+  },
+  "osrm": {
+   "meters": 1308.3,
+   "seconds": 1046.5
+  },
+  "brouter": {
+   "meters": 1235,
+   "seconds": 863,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Pregassona, Fola",
+   "lat": 46.01718917,
+   "lon": 8.96455278
+  },
+  "to": {
+   "name": "Pregassona, Boschina",
+   "lat": 46.02077444,
+   "lon": 8.965556939999999
+  },
+  "straight": 406.1340550485523,
+  "climb": 13.300000000000011,
+  "valhalla": {
+   "meters": 419,
+   "seconds": 361.594
+  },
+  "osrm": {
+   "meters": 419.3,
+   "seconds": 337.4
+  },
+  "brouter": {
+   "meters": 419,
+   "seconds": 323,
+   "ascend": 14
+  }
+ },
+ {
+  "from": {
+   "name": "Massagno, Sassa",
+   "lat": 46.01264639,
+   "lon": 8.94982139
+  },
+  "to": {
+   "name": "Lugano, S. Nicolao",
+   "lat": 46.00669361,
+   "lon": 8.94219389
+  },
+  "straight": 886.0774100089474,
+  "climb": 8.099999999999966,
+  "valhalla": {
+   "meters": 1163,
+   "seconds": 894.777
+  },
+  "osrm": {
+   "meters": 1178.7,
+   "seconds": 944.3
+  },
+  "brouter": {
+   "meters": 1161,
+   "seconds": 844,
+   "ascend": 25
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Stazione",
+   "lat": 46.00472139,
+   "lon": 8.9472875
+  },
+  "to": {
+   "name": "Lugano, Loreto",
+   "lat": 45.99674528,
+   "lon": 8.94402444
+  },
+  "straight": 922.0210469758406,
+  "climb": -26.099999999999966,
+  "valhalla": {
+   "meters": 1094,
+   "seconds": 800.587
+  },
+  "osrm": {
+   "meters": 1102,
+   "seconds": 881.2
+  },
+  "brouter": {
+   "meters": 1075,
+   "seconds": 719,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Paradiso, Fontana",
+   "lat": 45.99115833,
+   "lon": 8.947355830000001
+  },
+  "to": {
+   "name": "Lugano, Piazza Luini",
+   "lat": 45.99954139,
+   "lon": 8.94953667
+  },
+  "straight": 947.2549556261307,
+  "climb": -5.199999999999989,
+  "valhalla": {
+   "meters": 1143,
+   "seconds": 908.061
+  },
+  "osrm": {
+   "meters": 1153.4,
+   "seconds": 922.6
+  },
+  "brouter": {
+   "meters": 1065,
+   "seconds": 750,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Davesco, Ponte di Valle",
+   "lat": 46.03128778,
+   "lon": 8.97250306
+  },
+  "to": {
+   "name": "Pregassona, Boschina",
+   "lat": 46.02077444,
+   "lon": 8.965556939999999
+  },
+  "straight": 1286.169065649795,
+  "climb": -5.5,
+  "valhalla": {
+   "meters": 1525,
+   "seconds": 1094.798
+  },
+  "osrm": {
+   "meters": 1526.3,
+   "seconds": 1220.9
+  },
+  "brouter": {
+   "meters": 1508,
+   "seconds": 1066,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Resega",
+   "lat": 46.02491028,
+   "lon": 8.96245639
+  },
+  "to": {
+   "name": "Pregassona, Croce Verde",
+   "lat": 46.02377694,
+   "lon": 8.96707444
+  },
+  "straight": 378.1683214790908,
+  "climb": 3.3000000000000114,
+  "valhalla": {
+   "meters": 395,
+   "seconds": 301.61
+  },
+  "osrm": {
+   "meters": 395,
+   "seconds": 318.1
+  },
+  "brouter": {
+   "meters": 389,
+   "seconds": 281,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Loreto",
+   "lat": 45.99763028,
+   "lon": 8.94443611
+  },
+  "to": {
+   "name": "Lugano, ai Frati",
+   "lat": 46.00855333,
+   "lon": 8.94911417
+  },
+  "straight": 1267.1933522187417,
+  "climb": 2.8000000000000114,
+  "valhalla": {
+   "meters": 1453,
+   "seconds": 1149.63
+  },
+  "osrm": {
+   "meters": 1461.7,
+   "seconds": 1171
+  },
+  "brouter": {
+   "meters": 1444,
+   "seconds": 1062,
+   "ascend": 28
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Pista Ghiaccio",
+   "lat": 46.02620639,
+   "lon": 8.96507583
+  },
+  "to": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "straight": 1350.3112139492562,
+  "climb": 4.099999999999966,
+  "valhalla": {
+   "meters": 2106,
+   "seconds": 1557.088
+  },
+  "osrm": {
+   "meters": 2010.9,
+   "seconds": 1608.3
+  },
+  "brouter": {
+   "meters": 1903,
+   "seconds": 1426,
+   "ascend": 41
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Bellavista",
+   "lat": 46.00374167,
+   "lon": 8.94762556
+  },
+  "to": {
+   "name": "Paradiso, Via Cattori",
+   "lat": 45.99255944,
+   "lon": 8.94418028
+  },
+  "straight": 1271.5688047078527,
+  "climb": -56.5,
+  "valhalla": {
+   "meters": 1646,
+   "seconds": 1193.906
+  },
+  "osrm": {
+   "meters": 1653.9,
+   "seconds": 1323.1
+  },
+  "brouter": {
+   "meters": 1588,
+   "seconds": 1050,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Ruvigliana, Paese",
+   "lat": 46.00385472,
+   "lon": 8.97781444
+  },
+  "to": {
+   "name": "Albonago, Sentiero Castagni",
+   "lat": 46.01244528,
+   "lon": 8.97464722
+  },
+  "straight": 986.0482019960751,
+  "climb": 10.400000000000034,
+  "valhalla": {
+   "meters": 1321,
+   "seconds": 1208.438
+  },
+  "osrm": {
+   "meters": 1331.6,
+   "seconds": 1065.8
+  },
+  "brouter": {
+   "meters": 1311,
+   "seconds": 1120,
+   "ascend": 72
+  }
+ },
+ {
+  "from": {
+   "name": "Pambio, S. Pietro Chiesa",
+   "lat": 45.98672472,
+   "lon": 8.93710167
+  },
+  "to": {
+   "name": "Pazzallo, P+R Fornaci",
+   "lat": 45.98484667,
+   "lon": 8.93286861
+  },
+  "straight": 388.04057484033035,
+  "climb": 2.099999999999966,
+  "valhalla": {
+   "meters": 461,
+   "seconds": 357.536
+  },
+  "osrm": {
+   "meters": 459.7,
+   "seconds": 348.6
+  },
+  "brouter": {
+   "meters": 452,
+   "seconds": 328,
+   "ascend": 5
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, la Santa",
+   "lat": 46.01160056,
+   "lon": 8.964654999999999
+  },
+  "to": {
+   "name": "Lugano, Piazza Molino Nuovo",
+   "lat": 46.01260917,
+   "lon": 8.95592806
+  },
+  "straight": 683.2110825471926,
+  "climb": -0.5,
+  "valhalla": {
+   "meters": 796,
+   "seconds": 559.933
+  },
+  "osrm": {
+   "meters": 786.2,
+   "seconds": 631.2
+  },
+  "brouter": {
+   "meters": 785,
+   "seconds": 560,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Zurigo",
+   "lat": 46.0111875,
+   "lon": 8.954610279999999
+  },
+  "to": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "straight": 1305.5751793957286,
+  "climb": 84.19999999999999,
+  "valhalla": {
+   "meters": 2157,
+   "seconds": 1880.398
+  },
+  "osrm": {
+   "meters": 1812.3,
+   "seconds": 1460.1
+  },
+  "brouter": {
+   "meters": 1739,
+   "seconds": 1482,
+   "ascend": 90
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via F. Pelli",
+   "lat": 46.00967139,
+   "lon": 8.950926939999999
+  },
+  "to": {
+   "name": "Lugano, Piazza Luini",
+   "lat": 45.99954139,
+   "lon": 8.94953667
+  },
+  "straight": 1131.5111938295674,
+  "climb": -16.69999999999999,
+  "valhalla": {
+   "meters": 1216,
+   "seconds": 851.669
+  },
+  "osrm": {
+   "meters": 1217.7,
+   "seconds": 974.3
+  },
+  "brouter": {
+   "meters": 1217,
+   "seconds": 833,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "to": {
+   "name": "Lugano, Palazzo Studi",
+   "lat": 46.00579056,
+   "lon": 8.95918611
+  },
+  "straight": 1253.6604302066278,
+  "climb": -30.099999999999966,
+  "valhalla": {
+   "meters": 1572,
+   "seconds": 1084.743
+  },
+  "osrm": {
+   "meters": 1576.9,
+   "seconds": 1265.5
+  },
+  "brouter": {
+   "meters": 1567,
+   "seconds": 1052,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Lido",
+   "lat": 46.00610444,
+   "lon": 8.96257778
+  },
+  "to": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "straight": 1313.4826272304667,
+  "climb": 50,
+  "valhalla": {
+   "meters": 1627,
+   "seconds": 1364.441
+  },
+  "osrm": {
+   "meters": 1633.9,
+   "seconds": 1306.9
+  },
+  "brouter": {
+   "meters": 1622,
+   "seconds": 1271,
+   "ascend": 50
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, S. Domenico",
+   "lat": 46.00122444,
+   "lon": 8.97540361
+  },
+  "to": {
+   "name": "Albonago, Gradinata",
+   "lat": 46.00926917,
+   "lon": 8.97202722
+  },
+  "straight": 931.7691313084059,
+  "climb": 69.89999999999998,
+  "valhalla": {
+   "meters": 1796,
+   "seconds": 1562.337
+  },
+  "osrm": {
+   "meters": 1301.2,
+   "seconds": 1040.2
+  },
+  "brouter": {
+   "meters": 1290,
+   "seconds": 1152,
+   "ascend": 86
+  }
+ },
+ {
+  "from": {
+   "name": "Sorengo, Moncucchetto",
+   "lat": 46.00509,
+   "lon": 8.93627528
+  },
+  "to": {
+   "name": "Lugano, Cappuccine",
+   "lat": 46.00654861,
+   "lon": 8.95032417
+  },
+  "straight": 1097.111855593488,
+  "climb": -84.19999999999999,
+  "valhalla": {
+   "meters": 1567,
+   "seconds": 1181.901
+  },
+  "osrm": {
+   "meters": 1617,
+   "seconds": 1293.2
+  },
+  "brouter": {
+   "meters": 1501,
+   "seconds": 1035,
+   "ascend": 6
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Scuole Molino Nuovo 2",
+   "lat": 46.01485917,
+   "lon": 8.955215829999998
+  },
+  "to": {
+   "name": "Savosa, Crocifisso",
+   "lat": 46.01836778,
+   "lon": 8.93979028
+  },
+  "straight": 1253.4142588455743,
+  "climb": 105.19999999999999,
+  "valhalla": {
+   "meters": 2658,
+   "seconds": 2279.172
+  },
+  "osrm": {
+   "meters": 2581.2,
+   "seconds": 2073.2
+  },
+  "brouter": {
+   "meters": 1978,
+   "seconds": 1703,
+   "ascend": 106
+  }
+ },
+ {
+  "from": {
+   "name": "Cortivallo, Casa Anziani",
+   "lat": 46.00234944,
+   "lon": 8.93396667
+  },
+  "to": {
+   "name": "Paradiso, Via S. Salvatore",
+   "lat": 45.992068610000004,
+   "lon": 8.94522528
+  },
+  "straight": 1436.3867763908504,
+  "climb": -73.5,
+  "valhalla": {
+   "meters": 2892,
+   "seconds": 2083.121
+  },
+  "osrm": {
+   "meters": 2622.8,
+   "seconds": 2105.5
+  },
+  "brouter": {
+   "meters": 2099,
+   "seconds": 1575,
+   "ascend": 38
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "to": {
+   "name": "Lugano, Autosilo",
+   "lat": 46.00828167,
+   "lon": 8.95459444
+  },
+  "straight": 1344.3653864942212,
+  "climb": -27.899999999999977,
+  "valhalla": {
+   "meters": 1617,
+   "seconds": 1125.441
+  },
+  "osrm": {
+   "meters": 1662.9,
+   "seconds": 1329.9
+  },
+  "brouter": {
+   "meters": 1596,
+   "seconds": 1076,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Canobbio, Cioss",
+   "lat": 46.03336056,
+   "lon": 8.964306939999998
+  },
+  "to": {
+   "name": "Lugano, Pista Ghiaccio",
+   "lat": 46.02620639,
+   "lon": 8.96507583
+  },
+  "straight": 797.7189526153578,
+  "climb": -69.69999999999999,
+  "valhalla": {
+   "meters": 1497,
+   "seconds": 1068.95
+  },
+  "osrm": {
+   "meters": 1505.1,
+   "seconds": 1206.4
+  },
+  "brouter": {
+   "meters": 1451,
+   "seconds": 967,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Aldesago, Paese",
+   "lat": 46.00756694,
+   "lon": 8.97939083
+  },
+  "to": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "straight": 1079.8538951612993,
+  "climb": -266.30000000000007,
+  "valhalla": {
+   "meters": 2231,
+   "seconds": 1655.286
+  },
+  "osrm": {
+   "meters": 1984.7,
+   "seconds": 1608.1
+  },
+  "brouter": {
+   "meters": 1939,
+   "seconds": 1603,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Comano, Studio TV",
+   "lat": 46.03307111,
+   "lon": 8.951071109999999
+  },
+  "to": {
+   "name": "Canobbio, Mercato Resega",
+   "lat": 46.02773861,
+   "lon": 8.96752111
+  },
+  "straight": 1401.5473245488965,
+  "climb": -147.59999999999997,
+  "valhalla": {
+   "meters": 2485,
+   "seconds": 1887.432
+  },
+  "osrm": {
+   "meters": 2460.4,
+   "seconds": 2044.6
+  },
+  "brouter": {
+   "meters": 2457,
+   "seconds": 1838,
+   "ascend": 20
+  }
+ },
+ {
+  "from": {
+   "name": "Ruvigliana, Paese",
+   "lat": 46.00385472,
+   "lon": 8.97781444
+  },
+  "to": {
+   "name": "Castagnola, S. Domenico",
+   "lat": 46.00122444,
+   "lon": 8.97540361
+  },
+  "straight": 346.72044452628086,
+  "climb": -119.39999999999998,
+  "valhalla": {
+   "meters": 999,
+   "seconds": 720.799
+  },
+  "osrm": {
+   "meters": 776.5,
+   "seconds": 621.3
+  },
+  "brouter": {
+   "meters": 761,
+   "seconds": 643,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Ruvigliana, Parco S. Michele",
+   "lat": 46.00542333,
+   "lon": 8.974295
+  },
+  "to": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "straight": 1486.8095238789876,
+  "climb": -122,
+  "valhalla": {
+   "meters": 2790,
+   "seconds": 1926.8
+  },
+  "osrm": {
+   "meters": 2602.3,
+   "seconds": 2087.1
+  },
+  "brouter": {
+   "meters": 2374,
+   "seconds": 1652,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Aldesago, Ronchée",
+   "lat": 46.00916111,
+   "lon": 8.97993944
+  },
+  "to": {
+   "name": "Castagnola, Capolinea",
+   "lat": 46.00165083,
+   "lon": 8.97514444
+  },
+  "straight": 913.5388705958267,
+  "climb": -289.70000000000005,
+  "valhalla": {
+   "meters": 2013.9999999999998,
+   "seconds": 1550.433
+  },
+  "osrm": {
+   "meters": 1894,
+   "seconds": 1514.8
+  },
+  "brouter": {
+   "meters": 1888,
+   "seconds": 1644,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Pregassona, Boschina",
+   "lat": 46.02077444,
+   "lon": 8.965556939999999
+  },
+  "to": {
+   "name": "Cassarate, Scuole",
+   "lat": 46.00738944,
+   "lon": 8.96668083
+  },
+  "straight": 1490.872441488456,
+  "climb": -31.600000000000023,
+  "valhalla": {
+   "meters": 1617,
+   "seconds": 1108.266
+  },
+  "osrm": {
+   "meters": 1727.9,
+   "seconds": 1382.4
+  },
+  "brouter": {
+   "meters": 1616,
+   "seconds": 1089,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Roccolo",
+   "lat": 46.00745528,
+   "lon": 8.97637917
+  },
+  "to": {
+   "name": "Aldesago, Ronchée",
+   "lat": 46.00916111,
+   "lon": 8.97993944
+  },
+  "straight": 334.04028762006817,
+  "climb": 138.70000000000005,
+  "valhalla": {
+   "meters": 1425,
+   "seconds": 1486.874
+  },
+  "osrm": {
+   "meters": 1075.3,
+   "seconds": 860.5
+  },
+  "brouter": {
+   "meters": 1074,
+   "seconds": 1187,
+   "ascend": 140
+  }
+ },
+ {
+  "from": {
+   "name": "Aldesago, Arcate",
+   "lat": 46.01006306,
+   "lon": 8.98042972
+  },
+  "to": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "straight": 984.169016585728,
+  "climb": -318.20000000000005,
+  "valhalla": {
+   "meters": 2821,
+   "seconds": 2147.597
+  },
+  "osrm": {
+   "meters": 2398,
+   "seconds": 1919
+  },
+  "brouter": {
+   "meters": 2479,
+   "seconds": 2023,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Manzoni",
+   "lat": 46.00382417,
+   "lon": 8.95288278
+  },
+  "to": {
+   "name": "Paradiso, Debarcadero",
+   "lat": 45.99238917,
+   "lon": 8.94682194
+  },
+  "straight": 1354.9654278862458,
+  "climb": 0.8000000000000114,
+  "valhalla": {
+   "meters": 1561,
+   "seconds": 1154.568
+  },
+  "osrm": {
+   "meters": 1583.8,
+   "seconds": 1266.8
+  },
+  "brouter": {
+   "meters": 1544,
+   "seconds": 1105,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Casa Serena",
+   "lat": 46.01479889,
+   "lon": 8.961012219999999
+  },
+  "to": {
+   "name": "Massagno, Sassa",
+   "lat": 46.01264639,
+   "lon": 8.94982139
+  },
+  "straight": 896.7255879599652,
+  "climb": 59.400000000000034,
+  "valhalla": {
+   "meters": 1998,
+   "seconds": 1679.612
+  },
+  "osrm": {
+   "meters": 2085.8,
+   "seconds": 1674.7
+  },
+  "brouter": {
+   "meters": 1215,
+   "seconds": 1021,
+   "ascend": 61
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, la Santa",
+   "lat": 46.01160056,
+   "lon": 8.964654999999999
+  },
+  "to": {
+   "name": "Lugano, Corso Elvezia",
+   "lat": 46.00996944,
+   "lon": 8.95619056
+  },
+  "straight": 678.3822764652267,
+  "climb": -4.300000000000011,
+  "valhalla": {
+   "meters": 812,
+   "seconds": 572.961
+  },
+  "osrm": {
+   "meters": 824.4,
+   "seconds": 664.1
+  },
+  "brouter": {
+   "meters": 813,
+   "seconds": 573,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Aldesago, Arcate",
+   "lat": 46.01006306,
+   "lon": 8.98042972
+  },
+  "to": {
+   "name": "Ruvigliana, Trona",
+   "lat": 46.00494083,
+   "lon": 8.97734139
+  },
+  "straight": 617.4918822390547,
+  "climb": -188.10000000000002,
+  "valhalla": {
+   "meters": 1413,
+   "seconds": 1139.143
+  },
+  "osrm": {
+   "meters": 1314.1,
+   "seconds": 1051.2
+  },
+  "brouter": {
+   "meters": 1400,
+   "seconds": 1141,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Stazione Piazza Besso",
+   "lat": 46.00590139,
+   "lon": 8.94423806
+  },
+  "to": {
+   "name": "Massagno, al Sole",
+   "lat": 46.01276444,
+   "lon": 8.94638972
+  },
+  "straight": 781.0185999151341,
+  "climb": 28.5,
+  "valhalla": {
+   "meters": 986,
+   "seconds": 858.765
+  },
+  "osrm": {
+   "meters": 1093.7,
+   "seconds": 876.6
+  },
+  "brouter": {
+   "meters": 951,
+   "seconds": 748,
+   "ascend": 44
+  }
+ },
+ {
+  "from": {
+   "name": "Cassarate, Lanchetta",
+   "lat": 46.00601444,
+   "lon": 8.96589333
+  },
+  "to": {
+   "name": "Viganello, Villa Costanza",
+   "lat": 46.01446722,
+   "lon": 8.96955167
+  },
+  "straight": 981.4505855781478,
+  "climb": 31.69999999999999,
+  "valhalla": {
+   "meters": 1153,
+   "seconds": 949.724
+  },
+  "osrm": {
+   "meters": 1152.6,
+   "seconds": 921.9
+  },
+  "brouter": {
+   "meters": 1148,
+   "seconds": 886,
+   "ascend": 31
+  }
+ },
+ {
+  "from": {
+   "name": "Castagnola, S. Grato",
+   "lat": 46.00215472,
+   "lon": 8.984350829999999
+  },
+  "to": {
+   "name": "Brè, Paese",
+   "lat": 46.01076694,
+   "lon": 8.99597028
+  },
+  "straight": 1312.4063942063506,
+  "climb": 427.70000000000005,
+  "valhalla": {
+   "meters": 4268,
+   "seconds": 4876.128
+  },
+  "osrm": {
+   "meters": 3479.5,
+   "seconds": 2784.1
+  },
+  "brouter": {
+   "meters": 2834,
+   "seconds": 3447,
+   "ascend": 427
+  }
+ },
+ {
+  "from": {
+   "name": "Muzzano, Paese",
+   "lat": 45.99839389,
+   "lon": 8.923531109999999
+  },
+  "to": {
+   "name": "Cortivallo, Paese",
+   "lat": 46.00328333,
+   "lon": 8.93545111
+  },
+  "straight": 1069.255715934595,
+  "climb": -30.80000000000001,
+  "valhalla": {
+   "meters": 1174,
+   "seconds": 841.831
+  },
+  "osrm": {
+   "meters": 1173.9,
+   "seconds": 939.3
+  },
+  "brouter": {
+   "meters": 1173,
+   "seconds": 768,
+   "ascend": 7
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Balestra",
+   "lat": 46.00828389,
+   "lon": 8.95576944
+  },
+  "to": {
+   "name": "Cassarate, Lido",
+   "lat": 46.00610444,
+   "lon": 8.96257778
+  },
+  "straight": 578.9837250156398,
+  "climb": -0.9000000000000341,
+  "valhalla": {
+   "meters": 748,
+   "seconds": 515.47
+  },
+  "osrm": {
+   "meters": 794.4,
+   "seconds": 641.7
+  },
+  "brouter": {
+   "meters": 750,
+   "seconds": 536,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Sentiero Castagni",
+   "lat": 46.01244528,
+   "lon": 8.97464722
+  },
+  "to": {
+   "name": "Lugano, Via Molinazzo",
+   "lat": 46.00974889,
+   "lon": 8.96651417
+  },
+  "straight": 695.9836659518562,
+  "climb": -157.90000000000003,
+  "valhalla": {
+   "meters": 1816,
+   "seconds": 1300.706
+  },
+  "osrm": {
+   "meters": 1271.7,
+   "seconds": 1037.4
+  },
+  "brouter": {
+   "meters": 1268,
+   "seconds": 1069,
+   "ascend": 5
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, ai Ronchi",
+   "lat": 46.01508167,
+   "lon": 8.97332667
+  },
+  "to": {
+   "name": "Aldesago, Ronchée",
+   "lat": 46.00916111,
+   "lon": 8.97993944
+  },
+  "straight": 833.1839148696795,
+  "climb": 241.90000000000003,
+  "valhalla": {
+   "meters": 2291,
+   "seconds": 2424.57
+  },
+  "osrm": {
+   "meters": 1970.1,
+   "seconds": 1576.8
+  },
+  "brouter": {
+   "meters": 1951,
+   "seconds": 2139,
+   "ascend": 245
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Max Frisch",
+   "lat": 46.01339667,
+   "lon": 8.97152333
+  },
+  "to": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "straight": 316.9172228462366,
+  "climb": -16.700000000000045,
+  "valhalla": {
+   "meters": 366,
+   "seconds": 259.577
+  },
+  "osrm": {
+   "meters": 365.6,
+   "seconds": 292.4
+  },
+  "brouter": {
+   "meters": 370,
+   "seconds": 240,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, Centro",
+   "lat": 46.01228972,
+   "lon": 8.965578059999999
+  },
+  "to": {
+   "name": "Lugano, Campus Universitario",
+   "lat": 46.01126389,
+   "lon": 8.9609525
+  },
+  "straight": 374.98390515000256,
+  "climb": -2.1999999999999886,
+  "valhalla": {
+   "meters": 394,
+   "seconds": 277.669
+  },
+  "osrm": {
+   "meters": 394.7,
+   "seconds": 315.8
+  },
+  "brouter": {
+   "meters": 394,
+   "seconds": 276,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "to": {
+   "name": "Albonago, Via Max Frisch",
+   "lat": 46.01339667,
+   "lon": 8.97152333
+  },
+  "straight": 306.10152954587215,
+  "climb": -22.099999999999966,
+  "valhalla": {
+   "meters": 310,
+   "seconds": 202.372
+  },
+  "osrm": {
+   "meters": 310.1,
+   "seconds": 248.1
+  },
+  "brouter": {
+   "meters": 310,
+   "seconds": 196,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Paradiso, Fontana",
+   "lat": 45.99115833,
+   "lon": 8.947355830000001
+  },
+  "to": {
+   "name": "Lugano, Cassarina",
+   "lat": 45.9949775,
+   "lon": 8.94299472
+  },
+  "straight": 542.0808868471241,
+  "climb": 22,
+  "valhalla": {
+   "meters": 777,
+   "seconds": 616.115
+  },
+  "osrm": {
+   "meters": 800.8,
+   "seconds": 640.7
+  },
+  "brouter": {
+   "meters": 724,
+   "seconds": 564,
+   "ascend": 23
+  }
+ },
+ {
+  "from": {
+   "name": "Ruvigliana, Trona",
+   "lat": 46.00494083,
+   "lon": 8.97734139
+  },
+  "to": {
+   "name": "Lugano, Via Molinazzo",
+   "lat": 46.00974889,
+   "lon": 8.96651417
+  },
+  "straight": 992.5114735614495,
+  "climb": -176.3,
+  "valhalla": {
+   "meters": 2879,
+   "seconds": 1979.84
+  },
+  "osrm": {
+   "meters": 1983.6,
+   "seconds": 1586.9
+  },
+  "brouter": {
+   "meters": 1977,
+   "seconds": 1480,
+   "ascend": 4
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Università",
+   "lat": 46.01147611,
+   "lon": 8.95789806
+  },
+  "to": {
+   "name": "Suvigliana, Funicolare",
+   "lat": 46.00704472,
+   "lon": 8.97284278
+  },
+  "straight": 1254.957591916569,
+  "climb": 108.40000000000003,
+  "valhalla": {
+   "meters": 2271,
+   "seconds": 2076.103
+  },
+  "osrm": {
+   "meters": 1858,
+   "seconds": 1492.8
+  },
+  "brouter": {
+   "meters": 1859,
+   "seconds": 1646,
+   "ascend": 109
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Piazza Luini",
+   "lat": 45.99954139,
+   "lon": 8.94953667
+  },
+  "to": {
+   "name": "Lugano, ai Frati",
+   "lat": 46.00855333,
+   "lon": 8.94911417
+  },
+  "straight": 1002.6132022767231,
+  "climb": 38,
+  "valhalla": {
+   "meters": 1393,
+   "seconds": 1175.304
+  },
+  "osrm": {
+   "meters": 1165.6,
+   "seconds": 932.7
+  },
+  "brouter": {
+   "meters": 1166,
+   "seconds": 927,
+   "ascend": 42
+  }
+ },
+ {
+  "from": {
+   "name": "Davesco, Ponte di Valle",
+   "lat": 46.03128778,
+   "lon": 8.97250306
+  },
+  "to": {
+   "name": "Lugano, Cornaredo",
+   "lat": 46.02288667,
+   "lon": 8.95973944
+  },
+  "straight": 1357.8259150771994,
+  "climb": -16.900000000000034,
+  "valhalla": {
+   "meters": 1481,
+   "seconds": 1038.147
+  },
+  "osrm": {
+   "meters": 1520.2,
+   "seconds": 1216.1
+  },
+  "brouter": {
+   "meters": 1482,
+   "seconds": 1022,
+   "ascend": 2
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "to": {
+   "name": "Lugano, Casa Serena",
+   "lat": 46.01479889,
+   "lon": 8.961012219999999
+  },
+  "straight": 810.9546624694653,
+  "climb": -40,
+  "valhalla": {
+   "meters": 1299,
+   "seconds": 873.796
+  },
+  "osrm": {
+   "meters": 1240.3,
+   "seconds": 956.1
+  },
+  "brouter": {
+   "meters": 1238,
+   "seconds": 808,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Stazione Piazza Besso",
+   "lat": 46.00590139,
+   "lon": 8.94423806
+  },
+  "to": {
+   "name": "Savosa, Valgersa",
+   "lat": 46.01646194,
+   "lon": 8.94102944
+  },
+  "straight": 1200.1388510804763,
+  "climb": 41.30000000000001,
+  "valhalla": {
+   "meters": 1499,
+   "seconds": 1197.861
+  },
+  "osrm": {
+   "meters": 1440.7,
+   "seconds": 1156.7
+  },
+  "brouter": {
+   "meters": 1418,
+   "seconds": 1120,
+   "ascend": 43
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cà Rezzonico",
+   "lat": 46.01872472,
+   "lon": 8.954780829999999
+  },
+  "to": {
+   "name": "Savosa, Crocifisso",
+   "lat": 46.01836778,
+   "lon": 8.93979028
+  },
+  "straight": 1158.1994301487114,
+  "climb": 56.39999999999998,
+  "valhalla": {
+   "meters": 1945,
+   "seconds": 1665.542
+  },
+  "osrm": {
+   "meters": 1934.2,
+   "seconds": 1549.6
+  },
+  "brouter": {
+   "meters": 1903,
+   "seconds": 1501,
+   "ascend": 57
+  }
+ },
+ {
+  "from": {
+   "name": "Cureggia, Paese",
+   "lat": 46.0196025,
+   "lon": 8.98418583
+  },
+  "to": {
+   "name": "Pregassona, Bozzoreda",
+   "lat": 46.02217167,
+   "lon": 8.96669361
+  },
+  "straight": 1380.5144799932064,
+  "climb": -347.4,
+  "valhalla": {
+   "meters": 2724,
+   "seconds": 1966.517
+  },
+  "osrm": {
+   "meters": 2667.1,
+   "seconds": 2134.1
+  },
+  "brouter": {
+   "meters": 2657,
+   "seconds": 2163,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Via Beltramina",
+   "lat": 46.01671306,
+   "lon": 8.961840559999999
+  },
+  "to": {
+   "name": "Lugano, Centro",
+   "lat": 46.00590472,
+   "lon": 8.95204944
+  },
+  "straight": 1419.9094929451503,
+  "climb": -13.399999999999977,
+  "valhalla": {
+   "meters": 1749,
+   "seconds": 1237.616
+  },
+  "osrm": {
+   "meters": 1868.7,
+   "seconds": 1505.3
+  },
+  "brouter": {
+   "meters": 1710,
+   "seconds": 1192,
+   "ascend": 0
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Via Ruscello",
+   "lat": 46.01064389,
+   "lon": 8.97149778
+  },
+  "to": {
+   "name": "Albonago, Paese",
+   "lat": 46.01132611,
+   "lon": 8.97491278
+  },
+  "straight": 274.42401430699204,
+  "climb": 83.60000000000002,
+  "valhalla": {
+   "meters": 634,
+   "seconds": 755.983
+  },
+  "osrm": {
+   "meters": 634,
+   "seconds": 517.8
+  },
+  "brouter": {
+   "meters": 615,
+   "seconds": 676,
+   "ascend": 88
+  }
+ },
+ {
+  "from": {
+   "name": "Viganello, S. Siro",
+   "lat": 46.01624278,
+   "lon": 8.97130611
+  },
+  "to": {
+   "name": "Canobbio, Mercato Resega",
+   "lat": 46.02773861,
+   "lon": 8.96752111
+  },
+  "straight": 1311.2599462494375,
+  "climb": -22.099999999999966,
+  "valhalla": {
+   "meters": 1890,
+   "seconds": 1388.432
+  },
+  "osrm": {
+   "meters": 2078.6,
+   "seconds": 1662.4
+  },
+  "brouter": {
+   "meters": 1882,
+   "seconds": 1315,
+   "ascend": 20
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, ai Ronchi",
+   "lat": 46.01508167,
+   "lon": 8.97332667
+  },
+  "to": {
+   "name": "Lugano, Stadio",
+   "lat": 46.02428028,
+   "lon": 8.960462779999999
+  },
+  "straight": 1425.7681847911335,
+  "climb": -80.10000000000002,
+  "valhalla": {
+   "meters": 2132,
+   "seconds": 1588.356
+  },
+  "osrm": {
+   "meters": 2241.8,
+   "seconds": 1793.5
+  },
+  "brouter": {
+   "meters": 2067,
+   "seconds": 1463,
+   "ascend": 23
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Sacro Cuore",
+   "lat": 46.01043889,
+   "lon": 8.95540306
+  },
+  "to": {
+   "name": "Lugano, Genzana",
+   "lat": 46.00912444,
+   "lon": 8.94678
+  },
+  "straight": 681.799563121392,
+  "climb": 59.5,
+  "valhalla": {
+   "meters": 1238,
+   "seconds": 1094.333
+  },
+  "osrm": {
+   "meters": 1041.1,
+   "seconds": 834.7
+  },
+  "brouter": {
+   "meters": 1039,
+   "seconds": 879,
+   "ascend": 60
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, S. Nicolao",
+   "lat": 46.00669361,
+   "lon": 8.94219389
+  },
+  "to": {
+   "name": "Lugano, Piazza Rezzonico",
+   "lat": 46.00283556,
+   "lon": 8.95077667
+  },
+  "straight": 789.6019290843813,
+  "climb": -80.69999999999999,
+  "valhalla": {
+   "meters": 1228,
+   "seconds": 866.366
+  },
+  "osrm": {
+   "meters": 1120.7,
+   "seconds": 896.3
+  },
+  "brouter": {
+   "meters": 1123,
+   "seconds": 799,
+   "ascend": 1
+  }
+ },
+ {
+  "from": {
+   "name": "Albonago, Gradinata",
+   "lat": 46.00926917,
+   "lon": 8.97202722
+  },
+  "to": {
+   "name": "Ruvigliana, Trona",
+   "lat": 46.00494083,
+   "lon": 8.97734139
+  },
+  "straight": 632.5265593142565,
+  "climb": 78.30000000000001,
+  "valhalla": {
+   "meters": 1176,
+   "seconds": 1104.665
+  },
+  "osrm": {
+   "meters": 917.2,
+   "seconds": 733.4
+  },
+  "brouter": {
+   "meters": 919,
+   "seconds": 889,
+   "ascend": 86
+  }
+ },
+ {
+  "from": {
+   "name": "Lugano, Cappuccine",
+   "lat": 46.00654861,
+   "lon": 8.95032417
+  },
+  "to": {
+   "name": "Lugano, Malpensata",
+   "lat": 45.99601722,
+   "lon": 8.946650830000001
+  },
+  "straight": 1204.919686178144,
+  "climb": -5.7000000000000455,
+  "valhalla": {
+   "meters": 1319,
+   "seconds": 958.407
+  },
+  "osrm": {
+   "meters": 1400.9,
+   "seconds": 1120.9
+  },
+  "brouter": {
+   "meters": 1314,
+   "seconds": 927,
+   "ascend": 0
+  }
+ }
+]
