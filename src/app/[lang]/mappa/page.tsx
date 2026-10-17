@@ -1,4 +1,4 @@
-import { StopsHeader } from "../components/stops-header";
+import { StopsHeader } from "~/app/components/stops-header";
 import { StopsMap } from "./stops-map-loader";
 
 export default function MapPage() {

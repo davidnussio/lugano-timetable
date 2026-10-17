@@ -21,7 +21,7 @@ import {
 import { isScheduled } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
 import { type Departure, InTimeStatus, type Target } from "~/timetable/models";
-import { LineBadge } from "./components/line-badge";
+import { LineBadge } from "~/app/components/line-badge";
 
 // More would push the stop list off the screen
 const SHOWN = 4;

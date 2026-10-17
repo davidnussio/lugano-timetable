@@ -1,4 +1,4 @@
-import { SkeletonList } from "./components/skeleton-list";
+import { SkeletonList } from "~/app/components/skeleton-list";
 
 export default function LoadingPage() {
   return (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNow } from "~/hooks/use-now";
+import { stripLocale } from "~/i18n/config";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
@@ -21,7 +22,7 @@ export function TimerBar() {
   const pathname = usePathname();
   const now = useNow(timer !== null);
 
-  if (!timer || !countdown || pathname === "/timer") return null;
+  if (!timer || !countdown || stripLocale(pathname) === "/timer") return null;
 
   const tone = timerTone(countdown, stage);
   // Once on board of a journey: the next transfer or the arrival. Of a

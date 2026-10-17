@@ -9,7 +9,7 @@ import { formatDistance, town } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { distanceMeters, type Position } from "~/timer/plan";
 import type { Target } from "~/timetable/models";
-import { StopsHeader } from "./components/stops-header";
+import { StopsHeader } from "~/app/components/stops-header";
 import { NowRides } from "./now-rides";
 
 function bySearchValue(search: string): (target: Target) => boolean {
