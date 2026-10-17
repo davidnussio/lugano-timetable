@@ -164,7 +164,9 @@ const it: Policy = {
             browser) per farla funzionare in modo sicuro. Questi dati possono
             essere trasferiti negli Stati Uniti: Vercel è certificata secondo
             lo Swiss-U.S. Data Privacy Framework, che la Svizzera riconosce
-            come garanzia di una protezione adeguata dei dati.
+            come garanzia di una protezione adeguata dei dati, e il contratto
+            con Vercel sul trattamento dei dati include le clausole
+            contrattuali standard.
           </p>
           <p>
             Il nostro database (Upstash) contiene solo dati pubblici sugli
@@ -340,7 +342,8 @@ const de: Policy = {
             Seite, Browser), um einen sicheren Betrieb zu gewährleisten. Diese
             Daten können in die USA übermittelt werden: Vercel ist nach dem
             Swiss-U.S. Data Privacy Framework zertifiziert, das die Schweiz als
-            angemessenen Datenschutz anerkennt.
+            angemessenen Datenschutz anerkennt, und der Vertrag mit Vercel über
+            die Auftragsbearbeitung enthält die Standardvertragsklauseln.
           </p>
           <p>
             Unsere Datenbank (Upstash) enthält nur öffentliche Fahrplandaten,
@@ -507,7 +510,9 @@ const en: Policy = {
             about each request (IP address, date and time, page, browser) to
             run it securely. This data may be transferred to the United States:
             Vercel is certified under the Swiss-U.S. Data Privacy Framework,
-            which Switzerland recognises as ensuring adequate data protection.
+            which Switzerland recognises as ensuring adequate data protection,
+            and the data processing agreement with Vercel includes the standard
+            contractual clauses.
           </p>
           <p>
             Our database (Upstash) holds only public timetable data, such as
