@@ -161,9 +161,10 @@ const it: Policy = {
           <p>
             L&apos;app è ospitata da Vercel Inc. (Stati Uniti), che registra
             dati tecnici di ogni richiesta (indirizzo IP, data e ora, pagina,
-            browser) per farla funzionare in modo sicuro. Vercel può trattarli
-            anche fuori dalla Svizzera, con le garanzie contrattuali previste
-            dalla legge.
+            browser) per farla funzionare in modo sicuro. Questi dati possono
+            essere trasferiti negli Stati Uniti: Vercel è certificata secondo
+            lo Swiss-U.S. Data Privacy Framework, che la Svizzera riconosce
+            come garanzia di una protezione adeguata dei dati.
           </p>
           <p>
             Il nostro database (Upstash) contiene solo dati pubblici sugli
@@ -336,9 +337,10 @@ const de: Policy = {
           <p>
             Die App wird von Vercel Inc. (USA) gehostet. Vercel protokolliert
             technische Daten jeder Anfrage (IP-Adresse, Datum und Uhrzeit,
-            Seite, Browser), um einen sicheren Betrieb zu gewährleisten, und
-            kann sie auch ausserhalb der Schweiz bearbeiten, mit den gesetzlich
-            vorgesehenen vertraglichen Garantien.
+            Seite, Browser), um einen sicheren Betrieb zu gewährleisten. Diese
+            Daten können in die USA übermittelt werden: Vercel ist nach dem
+            Swiss-U.S. Data Privacy Framework zertifiziert, das die Schweiz als
+            angemessenen Datenschutz anerkennt.
           </p>
           <p>
             Unsere Datenbank (Upstash) enthält nur öffentliche Fahrplandaten,
@@ -503,8 +505,9 @@ const en: Policy = {
           <p>
             The app is hosted by Vercel Inc. (USA), which logs technical data
             about each request (IP address, date and time, page, browser) to
-            run it securely, and may process it outside Switzerland with the
-            contractual safeguards the law requires.
+            run it securely. This data may be transferred to the United States:
+            Vercel is certified under the Swiss-U.S. Data Privacy Framework,
+            which Switzerland recognises as ensuring adequate data protection.
           </p>
           <p>
             Our database (Upstash) holds only public timetable data, such as
