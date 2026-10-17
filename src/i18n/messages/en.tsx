@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import type { Messages } from "./it";
 
+const decimal = new Intl.NumberFormat("en-GB", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  useGrouping: false,
+});
+
 // British English. Glossary: fermata → stop, partenze → departures,
 // tragitto → journey, coincidenza → connection, esci tra → leave in
 export const en: Messages = {
@@ -286,5 +292,69 @@ export const en: Messages = {
       "AttributionControl.MapFeedback": "Map feedback",
       "Popup.Close": "Close",
     },
+  },
+  format: {
+    now: "now",
+    decimal: (value: number) => decimal.format(value),
+  },
+  weather: { ice: "Ice", snow: "Snow", heavyRain: "Heavy rain", rain: "Rain" },
+  weatherInline: { ice: "ice", snow: "snow", heavyRain: "heavy rain", rain: "rain" },
+  alerts: {
+    bus: (line: string, destination: string) => `Line ${line} to ${destination}`,
+    busDeparts: (minutes: number) =>
+      minutes <= 0 ? "The bus is arriving" : `The bus leaves in ${minutes} min`,
+    busDepartsInline: (minutes: number) =>
+      minutes <= 0 ? "the bus is arriving" : `the bus leaves in ${minutes} min`,
+    onFoot: (minutes: number, weather?: string) =>
+      `${minutes} min on foot${weather ? ` (${weather})` : ""}`,
+    leaveIn: (minutes: number) => `Leave in ${minutes} min`,
+    leaveNow: "Leave now",
+    late: (minutes: number) => `${minutes} min late: hurry up!`,
+    nextStop: (stop: string) => `Next stop: ${stop}`,
+    getReady: (bus: string) => `Get ready to get off · ${bus}`,
+    getOffNow: (stop: string) => `Get off now at ${stop}`,
+    tightTransfer: (stop: string) => `Tight connection at ${stop}`,
+    noSpare: "no time to spare, hurry up",
+    transferAtRisk: (stop: string) => `Connection at ${stop} at risk`,
+    lateBy: (minutes: number) => `${minutes} min late`,
+    nextLine: (line: string, time: string, later: number) =>
+      `Next line ${line} at ${time}, arrival ${later > 0 ? `+${later} min` : "unchanged"}`,
+  },
+  headline: {
+    busGone: "Bus gone",
+    busIn: "Bus in",
+    departsIn: "Leaves in",
+    arriving: "Arriving",
+    atStopIn: "At the stop in",
+    leaveIn: "Leave in",
+    lateBy: "Late by",
+    arrivedAt: (stop: string) => `Arrived at ${stop}`,
+    getOffIn: (stop: string) => `Get off at ${stop} in`,
+    arrivingAt: (stop: string) => `Arriving at ${stop}`,
+    arrived: "Arrived",
+    lineIn: (line: string) => `Line ${line} in`,
+    arrivalIn: "Arriving in",
+  },
+  ride: {
+    headingTo: (stop: string) => `On the way to ${stop}`,
+    busLeft: "The bus has left the stop",
+    busAtStop: "The bus is at the stop",
+    nextStop: "Next stop",
+    stopsLeft: (stops: number) => `${stops} stops to go`,
+  },
+  rideInline: {
+    headingTo: (stop: string) => `on the way to ${stop}`,
+    busLeft: "the bus has left the stop",
+    busAtStop: "the bus is at the stop",
+    nextStop: "next stop",
+    stopsLeft: (stops: number) => `${stops} stops to go`,
+  },
+  reliability: {
+    onTime: "Usually leaves on time",
+    late: (minutes: number) => `Usually leaves +${minutes} min late`,
+    early: (minutes: number) => `Usually leaves ${minutes} min early`,
+    within: (minutes: number) => `80% within +${minutes} min`,
+    allOnTime: "80% on time",
+    days: (days: number) => `(${days} days)`,
   },
 };

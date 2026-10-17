@@ -101,6 +101,7 @@ export function DepartureBoard({
 }
 
 function BoardRow({ departure, now }: { departure: StationDeparture; now: number }) {
+  const { m } = useI18n();
   const at = expected(departure.departure);
   const ms = at - now;
   const delay = Math.round(delayMs(departure.departure) / 60_000);
@@ -114,7 +115,7 @@ function BoardRow({ departure, now }: { departure: StationDeparture; now: number
       <span className="flex items-center gap-1.5 tabular-nums">
         {delay > 0 && <span className="text-[#ff5a36] [text-shadow:0_0_6px_rgba(255,90,54,0.5)]">+{delay}′</span>}
         <span className={cn(now > 0 && ms < 2 * 60_000 && "animate-pulse")}>
-          {now > 0 ? formatDeparture(ms, formatTime(at)) : formatTime(at)}
+          {now > 0 ? formatDeparture(m, ms, formatTime(at)) : formatTime(at)}
         </span>
       </span>
     </li>

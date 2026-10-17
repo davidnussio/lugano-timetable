@@ -2,6 +2,7 @@
 // stop, when to leave and when to alert. Kept free of browser APIs so that it
 // can be unit tested.
 
+import type { Messages } from "~/i18n/messages";
 import type { CurrentWeather } from "~/weather/open-meteo-client";
 
 export interface Position {
@@ -61,11 +62,14 @@ export function walkingSeconds(
   return ((meters * DETOUR_FACTOR) / speed) * climbFactor(meters, climb);
 }
 
+// What slows down the walk
+export type WeatherKind = "ice" | "snow" | "heavyRain" | "rain";
+
 export interface WeatherWalk {
   // How much longer the walk takes
   readonly factor: number;
   // What slows it down, undefined when dry
-  readonly label?: string;
+  readonly kind?: WeatherKind;
 }
 
 const DRY: WeatherWalk = { factor: 1 };
@@ -89,19 +93,19 @@ const ICE_CODES = new Set([56, 57, 66, 67]);
 export function weatherWalk(weather: CurrentWeather | undefined): WeatherWalk {
   if (weather === undefined) return DRY;
   const { precipitation, snowfall, code } = weather;
-  if (ICE_CODES.has(code)) return { factor: 1.3, label: "Ghiaccio" };
-  if (snowfall > 0 || SNOW_CODES.has(code)) return { factor: 1.3, label: "Neve" };
+  if (ICE_CODES.has(code)) return { factor: 1.3, kind: "ice" };
+  if (snowfall > 0 || SNOW_CODES.has(code)) return { factor: 1.3, kind: "snow" };
   if (precipitation >= HEAVY_RAIN_MM_PER_HOUR || HEAVY_RAIN_CODES.has(code)) {
-    return { factor: 1.15, label: "Pioggia forte" };
+    return { factor: 1.15, kind: "heavyRain" };
   }
   if (precipitation >= RAIN_MM_PER_HOUR || RAIN_CODES.has(code)) {
-    return { factor: 1.1, label: "Pioggia" };
+    return { factor: 1.1, kind: "rain" };
   }
   return DRY;
 }
 
 export interface WeatherDelay {
-  readonly label: string;
+  readonly kind: WeatherKind;
   readonly minutes: number;
 }
 
@@ -109,11 +113,11 @@ export interface WeatherDelay {
 // by it): worth telling from one minute up
 export function weatherDelay(
   seconds: number,
-  { factor, label }: WeatherWalk
+  { factor, kind }: WeatherWalk
 ): WeatherDelay | undefined {
-  if (label === undefined) return undefined;
+  if (kind === undefined) return undefined;
   const minutes = Math.round((seconds - seconds / factor) / 60);
-  return minutes >= 1 ? { label, minutes } : undefined;
+  return minutes >= 1 ? { kind, minutes } : undefined;
 }
 
 // Meters per second by which the distance shrinks when the walking time drops
@@ -314,39 +318,30 @@ export interface AlertMessage {
   readonly body: string;
 }
 
-// With `weather`, what slows down the walk (e.g. "Pioggia")
+// With `weather`, what slows down the walk
 export function alertMessage(
+  m: Messages,
   line: string,
   destination: string,
   { departureMs, leaveMs, walkingMs }: Countdown,
-  weather?: string
+  weather?: WeatherKind
 ): AlertMessage {
-  const bus = `Linea ${line} per ${destination}`;
+  const bus = m.alerts.bus(line, destination);
   const departs = minutesLeft(departureMs);
-  const departsIn =
-    departs <= 0 ? "Il bus sta arrivando" : `Il bus parte tra ${departs} min`;
 
   if (walkingMs === undefined) {
-    return { title: departsIn, body: bus };
+    return { title: m.alerts.busDeparts(departs), body: bus };
   }
 
   const leave = minutesLeft(leaveMs);
   const walk = Math.max(1, Math.round(walkingMs / 60_000));
-  const onFoot = `${walk} min a piedi${weather ? ` (${weather.toLowerCase()})` : ""}`;
+  const onFoot = m.alerts.onFoot(walk, weather && m.weatherInline[weather]);
+  const departsIn = m.alerts.busDepartsInline(departs);
   if (leave > 0) {
-    return {
-      title: `Esci tra ${leave} min`,
-      body: `${bus} · ${departsIn.toLowerCase()}, ${onFoot}`,
-    };
+    return { title: m.alerts.leaveIn(leave), body: `${bus} · ${departsIn}, ${onFoot}` };
   }
   if (leave === 0) {
-    return {
-      title: "Esci ora",
-      body: `${bus} · ${departsIn.toLowerCase()}, ${onFoot}`,
-    };
+    return { title: m.alerts.leaveNow, body: `${bus} · ${departsIn}, ${onFoot}` };
   }
-  return {
-    title: `In ritardo di ${-leave} min: affrettati!`,
-    body: `${bus} · ${departsIn.toLowerCase()}`,
-  };
+  return { title: m.alerts.late(-leave), body: `${bus} · ${departsIn}` };
 }

@@ -15,8 +15,6 @@ import { AlertBanner } from "./alert-banner";
 import { PhaseIcon } from "./phase-icon";
 import { TimerBadge } from "./timer-badge";
 
-const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
-
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
   const { timer, countdown, distance, far, geolocation, legs, stage, ride } = useTimer();
@@ -34,23 +32,23 @@ export function TimerBar() {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(legs, now)
-        : getOff && getOffHeadline(getOff, ride, now >= timer.departureAt, now);
-  const headline = travel ?? timerHeadline(countdown, stage);
+        ? journeyHeadline(m, legs, now)
+        : getOff && getOffHeadline(m, getOff, ride, now >= timer.departureAt, now);
+  const headline = travel ?? timerHeadline(m, countdown, stage);
   const accuracy = geolocation.position?.accuracy;
   const where = travel
     ? getOff
-      ? lowerFirst(rideSummary(getOff, ride))
+      ? rideSummary(m.rideInline, getOff, ride)
       : m.timer.towards(timer.journey?.to.name ?? timer.destination)
     : stage === "arrived"
       ? m.timer.atStop(timer.stop.name)
       : far !== undefined
-        ? m.timer.farFrom(formatDistance(far), timer.stop.name)
+        ? m.timer.farFrom(formatDistance(m, far), timer.stop.name)
         : distance === undefined
           ? m.journey.fromStop(timer.stop.name)
           : accuracy === undefined
-            ? m.timer.distanceFrom(formatDistance(distance), timer.stop.name)
-            : m.timer.accuracyFrom(formatDistance(distance), Math.round(accuracy), timer.stop.name);
+            ? m.timer.distanceFrom(formatDistance(m, distance), timer.stop.name)
+            : m.timer.accuracyFrom(formatDistance(m, distance), Math.round(accuracy), timer.stop.name);
 
   return (
     <>

@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import type { Messages } from "./it";
 
+// "4.7", as in Switzerland
+const decimal = new Intl.NumberFormat("de-CH", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  useGrouping: false,
+});
+
 // Swiss Standard German: "ss", never "ß".
 // Glossary: fermata → Haltestelle, partenze → Abfahrten, tragitto →
 // Verbindung, coincidenza → Anschluss, esci tra → Losgehen in
@@ -294,5 +301,69 @@ export const de: Messages = {
       "AttributionControl.MapFeedback": "Feedback zur Karte",
       "Popup.Close": "Schliessen",
     },
+  },
+  format: {
+    now: "jetzt",
+    decimal: (value: number) => decimal.format(value),
+  },
+  weather: { ice: "Glatteis", snow: "Schnee", heavyRain: "Starker Regen", rain: "Regen" },
+  weatherInline: { ice: "Glatteis", snow: "Schnee", heavyRain: "starker Regen", rain: "Regen" },
+  alerts: {
+    bus: (line: string, destination: string) => `Linie ${line} nach ${destination}`,
+    busDeparts: (minutes: number) =>
+      minutes <= 0 ? "Der Bus fährt ein" : `Der Bus fährt in ${minutes} min ab`,
+    busDepartsInline: (minutes: number) =>
+      minutes <= 0 ? "der Bus fährt ein" : `der Bus fährt in ${minutes} min ab`,
+    onFoot: (minutes: number, weather?: string) =>
+      `${minutes} min zu Fuss${weather ? ` (${weather})` : ""}`,
+    leaveIn: (minutes: number) => `Losgehen in ${minutes} min`,
+    leaveNow: "Jetzt losgehen",
+    late: (minutes: number) => `${minutes} min zu spät: Beeil dich!`,
+    nextStop: (stop: string) => `Nächste Haltestelle: ${stop}`,
+    getReady: (bus: string) => `Mach dich bereit zum Aussteigen · ${bus}`,
+    getOffNow: (stop: string) => `Jetzt aussteigen in ${stop}`,
+    tightTransfer: (stop: string) => `Knapper Anschluss in ${stop}`,
+    noSpare: "keine Reserve, beeil dich",
+    transferAtRisk: (stop: string) => `Anschluss in ${stop} gefährdet`,
+    lateBy: (minutes: number) => `${minutes} min Verspätung`,
+    nextLine: (line: string, time: string, later: number) =>
+      `Nächste Linie ${line} um ${time}, Ankunft ${later > 0 ? `+${later} min` : "unverändert"}`,
+  },
+  headline: {
+    busGone: "Bus abgefahren",
+    busIn: "Bus in",
+    departsIn: "Abfahrt in",
+    arriving: "Fährt ein",
+    atStopIn: "An der Haltestelle in",
+    leaveIn: "Losgehen in",
+    lateBy: "Zu spät um",
+    arrivedAt: (stop: string) => `Angekommen in ${stop}`,
+    getOffIn: (stop: string) => `Ausstieg in ${stop} in`,
+    arrivingAt: (stop: string) => `Einfahrt in ${stop}`,
+    arrived: "Angekommen",
+    lineIn: (line: string) => `Linie ${line} in`,
+    arrivalIn: "Ankunft in",
+  },
+  ride: {
+    headingTo: (stop: string) => `Unterwegs nach ${stop}`,
+    busLeft: "Der Bus hat die Haltestelle verlassen",
+    busAtStop: "Der Bus ist an der Haltestelle",
+    nextStop: "Nächste Haltestelle",
+    stopsLeft: (stops: number) => `Noch ${stops} Haltestellen`,
+  },
+  rideInline: {
+    headingTo: (stop: string) => `unterwegs nach ${stop}`,
+    busLeft: "der Bus hat die Haltestelle verlassen",
+    busAtStop: "der Bus ist an der Haltestelle",
+    nextStop: "nächste Haltestelle",
+    stopsLeft: (stops: number) => `noch ${stops} Haltestellen`,
+  },
+  reliability: {
+    onTime: "Fährt meist pünktlich ab",
+    late: (minutes: number) => `Fährt meist mit +${minutes} min ab`,
+    early: (minutes: number) => `Fährt meist ${minutes} min früher ab`,
+    within: (minutes: number) => `80% innert +${minutes} min`,
+    allOnTime: "80% pünktlich",
+    days: (days: number) => `(${days} Tage)`,
   },
 };

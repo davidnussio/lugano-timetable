@@ -215,6 +215,7 @@ function When({
   now: number;
   className?: string;
 }) {
+  const { m } = useI18n();
   const ms = departure.DepartureAt !== undefined ? departure.DepartureAt - now : undefined;
   return (
     <span
@@ -224,7 +225,7 @@ function When({
         ms !== undefined && ms < 2 * 60_000 && "text-warning",
         className
       )}>
-      {ms !== undefined ? formatDeparture(ms, departure.Time) : departure.Time}
+      {ms !== undefined ? formatDeparture(m, ms, departure.Time) : departure.Time}
     </span>
   );
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "~/i18n/messages";
 import { RoutingStatus } from "~/timetable/models";
 import {
   clockAt,
@@ -11,6 +12,9 @@ import {
   rideState,
   rideSummary,
 } from "../get-off";
+
+// The Italian texts: the words asserted below
+const m = messages.it;
 
 const MIN = 60_000;
 const { FeatureStation: F, CurrentStation: C, PassedStation: P, Origin: O } =
@@ -169,11 +173,11 @@ describe("dueGetOffAlert", () => {
 
 describe("getOffMessage", () => {
   it("names the stop and the bus", () => {
-    expect(getOffMessage("next", getOff, "5", "Cornaredo")).toEqual({
+    expect(getOffMessage(m, "next", getOff, "5", "Cornaredo")).toEqual({
       title: "Prossima fermata: Cornaredo",
       body: "Preparati a scendere · Linea 5 per Cornaredo",
     });
-    expect(getOffMessage("now", getOff, "5", "Cornaredo")).toEqual({
+    expect(getOffMessage(m, "now", getOff, "5", "Cornaredo")).toEqual({
       title: "Scendi ora a Cornaredo",
       body: "Linea 5 per Cornaredo",
     });
@@ -184,43 +188,43 @@ describe("getOffHeadline", () => {
   const timed = { ...getOff, arrivalAt: eight + 14 * MIN };
 
   it("leaves the countdown to the bus until it has left", () => {
-    expect(getOffHeadline(timed, ride("before", 3, false), true, eight)).toBeUndefined();
-    expect(getOffHeadline(timed, undefined, false, eight)).toBeUndefined();
+    expect(getOffHeadline(m, timed, ride("before", 3, false), true, eight)).toBeUndefined();
+    expect(getOffHeadline(m, timed, undefined, false, eight)).toBeUndefined();
   });
 
   it("counts down to the stop", () => {
-    expect(getOffHeadline(timed, ride("before", 3), false, eight)).toEqual({
+    expect(getOffHeadline(m, timed, ride("before", 3), false, eight)).toEqual({
       label: "Scendi a Cornaredo tra",
       ms: 14 * MIN,
       phase: "arrival",
     });
     // Without the routing, from the departure
-    expect(getOffHeadline(timed, undefined, true, eight)?.ms).toBe(14 * MIN);
-    expect(getOffHeadline(timed, ride("next"), false, eight + 15 * MIN)?.label).toBe(
+    expect(getOffHeadline(m, timed, undefined, true, eight)?.ms).toBe(14 * MIN);
+    expect(getOffHeadline(m, timed, ride("next"), false, eight + 15 * MIN)?.label).toBe(
       "In arrivo a Cornaredo"
     );
   });
 
   it("tells to get off, then the arrival", () => {
-    expect(getOffHeadline(timed, ride("at", 0), false, eight)?.label).toBe(
+    expect(getOffHeadline(m, timed, ride("at", 0), false, eight)?.label).toBe(
       "Scendi ora a Cornaredo"
     );
     expect(
-      getOffHeadline({ ...timed, alerted: ["now"] }, undefined, true, eight)?.label
+      getOffHeadline(m, { ...timed, alerted: ["now"] }, undefined, true, eight)?.label
     ).toBe("Scendi ora a Cornaredo");
     expect(
-      getOffHeadline({ ...timed, arrivedAt: eight }, undefined, true, eight)
+      getOffHeadline(m, { ...timed, arrivedAt: eight }, undefined, true, eight)
     ).toEqual({ label: "Arrivato a Cornaredo", ms: 0, phase: "arrival" });
   });
 });
 
 describe("rideSummary", () => {
   it("tells the stops left", () => {
-    expect(rideSummary(getOff, ride("before", 3))).toBe("Ancora 3 fermate");
-    expect(rideSummary(getOff, ride("before", 1))).toBe("Prossima fermata");
-    expect(rideSummary(getOff, ride("next"))).toBe("Prossima fermata");
-    expect(rideSummary(getOff, ride("at", 0))).toBe("Il bus è alla fermata");
-    expect(rideSummary(getOff, ride("passed", 0))).toBe("Il bus ha lasciato la fermata");
-    expect(rideSummary(getOff, undefined)).toBe("In viaggio verso Cornaredo");
+    expect(rideSummary(m.ride, getOff, ride("before", 3))).toBe("Ancora 3 fermate");
+    expect(rideSummary(m.ride, getOff, ride("before", 1))).toBe("Prossima fermata");
+    expect(rideSummary(m.ride, getOff, ride("next"))).toBe("Prossima fermata");
+    expect(rideSummary(m.ride, getOff, ride("at", 0))).toBe("Il bus è alla fermata");
+    expect(rideSummary(m.ride, getOff, ride("passed", 0))).toBe("Il bus ha lasciato la fermata");
+    expect(rideSummary(m.ride, getOff, undefined)).toBe("In viaggio verso Cornaredo");
   });
 });

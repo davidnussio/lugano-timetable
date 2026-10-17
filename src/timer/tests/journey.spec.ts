@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "~/i18n/messages";
 import {
   connectionStatus,
   delayMs,
@@ -16,6 +17,9 @@ import {
   transferWalkingMs,
 } from "../journey";
 import { climbFactor, distanceMeters, PACE_SPEED } from "../plan";
+
+// The Italian texts: the words asserted below
+const m = messages.it;
 
 const MIN = 60_000;
 
@@ -325,21 +329,21 @@ describe("transferMessage", () => {
   const departing = toParadiso(15, 25);
 
   it("says nothing while the connection is fine", () => {
-    expect(transferMessage(departing, transfer(arriving(0), departing))).toBeUndefined();
+    expect(transferMessage(m, departing, transfer(arriving(0), departing))).toBeUndefined();
   });
 
   it("warns about a tight connection", () => {
-    expect(transferMessage(departing, transfer(arriving(3), departing))).toEqual({
+    expect(transferMessage(m, departing, transfer(arriving(3), departing))).toEqual({
       title: "Coincidenza stretta a Lugano, Centro",
       body: "Linea 5 per Paradiso · 1 min di margine",
     });
-    expect(transferMessage(departing, transfer(arriving(4), departing))?.body).toBe(
+    expect(transferMessage(m, departing, transfer(arriving(4), departing))?.body).toBe(
       "Linea 5 per Paradiso · nessun margine, affrettati"
     );
   });
 
   it("tells by how much a connection is missed", () => {
-    expect(transferMessage(departing, transfer(arriving(7), departing))).toEqual({
+    expect(transferMessage(m, departing, transfer(arriving(7), departing))).toEqual({
       title: "Coincidenza a rischio a Lugano, Centro",
       body: "Linea 5 per Paradiso · in ritardo di 3 min",
     });
@@ -348,7 +352,7 @@ describe("transferMessage", () => {
   it("suggests the next bus", () => {
     const alternative = { leg: toParadiso(25, 35), laterMs: 10 * MIN };
     expect(
-      transferMessage(departing, transfer(arriving(7), departing), alternative)
+      transferMessage(m, departing, transfer(arriving(7), departing), alternative)
     ).toEqual({
       title: "Coincidenza a rischio a Lugano, Centro",
       body: `Prossima linea 5 alle ${formatTime(25 * MIN)}, arrivo +10 min`,
@@ -365,25 +369,25 @@ describe("journeyHeadline", () => {
   const legs = [leg("2", 0, 10), toParadiso(15, 25)];
 
   it("leaves the countdown to the timer before the first bus", () => {
-    expect(journeyHeadline(legs, -MIN)).toBeUndefined();
+    expect(journeyHeadline(m, legs, -MIN)).toBeUndefined();
   });
 
   it("tells when to get off, wait and arrive", () => {
-    expect(journeyHeadline(legs, 4 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 4 * MIN)).toEqual({
       label: "Scendi a Lugano, Centro tra",
       ms: 6 * MIN,
       phase: "transfer",
     });
-    expect(journeyHeadline(legs, 12 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 12 * MIN)).toEqual({
       label: "Linea 5 tra",
       ms: 3 * MIN,
       phase: "bus",
     });
-    expect(journeyHeadline(legs, 20 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 20 * MIN)).toEqual({
       label: "Arrivo tra",
       ms: 5 * MIN,
       phase: "arrival",
     });
-    expect(journeyHeadline(legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
+    expect(journeyHeadline(m, legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
   });
 });

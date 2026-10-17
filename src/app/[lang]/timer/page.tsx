@@ -58,7 +58,12 @@ const paces: ReadonlyArray<Pace> = ["slow", "normal", "fast"];
 
 // Share of the time left since the timer started: the ring, or the bar of the
 // compact countdown. Until leaving it counts down to leave, then to the bus.
-function timerProgress(active: ActiveTimer, countdown: Countdown, stage: Stage): number {
+function timerProgress(
+  m: Messages,
+  active: ActiveTimer,
+  countdown: Countdown,
+  stage: Stage
+): number {
   if (timerTone(countdown, stage) === "gone") return 0;
   const total = active.departureAt - active.startedAt;
   if (stage !== "away") {
@@ -66,25 +71,26 @@ function timerProgress(active: ActiveTimer, countdown: Countdown, stage: Stage):
   }
   if (countdown.leaveMs < 0) return 1;
   const leaveTotal = total - (countdown.walkingMs ?? 0);
-  return Math.min(1, Math.max(0, leaveTotal > 0 ? timerHeadline(countdown).ms / leaveTotal : 0));
+  return Math.min(1, Math.max(0, leaveTotal > 0 ? timerHeadline(m, countdown).ms / leaveTotal : 0));
 }
 
 // The countdown to leave, or what comes next once on board: of a journey, or
 // of a single bus with a stop to get off
 function useHeadline(countdown: Countdown) {
   const { timer, legs, stage, ride } = useTimer();
+  const { m } = useI18n();
   const now = useNow();
   const getOff = timer?.journey === undefined ? timer?.getOff : undefined;
   const travel =
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(legs, now)
+        ? journeyHeadline(m, legs, now)
         : getOff && timer
-          ? getOffHeadline(getOff, ride, now >= timer.departureAt, now)
+          ? getOffHeadline(m, getOff, ride, now >= timer.departureAt, now)
           : undefined;
   return {
-    headline: travel ?? timerHeadline(countdown, stage),
+    headline: travel ?? timerHeadline(m, countdown, stage),
     travel: travel !== undefined,
     now,
   };
@@ -103,7 +109,7 @@ function PaceLearning() {
         ) : (
           <>
             {m.timer.measuredPace}{" "}
-            <span className="font-medium text-foreground">{formatSpeed(speed)}</span> ·{" "}
+            <span className="font-medium text-foreground">{formatSpeed(m, speed)}</span> ·{" "}
             {m.timer.walks(learnedPace.count)}
           </>
         )}
@@ -248,7 +254,7 @@ function CompactCountdown({
       <div className="h-1 bg-muted">
         <div
           className={cn("h-full transition-[width] duration-1000 ease-linear", toneBackground[tone])}
-          style={{ width: `${timerProgress(active, countdown, stage) * 100}%` }}
+          style={{ width: `${timerProgress(m, active, countdown, stage) * 100}%` }}
         />
       </div>
     </div>
@@ -310,7 +316,7 @@ function ActiveTimerView({
   // From the stop, also when too far to count the walk
   const meters = distance ?? far;
 
-  const progress = timerProgress(active, countdown, stage);
+  const progress = timerProgress(m, active, countdown, stage);
   const routingHref = `/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`;
 
   // Switch to the compact countdown once a fifth of the ring is under the
@@ -412,14 +418,14 @@ function ActiveTimerView({
             <span className="mt-1 text-xs text-muted-foreground">
               {travel
                 ? active.journey === undefined && active.getOff
-                  ? rideSummary(active.getOff, ride)
+                  ? rideSummary(m.ride, active.getOff, ride)
                   : m.routing.headingTo(active.journey?.to.name ?? active.destination)
                 : tone === "gone"
                 ? m.timer.busLeft
                 : countdown.departureMs <= 0
                   ? m.timer.busComing
                   : far !== undefined
-                    ? m.timer.farFromStop(formatDistance(far))
+                    ? m.timer.farFromStop(formatDistance(m, far))
                     : stage === "arrived"
                       ? m.timer.atYourStop(active.stop.name)
                       : walking === undefined
@@ -444,9 +450,9 @@ function ActiveTimerView({
               stage === "arrived" || meters === undefined
                 ? undefined
                 : [
-                    formatDistance(meters),
+                    formatDistance(m, meters),
                     far === undefined ? formatClimb(climb) : undefined,
-                    formatWeather(weather),
+                    formatWeather(m, weather),
                   ]
                     .filter(Boolean)
                     .join(" · ")
@@ -589,7 +595,7 @@ function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMarg
       : { target: active.target, route: active.route, dir: active.dir, time: active.time }
   );
   const { m } = useI18n();
-  const note = reliabilityNote(stats);
+  const note = reliabilityNote(m, stats);
   if (note === undefined) return null;
 
   return (
@@ -643,7 +649,7 @@ function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
                   : getOff.arrivedAt === undefined
                     ? m.timer.arrivalAt(formatTime(getOff.arrivalAt))
                     : m.timer.arrivedAt(formatTime(getOff.arrivedAt)),
-                ride ? rideSummary(getOff, ride) : m.timer.willAlert,
+                ride ? rideSummary(m.ride, getOff, ride) : m.timer.willAlert,
               ]
                 .filter(Boolean)
                 .join(" · ")

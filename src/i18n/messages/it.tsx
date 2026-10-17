@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
 
+const decimal = new Intl.NumberFormat("it", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  useGrouping: false,
+});
+
 // The Italian texts, and through `Messages` the shape every language follows.
 // Texts with values are functions: each language builds its own sentence.
 export const it = {
@@ -288,6 +294,76 @@ export const it = {
       "AttributionControl.MapFeedback": "Segnala un problema della mappa",
       "Popup.Close": "Chiudi",
     },
+  },
+  format: {
+    now: "ora",
+    // "4,7": one decimal, with the comma used so far
+    decimal: (value: number) => decimal.format(value),
+  },
+  // What slows down the walk, at the start of a sentence…
+  weather: { ice: "Ghiaccio", snow: "Neve", heavyRain: "Pioggia forte", rain: "Pioggia" },
+  // …and within one
+  weatherInline: { ice: "ghiaccio", snow: "neve", heavyRain: "pioggia forte", rain: "pioggia" },
+  alerts: {
+    bus: (line: string, destination: string) => `Linea ${line} per ${destination}`,
+    busDeparts: (minutes: number) =>
+      minutes <= 0 ? "Il bus sta arrivando" : `Il bus parte tra ${minutes} min`,
+    busDepartsInline: (minutes: number) =>
+      minutes <= 0 ? "il bus sta arrivando" : `il bus parte tra ${minutes} min`,
+    onFoot: (minutes: number, weather?: string) =>
+      `${minutes} min a piedi${weather ? ` (${weather})` : ""}`,
+    leaveIn: (minutes: number) => `Esci tra ${minutes} min`,
+    leaveNow: "Esci ora",
+    late: (minutes: number) => `In ritardo di ${minutes} min: affrettati!`,
+    nextStop: (stop: string) => `Prossima fermata: ${stop}`,
+    getReady: (bus: string) => `Preparati a scendere · ${bus}`,
+    getOffNow: (stop: string) => `Scendi ora a ${stop}`,
+    tightTransfer: (stop: string) => `Coincidenza stretta a ${stop}`,
+    noSpare: "nessun margine, affrettati",
+    transferAtRisk: (stop: string) => `Coincidenza a rischio a ${stop}`,
+    lateBy: (minutes: number) => `in ritardo di ${minutes} min`,
+    nextLine: (line: string, time: string, later: number) =>
+      `Prossima linea ${line} alle ${time}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
+  },
+  // The main line of the timer, followed by the countdown
+  headline: {
+    busGone: "Bus partito",
+    busIn: "Bus tra",
+    departsIn: "Parte tra",
+    arriving: "In arrivo",
+    atStopIn: "Alla fermata tra",
+    leaveIn: "Esci tra",
+    lateBy: "In ritardo di",
+    arrivedAt: (stop: string) => `Arrivato a ${stop}`,
+    getOffIn: (stop: string) => `Scendi a ${stop} tra`,
+    arrivingAt: (stop: string) => `In arrivo a ${stop}`,
+    arrived: "Arrivato",
+    lineIn: (line: string) => `Linea ${line} tra`,
+    arrivalIn: "Arrivo tra",
+  },
+  // What is left of the ride, at the start of a sentence…
+  ride: {
+    headingTo: (stop: string) => `In viaggio verso ${stop}`,
+    busLeft: "Il bus ha lasciato la fermata",
+    busAtStop: "Il bus è alla fermata",
+    nextStop: "Prossima fermata",
+    stopsLeft: (stops: number) => `Ancora ${stops} fermate`,
+  },
+  // …and within one
+  rideInline: {
+    headingTo: (stop: string) => `in viaggio verso ${stop}`,
+    busLeft: "il bus ha lasciato la fermata",
+    busAtStop: "il bus è alla fermata",
+    nextStop: "prossima fermata",
+    stopsLeft: (stops: number) => `ancora ${stops} fermate`,
+  },
+  reliability: {
+    onTime: "Di solito parte in orario",
+    late: (minutes: number) => `Di solito parte con +${minutes} min`,
+    early: (minutes: number) => `Di solito parte ${minutes} min prima`,
+    within: (minutes: number) => `80% entro +${minutes} min`,
+    allOnTime: "80% in orario",
+    days: (days: number) => `(${days} giorni)`,
   },
 };
 

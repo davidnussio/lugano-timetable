@@ -111,7 +111,7 @@ export function StationPicker({
                 <span className="min-w-0 flex-1 truncate font-medium">{station.name}</span>
                 {station.distance !== undefined && (
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {formatDistance(station.distance)}
+                    {formatDistance(m, station.distance)}
                   </span>
                 )}
               </button>

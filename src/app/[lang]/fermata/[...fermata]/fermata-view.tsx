@@ -169,7 +169,7 @@ export function FermataView({ fermata }: { fermata: string[] }) {
       {nearest !== undefined && walkMinutes !== undefined && (
         <p className="flex items-center gap-1.5 px-5 pb-1 text-xs text-muted-foreground">
           <Footprints className="size-3.5" />
-          {formatDistance(nearest.meters)}
+          {formatDistance(m, nearest.meters)}
           {climbLabel && ` ${climbLabel}`} · {m.stop.walk(walkMinutes)}
         </p>
       )}
@@ -360,7 +360,7 @@ function DepartureRow({
                 "text-xl font-bold tabular-nums leading-none",
                 imminent ? "text-warning" : "text-foreground"
               )}>
-              {formatDeparture(ms, departure.Time)}
+              {formatDeparture(m, ms, departure.Time)}
             </span>
           ) : (
             <span className="font-mono text-lg font-semibold tabular-nums">

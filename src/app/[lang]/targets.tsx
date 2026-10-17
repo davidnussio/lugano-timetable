@@ -204,6 +204,7 @@ function Section({
 }
 
 function TargetRow({ row, favorite }: { row: Row; favorite?: boolean }) {
+  const { m } = useI18n();
   const { target, distance } = row;
   return (
     <li>
@@ -219,7 +220,7 @@ function TargetRow({ row, favorite }: { row: Row; favorite?: boolean }) {
         </div>
         {distance !== undefined && (
           <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-            {formatDistance(distance)}
+            {formatDistance(m, distance)}
           </span>
         )}
         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />

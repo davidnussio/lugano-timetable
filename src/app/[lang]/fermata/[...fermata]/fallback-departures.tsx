@@ -113,7 +113,7 @@ function FallbackRow({
               "text-xl font-bold tabular-nums leading-none",
               imminent ? "text-warning" : "text-foreground"
             )}>
-            {formatDeparture(ms, formatTime(at))}
+            {formatDeparture(m, ms, formatTime(at))}
           </span>
         ) : (
           <span className="font-mono text-lg font-semibold tabular-nums">

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "~/i18n/messages";
 import {
   alertMessage,
   alertThresholds,
@@ -16,6 +17,9 @@ import {
   weatherDelay,
   weatherWalk,
 } from "../plan";
+
+// The Italian texts: the words asserted below
+const m = messages.it;
 
 describe("alertThresholds", () => {
   it("spaces alerts as a fraction of the remaining time", () => {
@@ -106,13 +110,13 @@ describe("weatherWalk", () => {
   it("walks slower in the rain, more under a downpour", () => {
     expect(weatherWalk({ ...dry, precipitation: 0.3, code: 53 })).toEqual({
       factor: 1.1,
-      label: "Pioggia",
+      kind: "rain",
     });
     // The code of the model tells the rain also with little water
-    expect(weatherWalk({ ...dry, precipitation: 0.1, code: 80 }).label).toBe("Pioggia");
+    expect(weatherWalk({ ...dry, precipitation: 0.1, code: 80 }).kind).toBe("rain");
     expect(weatherWalk({ ...dry, precipitation: 4, code: 63 })).toEqual({
       factor: 1.15,
-      label: "Pioggia forte",
+      kind: "heavyRain",
     });
     expect(weatherWalk({ ...dry, precipitation: 2, code: 82 }).factor).toBe(1.15);
   });
@@ -120,13 +124,13 @@ describe("weatherWalk", () => {
   it("walks much slower on snow and ice", () => {
     expect(weatherWalk({ ...dry, precipitation: 0.1, snowfall: 0.1 })).toEqual({
       factor: 1.3,
-      label: "Neve",
+      kind: "snow",
     });
     // Snow wins over the rain of the same hour
-    expect(weatherWalk({ precipitation: 5, snowfall: 0, code: 85 }).label).toBe("Neve");
+    expect(weatherWalk({ precipitation: 5, snowfall: 0, code: 85 }).kind).toBe("snow");
     expect(weatherWalk({ ...dry, precipitation: 1, code: 66 })).toEqual({
       factor: 1.3,
-      label: "Ghiaccio",
+      kind: "ice",
     });
     expect(weatherWalk({ ...dry, code: 56 }).factor).toBe(1.3);
   });
@@ -135,16 +139,16 @@ describe("weatherWalk", () => {
 describe("weatherDelay", () => {
   it("tells the minutes added by the weather, from one up", () => {
     // 10 minutes dry, 11 in the rain
-    expect(weatherDelay(660, { factor: 1.1, label: "Pioggia" })).toEqual({
-      label: "Pioggia",
+    expect(weatherDelay(660, { factor: 1.1, kind: "rain" })).toEqual({
+      kind: "rain",
       minutes: 1,
     });
-    expect(weatherDelay(1300, { factor: 1.3, label: "Neve" })).toEqual({
-      label: "Neve",
+    expect(weatherDelay(1300, { factor: 1.3, kind: "snow" })).toEqual({
+      kind: "snow",
       minutes: 5,
     });
     // 4 minutes dry: 24 seconds more
-    expect(weatherDelay(264, { factor: 1.1, label: "Pioggia" })).toBeUndefined();
+    expect(weatherDelay(264, { factor: 1.1, kind: "rain" })).toBeUndefined();
     expect(weatherDelay(600, { factor: 1 })).toBeUndefined();
   });
 });
@@ -169,26 +173,26 @@ describe("countdown", () => {
 
 describe("alertMessage", () => {
   it("tells when to leave", () => {
-    expect(alertMessage("2", "Castagnola", countdown(600_000, 0, 300))).toEqual({
+    expect(alertMessage(m, "2", "Castagnola", countdown(600_000, 0, 300))).toEqual({
       title: "Esci tra 5 min",
       body: "Linea 2 per Castagnola · il bus parte tra 10 min, 5 min a piedi",
     });
-    expect(alertMessage("2", "Castagnola", countdown(300_000, 0, 300)).title).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(300_000, 0, 300)).title).toBe(
       "Esci ora"
     );
-    expect(alertMessage("2", "Castagnola", countdown(120_000, 0, 300)).title).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(120_000, 0, 300)).title).toBe(
       "In ritardo di 3 min: affrettati!"
     );
   });
 
   it("tells what slows down the walk", () => {
-    expect(alertMessage("2", "Castagnola", countdown(600_000, 0, 300), "Pioggia forte").body).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(600_000, 0, 300), "heavyRain").body).toBe(
       "Linea 2 per Castagnola · il bus parte tra 10 min, 5 min a piedi (pioggia forte)"
     );
   });
 
   it("counts down to the departure without a position", () => {
-    expect(alertMessage("2", "Castagnola", countdown(240_000, 0, undefined))).toEqual({
+    expect(alertMessage(m, "2", "Castagnola", countdown(240_000, 0, undefined))).toEqual({
       title: "Il bus parte tra 4 min",
       body: "Linea 2 per Castagnola",
     });

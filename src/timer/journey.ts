@@ -2,6 +2,7 @@
 // still be made with the real-time data, which bus to catch first and what
 // to tell the user. Like `plan.ts`, kept free of browser APIs.
 
+import type { Messages } from "~/i18n/messages";
 import {
   type AlertMessage,
   climbFactor,
@@ -289,37 +290,35 @@ export interface Alternative {
 // What to tell the user about the connection with `departing`. Nothing while
 // it is fine; `alternative` is the way to fall back on when it is lost.
 export function transferMessage(
+  m: Messages,
   departing: Leg,
   { at, slackMs, status }: Transfer,
   alternative?: Alternative
 ): AlertMessage | undefined {
-  const bus = `Linea ${departing.line} per ${departing.destination}`;
+  const bus = m.alerts.bus(departing.line, departing.destination);
   switch (status) {
     case "ok":
       return undefined;
     case "tight": {
       const spare = Math.floor(slackMs / 60_000);
       return {
-        title: `Coincidenza stretta a ${at.name}`,
-        body:
-          spare > 0
-            ? `${bus} · ${spare} min di margine`
-            : `${bus} · nessun margine, affrettati`,
+        title: m.alerts.tightTransfer(at.name),
+        body: `${bus} · ${spare > 0 ? m.timer.spareMinutes(spare) : m.alerts.noSpare}`,
       };
     }
     case "missed": {
-      const title = `Coincidenza a rischio a ${at.name}`;
+      const title = m.alerts.transferAtRisk(at.name);
       if (alternative === undefined) {
-        return {
-          title,
-          body: `${bus} · in ritardo di ${minutesLeft(-slackMs)} min`,
-        };
+        return { title, body: `${bus} · ${m.alerts.lateBy(minutesLeft(-slackMs))}` };
       }
       const { leg, laterMs } = alternative;
-      const later = minutesLeft(laterMs);
       return {
         title,
-        body: `Prossima linea ${leg.line} alle ${formatTime(expected(leg.departure))}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
+        body: m.alerts.nextLine(
+          leg.line,
+          formatTime(expected(leg.departure)),
+          minutesLeft(laterMs)
+        ),
       };
     }
   }
@@ -328,18 +327,19 @@ export function transferMessage(
 // What comes next once on board: getting off for a transfer, or the arrival.
 // Undefined before the first departure, when the timer counts down to it.
 export function journeyHeadline(
+  m: Messages,
   legs: ReadonlyArray<Leg>,
   now: number
 ): Headline | undefined {
   if (legs.length === 0 || expected(legs[0].departure) > now) return undefined;
   const index = legs.findIndex((leg) => expected(leg.arrival) > now);
-  if (index === -1) return { label: "Arrivato", ms: 0, phase: "arrival" };
+  if (index === -1) return { label: m.headline.arrived, ms: 0, phase: "arrival" };
   const leg = legs[index];
   // Between two legs: waiting for the next bus
   if (expected(leg.departure) > now) {
-    return { label: `Linea ${leg.line} tra`, ms: expected(leg.departure) - now, phase: "bus" };
+    return { label: m.headline.lineIn(leg.line), ms: expected(leg.departure) - now, phase: "bus" };
   }
   const ms = expected(leg.arrival) - now;
-  if (index === legs.length - 1) return { label: "Arrivo tra", ms, phase: "arrival" };
-  return { label: `Scendi a ${leg.to.name} tra`, ms, phase: "transfer" };
+  if (index === legs.length - 1) return { label: m.headline.arrivalIn, ms, phase: "arrival" };
+  return { label: m.headline.getOffIn(leg.to.name), ms, phase: "transfer" };
 }

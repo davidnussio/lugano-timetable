@@ -17,6 +17,7 @@ import {
 } from "~/hooks/use-geolocation";
 import useSWR from "swr";
 import { useMonitored } from "~/hooks/use-monitored";
+import { useI18n } from "~/i18n/i18n-provider";
 import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useClimb, useStopHeights } from "~/terrain/use-climb";
@@ -233,6 +234,8 @@ function useReliableFix(
 // Runs the active timer on every page: follows the bus with the real-time
 // data, measures the walk to the stop and fires the alerts.
 export function TimerProvider({ children }: { children: React.ReactNode }) {
+  // The alerts are written in the language of the page
+  const { m } = useI18n();
   const timer = timerStore.useValue();
   const stored = settingsStore.useValue() ?? defaultSettings;
   const granted = useGeolocationGranted();
@@ -494,14 +497,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (!stored || !getOff) return;
     const due = dueGetOffAlert(ride, getOffDistance, getOff.alerted, departed);
     if (due === undefined) return;
-    const message = getOffMessage(due, getOff, stored.line, stored.destination);
+    const message = getOffMessage(m, due, getOff, stored.line, stored.destination);
     timerStore.set({
       ...stored,
       getOff: { ...getOff, alerted: [...getOff.alerted, due] },
       lastAlert: { ...message, at: Date.now() },
     });
     void notify(message);
-  }, [ride, getOffDistance, departed]);
+  }, [ride, getOffDistance, departed, m]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
@@ -524,7 +527,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     const message =
       due === undefined
         ? undefined
-        : alertMessage(next.line, next.destination, current, weather?.label);
+        : alertMessage(m, next.line, next.destination, current, weather?.kind);
     if (due !== undefined && message !== undefined) {
       next = {
         ...next,
@@ -535,7 +538,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walkSource, far, legs, stage, weather?.label]);
+  }, [current, walkSource, far, legs, stage, weather?.kind, m]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -558,14 +561,19 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
           (journey.arrivalAt + (stored.journey.walkAfterMs ?? 0)),
       };
     }
-    const message = transferMessage(legs[due.index + 1], journey.transfers[due.index], alternative);
+    const message = transferMessage(
+      m,
+      legs[due.index + 1],
+      journey.transfers[due.index],
+      alternative
+    );
     timerStore.set({
       ...stored,
       journey: { ...stored.journey, alerted: [...stored.journey.alerted, due.key] },
       ...(message ? { lastAlert: { ...message, at: Date.now() } } : {}),
     });
     if (message !== undefined) void notify(message);
-  }, [journey, legs, fallback, plans, plansError]);
+  }, [journey, legs, fallback, plans, plansError, m]);
 
   // Sound needs a gesture: unlock it on the first tap while a timer runs
   useEffect(() => {

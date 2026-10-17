@@ -2,6 +2,7 @@
 // where the bus is on the way there, what to tell and when. Like `plan.ts`,
 // kept free of browser APIs.
 
+import type { Messages } from "~/i18n/messages";
 import { busPosition } from "~/lib/trip";
 import type { RoutingStatus } from "~/timetable/models";
 import type { AlertMessage, Position } from "./plan";
@@ -149,20 +150,22 @@ export function dueGetOffAlert(
 }
 
 export function getOffMessage(
+  m: Messages,
   alert: GetOffAlert,
   { name }: Pick<GetOff, "name">,
   line: string,
   destination: string
 ): AlertMessage {
-  const bus = `Linea ${line} per ${destination}`;
+  const bus = m.alerts.bus(line, destination);
   return alert === "next"
-    ? { title: `Prossima fermata: ${name}`, body: `Preparati a scendere · ${bus}` }
-    : { title: `Scendi ora a ${name}`, body: bus };
+    ? { title: m.alerts.nextStop(name), body: m.alerts.getReady(bus) }
+    : { title: m.alerts.getOffNow(name), body: bus };
 }
 
 // Main line of the timer once on board: undefined until the bus has left the
 // stop of the user, when the timer still counts down to it
 export function getOffHeadline(
+  m: Messages,
   getOff: GetOff,
   ride: Ride | undefined,
   departed: boolean,
@@ -170,35 +173,37 @@ export function getOffHeadline(
 ): Headline | undefined {
   if (!(ride?.left ?? departed)) return undefined;
   const { name } = getOff;
-  if (ride?.status === "at") return { label: `Scendi ora a ${name}`, ms: 0, phase: "arrival" };
+  const getOffNow = { label: m.alerts.getOffNow(name), ms: 0, phase: "arrival" } as const;
+  if (ride?.status === "at") return getOffNow;
   if (ride?.status === "passed" || getOff.arrivedAt !== undefined) {
-    return { label: `Arrivato a ${name}`, ms: 0, phase: "arrival" };
+    return { label: m.headline.arrivedAt(name), ms: 0, phase: "arrival" };
   }
   // Told to get off by the GPS
-  if (getOff.alerted.includes("now")) {
-    return { label: `Scendi ora a ${name}`, ms: 0, phase: "arrival" };
-  }
+  if (getOff.alerted.includes("now")) return getOffNow;
   const ms = getOff.arrivalAt === undefined ? 0 : getOff.arrivalAt - now;
   return ms > 0
-    ? { label: `Scendi a ${name} tra`, ms, phase: "arrival" }
-    : { label: `In arrivo a ${name}`, ms: 0, phase: "arrival" };
+    ? { label: m.headline.getOffIn(name), ms, phase: "arrival" }
+    : { label: m.headline.arrivingAt(name), ms: 0, phase: "arrival" };
 }
 
-// What is left of the ride, under the headline
-export function rideSummary(getOff: GetOff, ride: Ride | undefined): string {
+// What is left of the ride, under the headline: `texts` are `m.ride` at the
+// start of a sentence, `m.rideInline` within one
+export function rideSummary(
+  texts: Messages["ride"],
+  getOff: GetOff,
+  ride: Ride | undefined
+): string {
   if (ride === undefined) {
-    return getOff.arrivedAt === undefined
-      ? `In viaggio verso ${getOff.name}`
-      : "Il bus ha lasciato la fermata";
+    return getOff.arrivedAt === undefined ? texts.headingTo(getOff.name) : texts.busLeft;
   }
   switch (ride.status) {
     case "passed":
-      return "Il bus ha lasciato la fermata";
+      return texts.busLeft;
     case "at":
-      return "Il bus è alla fermata";
+      return texts.busAtStop;
     case "next":
-      return "Prossima fermata";
+      return texts.nextStop;
     case "before":
-      return ride.stopsLeft === 1 ? "Prossima fermata" : `Ancora ${ride.stopsLeft} fermate`;
+      return ride.stopsLeft === 1 ? texts.nextStop : texts.stopsLeft(ride.stopsLeft);
   }
 }
