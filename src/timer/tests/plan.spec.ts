@@ -5,6 +5,7 @@ import {
   alertThresholds,
   approach,
   countdown,
+  detourFactor,
   distanceMeters,
   dueAlert,
   isFar,
@@ -82,18 +83,41 @@ describe("walking", () => {
     expect(walkingSeconds(1000, PACE_SPEED.slow)).toBeCloseTo(1350);
   });
 
-  it("walks slower uphill, as on the flat downhill", () => {
-    // 500 m to the stop, 1350 × 500 / 1300 seconds on the flat
-    const flat = walkingSeconds(500);
-    // 35 m up over 675 m of streets: about a fifth more
-    expect(walkingSeconds(500, PACE_SPEED.normal, 35) / flat).toBeCloseTo(Math.exp((3.5 * 35) / 675));
-    expect(walkingSeconds(500, PACE_SPEED.normal, 35) - flat).toBeGreaterThan(90);
-    expect(walkingSeconds(500, PACE_SPEED.normal, -35)).toBeCloseTo(flat);
+  it("walks the winding streets of a slope, slower uphill", () => {
+    // 500 m to the stop on level ground: 575 m of streets
+    expect(walkingSeconds(500, PACE_SPEED.normal, 0)).toBeCloseTo(575 / 1.3);
+    // 35 m up or down: 1.15 + 4.5 × 0.07 = 1.465 times as long, 732.5 m
+    const winding = 732.5 / 1.3;
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35)).toBeCloseTo(
+      winding * Math.exp((3.5 * 35) / 732.5)
+    );
+    expect(walkingSeconds(500, PACE_SPEED.normal, -35)).toBeCloseTo(winding);
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35) - walkingSeconds(500)).toBeGreaterThan(120);
   });
 
   it("caps the slope of a short walk", () => {
-    expect(walkingSeconds(20, PACE_SPEED.normal, 30)).toBeCloseTo(walkingSeconds(20) * Math.exp(3.5 * 0.25));
+    // 30 m up over 20 m: the slope of the streets counted over 200 m
+    expect(walkingSeconds(20, PACE_SPEED.normal, 30)).toBeCloseTo(
+      ((20 * 1.825) / 1.3) * Math.exp(3.5 * 0.25)
+    );
     expect(walkingSeconds(0, PACE_SPEED.normal, 10)).toBe(0);
+  });
+});
+
+describe("detourFactor", () => {
+  it("is the median of the town until the climb is known", () => {
+    expect(detourFactor(800, undefined)).toBe(1.35);
+  });
+
+  it("grows with the slope, up or down", () => {
+    expect(detourFactor(800, 0)).toBeCloseTo(1.15);
+    expect(detourFactor(800, 80)).toBeCloseTo(1.6);
+    expect(detourFactor(800, -80)).toBeCloseTo(1.6);
+  });
+
+  it("is capped on the steepest slopes, and on a short walk", () => {
+    expect(detourFactor(800, 500)).toBe(3);
+    expect(detourFactor(50, 10)).toBeCloseTo(1.15 + (4.5 * 10) / 200);
   });
 });
 
@@ -237,6 +261,20 @@ describe("peakHold", () => {
       envelope = peakHold(envelope, meters, second * 1000, release);
       const leave = 600 - second - walkingSeconds(envelope.value);
       expect(leave).toBeLessThanOrEqual(previousLeave + 1e-9);
+      previousLeave = leave;
+    });
+  });
+
+  it("keeps the time to leave from going back up on a hill too", () => {
+    // 60 m up: winding streets, walked slower
+    const readings = [300, 304, 296, 299, 307, 291, 288, 295];
+    const release = walkingRelease(PACE_SPEED.normal, 300, 60);
+    let envelope = peakHold(undefined, readings[0], 0, release);
+    let previousLeave = Infinity;
+    readings.forEach((meters, second) => {
+      envelope = peakHold(envelope, meters, second * 1000, release);
+      const leave = 900 - second - walkingSeconds(envelope.value, PACE_SPEED.normal, 60);
+      expect(leave).toBeLessThanOrEqual(previousLeave + 0.05);
       previousLeave = leave;
     });
   });

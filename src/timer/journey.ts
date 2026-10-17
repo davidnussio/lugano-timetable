@@ -100,7 +100,7 @@ export function transferWalkingMs(
   from: JourneyStop,
   to: JourneyStop,
   speed = PACE_SPEED.normal,
-  climb = 0
+  climb?: number
 ): number {
   if (from.position === undefined || to.position === undefined) return 0;
   return (

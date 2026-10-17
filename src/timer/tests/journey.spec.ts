@@ -16,7 +16,7 @@ import {
   transferMessage,
   transferWalkingMs,
 } from "../journey";
-import { climbFactor, distanceMeters, PACE_SPEED } from "../plan";
+import { climbFactor, detourFactor, distanceMeters, PACE_SPEED, walkingSeconds } from "../plan";
 
 // The Italian texts: the words asserted below
 const m = messages.it;
@@ -154,25 +154,27 @@ describe("transfer", () => {
     const stops = { from: cornaredo, to: bellavista };
     const arriving = leg("2", 0, 10, undefined, stops);
 
+    const meters = distanceMeters(bellavista.position, centro.position);
+    // The winding streets of the slope, up or down
+    const level = (meters * detourFactor(meters, 25)) / PACE_SPEED.normal;
+
     it("walks slower going up", () => {
-      const flat = transfer(arriving, toParadiso(20, 30));
+      const unknown = transfer(arriving, toParadiso(20, 30));
       const up = transfer(arriving, toParadiso(20, 30), { heightOf });
       expect(up.climb).toBe(25);
-      expect(up.walkingMs).toBeCloseTo(
-        flat.walkingMs * climbFactor(distanceMeters(bellavista.position, centro.position), 25)
-      );
-      expect(up.walkingMs - flat.walkingMs).toBeGreaterThan(MIN);
-      expect(up.slackMs).toBeCloseTo(flat.slackMs - (up.walkingMs - flat.walkingMs));
+      expect(up.walkingMs).toBeCloseTo(level * climbFactor(meters, 25) * 1000);
+      expect(up.walkingMs - unknown.walkingMs).toBeGreaterThan(MIN);
+      expect(up.slackMs).toBeCloseTo(unknown.slackMs - (up.walkingMs - unknown.walkingMs));
     });
 
-    it("walks as on the flat going down or without heights", () => {
+    it("walks at the pace of the flat going down, as the median walk without heights", () => {
       const back = leg("5", 20, 30, undefined, { from: bellavista, to: paradiso });
       const down = transfer(leg("2", 0, 10), back, { heightOf });
       expect(down.climb).toBe(-25);
-      expect(down.walkingMs).toBeCloseTo(transfer(leg("2", 0, 10), back).walkingMs);
-      expect(transfer(arriving, toParadiso(20, 30), { heightOf: () => undefined })).not.toHaveProperty(
-        "climb"
-      );
+      expect(down.walkingMs).toBeCloseTo(level * 1000);
+      const unknown = transfer(arriving, toParadiso(20, 30), { heightOf: () => undefined });
+      expect(unknown).not.toHaveProperty("climb");
+      expect(unknown.walkingMs).toBeCloseTo(walkingSeconds(meters) * 1000);
     });
 
     it("slows down the walk of the timetable, without losing the connection", () => {

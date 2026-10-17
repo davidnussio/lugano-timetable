@@ -344,18 +344,23 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       ? rawDistance
       : undefined;
 
+  // The walk to the stop is longer and slower uphill, and slower in the rain
+  // or the snow
+  const walkingFix =
+    rawDistance !== undefined && far === undefined && stage !== "arrived" ? fix : undefined;
+  const climb = useClimb(walkingFix, timer?.coordinates);
+  const weatherNow = weatherWalk(useWeather(walkingFix));
+
   const distance = useSteadyDistance(
     far === undefined ? rawDistance : undefined,
     now,
     timer?.startedAt,
     // On the way the distance really shrinks: follow it, faster than any
-    // pace, instead of holding it back as GPS noise
-    walkingRelease(speed) * (stage === "walking" ? 3 : 1)
+    // pace, instead of holding it back as GPS noise. The longer and steeper
+    // the way of the streets, the slower the distance as the crow flies
+    // shrinks.
+    walkingRelease(speed, rawDistance, climb) * (stage === "walking" ? 3 : 1)
   );
-  // The walk to the stop slows down uphill, and in the rain or the snow
-  const walkingFix = distance !== undefined && stage !== "arrived" ? fix : undefined;
-  const climb = useClimb(walkingFix, timer?.coordinates);
-  const weatherNow = weatherWalk(useWeather(walkingFix));
 
   // Move forward on the way to the stop, and measure the walk there to learn
   // the pace of the user. Runs again with the same fix when the climb, the

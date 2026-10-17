@@ -11,7 +11,7 @@ import {
   type WalkTrack,
   walkSpeed,
 } from "../pace";
-import { type Approach, approach, PACE_SPEED, walkingSeconds } from "../plan";
+import { type Approach, approach, detourFactor, PACE_SPEED, walkingSeconds } from "../plan";
 
 const SECOND = 1000;
 const MIN = 60 * SECOND;
@@ -108,7 +108,7 @@ describe("followWalk", () => {
     home: number,
     glitch?: { readonly at: number; readonly meters: number }
   ): number | undefined {
-    const crow = speed / 1.35;
+    const crow = speed / detourFactor(800, 0);
     let state: Approach | undefined;
     let walk: WalkTrack | undefined;
     let learned: number | undefined;
@@ -142,7 +142,8 @@ describe("walkSpeed", () => {
   const arrival = { meters: 20, at: 10 * MIN, pace: "normal" } as const;
 
   it("is the model speed of the walk", () => {
-    expect(walkSpeed(walk, arrival)).toBeCloseTo((580 * 1.35) / 600);
+    // 580 m on level ground: 667 m of streets in 10 minutes
+    expect(walkSpeed(walk, arrival)).toBeCloseTo((580 * 1.15) / 600);
   });
 
   it("counts the climb", () => {
@@ -153,7 +154,7 @@ describe("walkSpeed", () => {
 
   it("tells the normal pace from a walk at another one", () => {
     const fast = walkSpeed({ ...walk, pace: "fast" }, { ...arrival, pace: "fast" });
-    expect(fast).toBeCloseTo(((580 * 1.35) / 600) * (PACE_SPEED.normal / PACE_SPEED.fast));
+    expect(fast).toBeCloseTo(((580 * 1.15) / 600) * (PACE_SPEED.normal / PACE_SPEED.fast));
   });
 
   it("rejects the walks it cannot learn from", () => {
