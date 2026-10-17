@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useI18n } from "~/i18n/i18n-provider";
 import { lineColor, lineImage } from "~/lib/lines";
 import { cn } from "~/lib/utils";
 import { TransportBadge } from "./transport-badge";
@@ -21,6 +24,7 @@ export function LineBadge({
   size = 44,
   className,
 }: LineBadgeProps) {
+  const { m } = useI18n();
   if (img === "") {
     return (
       <TransportBadge
@@ -38,7 +42,7 @@ export function LineBadge({
       style={{ width: size, height: size, backgroundColor: lineColor(route) }}>
       <Image
         src={lineImage(img)}
-        alt={line ? `Linea ${line}` : "Linea"}
+        alt={m.common.line(line)}
         width={size}
         height={size}
       />

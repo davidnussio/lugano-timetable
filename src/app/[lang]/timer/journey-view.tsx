@@ -6,6 +6,8 @@ import useSWR from "swr";
 import { Time } from "~/app/components/leg-time";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useTargets } from "~/hooks/use-targets";
+import { useI18n } from "~/i18n/i18n-provider";
+import type { Messages } from "~/i18n/messages";
 import type { Connection } from "~/journey/models";
 import { formatClimb } from "~/lib/format";
 import { cn } from "~/lib/utils";
@@ -32,15 +34,16 @@ const statusBackground: Record<ConnectionStatus, string> = {
   missed: "bg-destructive/10",
 };
 
-function slackLabel({ slackMs, status }: Transfer): string {
-  if (status === "missed") return `mancano ${minutesLeft(-slackMs)} min`;
+function slackLabel({ slackMs, status }: Transfer, m: Messages): string {
+  if (status === "missed") return m.timer.missingMinutes(minutesLeft(-slackMs));
   const minutes = Math.floor(slackMs / 60_000);
-  return minutes > 0 ? `${minutes} min di margine` : "nessun margine";
+  return minutes > 0 ? m.timer.spareMinutes(minutes) : m.timer.noSpare;
 }
 
 // The legs of the journey with the state of every transfer
 export function JourneySection({ now }: { now: number }) {
   const { timer, legs, journey } = useTimer();
+  const { m } = useI18n();
   if (!timer?.journey || !legs || !journey) return null;
 
   return (
@@ -52,10 +55,11 @@ export function JourneySection({ now }: { now: number }) {
             {timer.journey.from.name} → {timer.journey.to.name}
           </p>
           <p className="text-xs text-muted-foreground">
-            Arrivo previsto alle{" "}
-            <span className="font-mono font-medium tabular-nums text-foreground">
-              {formatTime(journey.arrivalAt + (timer.journey.walkAfterMs ?? 0))}
-            </span>
+            {m.timer.expectedArrival(
+              <span className="font-mono font-medium tabular-nums text-foreground">
+                {formatTime(journey.arrivalAt + (timer.journey.walkAfterMs ?? 0))}
+              </span>
+            )}
           </p>
         </div>
         {journey.status !== "ok" && (
@@ -65,7 +69,7 @@ export function JourneySection({ now }: { now: number }) {
               statusBackground[journey.status],
               statusText[journey.status]
             )}>
-            {journey.status === "tight" ? "Stretta" : "A rischio"}
+            {journey.status === "tight" ? m.timer.tight : m.timer.atRisk}
           </span>
         )}
       </div>
@@ -88,16 +92,16 @@ export function JourneySection({ now }: { now: number }) {
                     <TriangleAlert className="mt-px size-3.5 shrink-0" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate">Cambio a {change.at.name}</p>
+                    <p className="truncate">{m.timer.changeAt(change.at.name)}</p>
                     <p className="flex items-center gap-1 font-normal">
                       {change.walkingMs > 0 && (
                         <>
                           <Footprints className="size-3.5" />
-                          {Math.max(1, Math.round(change.walkingMs / 60_000))} min a piedi
+                          {m.timer.walkMinutes(Math.max(1, Math.round(change.walkingMs / 60_000)))}
                           {formatClimb(change.climb) && ` ${formatClimb(change.climb)}`} ·
                         </>
                       )}{" "}
-                      {slackLabel(change)}
+                      {slackLabel(change, m)}
                     </p>
                   </div>
                 </li>
@@ -133,6 +137,7 @@ export function JourneySection({ now }: { now: number }) {
 // The way to fall back on when a connection is lost
 function FallbackCard() {
   const { fallback, reroute, journey, timer } = useTimer();
+  const { m } = useI18n();
   if (!fallback || !journey) return null;
   const { plan, index } = fallback;
   const first = plan.legs[0];
@@ -141,7 +146,7 @@ function FallbackCard() {
 
   return (
     <div className="space-y-2 border-t border-border bg-destructive/5 p-4">
-      <p className="text-sm font-semibold">Alternativa da {journey.transfers[index].at.name}</p>
+      <p className="text-sm font-semibold">{m.timer.alternativeFrom(journey.transfers[index].at.name)}</p>
       <p className="flex flex-wrap items-center gap-1.5 text-sm">
         {plan.legs.map((leg, i) => (
           <Fragment key={`${leg.trip}-${i}`}>
@@ -150,9 +155,12 @@ function FallbackCard() {
           </Fragment>
         ))}
         <span className="text-muted-foreground">
-          alle <span className="font-mono tabular-nums text-foreground">{formatTime(expected(first.departure))}</span>,
-          arrivo{" "}
-          <span className="font-mono tabular-nums text-foreground">{formatTime(arrival)}</span>
+          {m.timer.alternativeTimes(
+            <span className="font-mono tabular-nums text-foreground">
+              {formatTime(expected(first.departure))}
+            </span>,
+            <span className="font-mono tabular-nums text-foreground">{formatTime(arrival)}</span>
+          )}
           {later > 0 && <span className="font-semibold text-destructive"> +{later} min</span>}
         </span>
       </p>
@@ -160,7 +168,7 @@ function FallbackCard() {
         type="button"
         onClick={() => reroute(index, plan)}
         className="h-10 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
-        Usa questo percorso
+        {m.timer.useThisRoute}
       </button>
     </div>
   );
@@ -169,6 +177,7 @@ function FallbackCard() {
 // A later departure arriving at the same time, while still at home
 export function LaterSuggestion({ leaving }: { leaving: boolean }) {
   const { timer, legs, settings, speeds, startJourney } = useTimer();
+  const { m } = useI18n();
   const targets = useTargets();
   const journey = timer?.journey;
   const { data: plans } = useSWR<ReadonlyArray<Connection>>(
@@ -188,18 +197,20 @@ export function LaterSuggestion({ leaving }: { leaving: boolean }) {
     <section className="flex items-center gap-3 rounded-2xl border border-success/40 bg-success/5 p-4 shadow-sm">
       <Flag className="size-5 shrink-0 text-success" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">Puoi uscire più tardi</p>
+        <p className="text-sm font-semibold">{m.timer.leaveLater}</p>
         <p className="text-xs text-muted-foreground">
-          Linea {first.line} alle{" "}
-          <span className="font-mono tabular-nums">{formatTime(expected(first.departure))}</span>,
-          arrivo alle <span className="font-mono tabular-nums">{formatTime(arrival)}</span>
+          {m.timer.laterPlan(
+            first.line,
+            <span className="font-mono tabular-nums">{formatTime(expected(first.departure))}</span>,
+            <span className="font-mono tabular-nums">{formatTime(arrival)}</span>
+          )}
         </p>
       </div>
       <button
         type="button"
         onClick={() => startJourney(plan, journey.from, journey.to, targets)}
         className="h-9 shrink-0 rounded-xl bg-success px-3 text-sm font-semibold text-white">
-        Usa questo
+        {m.timer.useThis}
       </button>
     </section>
   );

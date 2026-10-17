@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "~/i18n/i18n-provider";
 import { cn } from "~/lib/utils";
 
 interface PageHeaderProps {
@@ -21,6 +22,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   const router = useRouter();
+  const { m } = useI18n();
 
   const goBack = () => {
     if (back === undefined) return;
@@ -38,7 +40,7 @@ export function PageHeader({
         <button
           type="button"
           className="grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-muted active:bg-muted"
-          aria-label="Indietro"
+          aria-label={m.common.back}
           onClick={goBack}>
           <ChevronLeft className="size-6" />
         </button>

@@ -10,6 +10,7 @@ import { SkeletonList } from "~/app/components/skeleton-list";
 import { Timetable } from "~/app/components/timetable";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
+import { useI18n } from "~/i18n/i18n-provider";
 import { useTargets } from "~/hooks/use-targets";
 import { minutesUntilClock, town } from "~/lib/format";
 import { lineColor } from "~/lib/lines";
@@ -65,6 +66,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
   const color = lineColor(route);
   const router = useRouter();
   const timer = useTimer();
+  const { m } = useI18n();
 
   const position = busPosition(data);
   const bus = busIndex(position, data.length);
@@ -171,7 +173,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
         title={
           <span className="flex items-center gap-2">
             <LineBadge img={route} route={route} size={26} className="rounded-md" />
-            <span className="truncate">{destination?.Name ?? "Percorso"}</span>
+            <span className="truncate">{destination?.Name ?? m.routing.title}</span>
           </span>
         }
         actions={
@@ -182,11 +184,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
                 onClick={toggleFavorite}
                 className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
                 aria-pressed={favorite}
-                aria-label={
-                  favorite
-                    ? "Rimuovi la corsa dai preferiti"
-                    : "Aggiungi la corsa ai preferiti"
-                }>
+                aria-label={favorite ? m.routing.removeRide : m.routing.addRide}>
                 <Star
                   className={cn(
                     "size-5 transition-colors",
@@ -205,8 +203,8 @@ export function RoutingView({ routing }: { routing: string[] }) {
                 )}
                 aria-label={
                   timed
-                    ? "Apri il timer"
-                    : `Avvia timer per la linea ${departure.RouteCode} delle ${departure.Time}`
+                    ? m.common.openTimer
+                    : m.common.startTimer(departure.RouteCode, departure.Time)
                 }>
                 {timed ? <BellRing className="size-5" /> : <Bell className="size-5" />}
               </button>
@@ -217,7 +215,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
 
       {isError && data.length === 0 ? (
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-          Servizio non disponibile, nuovo tentativo in corso…
+          {m.common.serviceUnavailable}
         </p>
       ) : isLoading ? (
         <SkeletonList rows={8} />
@@ -238,9 +236,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
           {riding && mine < data.length - 1 && (
             <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
               <Flag className="size-3.5 shrink-0 text-primary" />
-              {getOff
-                ? `Scendi a ${getOff.name}: tocca di nuovo la fermata per annullare`
-                : "Tocca la fermata dove scendi: ti avviseremo prima di arrivare"}
+              {getOff ? m.routing.getOffChosen(getOff.name) : m.routing.getOffHint}
             </p>
           )}
 
@@ -254,9 +250,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
                   <span className="grid w-8 place-items-center">
                     <ChevronUp className="size-4" />
                   </span>
-                  {hidden === 1
-                    ? "Mostra la fermata precedente"
-                    : `Mostra ${hidden} fermate precedenti`}
+                  {m.routing.showPassed(hidden)}
                 </button>
               </li>
             )}
@@ -303,6 +297,7 @@ function TripSummary({
   color: string;
   error: boolean;
 }) {
+  const { m } = useI18n();
   const myStop = stops[mine];
   const gone = bus > mine;
   const away = mine - bus;
@@ -310,12 +305,12 @@ function TripSummary({
 
   const where =
     position.kind === "origin"
-      ? `Al capolinea ${stops[0]?.Name ?? ""}`
+      ? m.routing.atOrigin(stops[0]?.Name ?? "")
       : position.kind === "at"
-        ? `Alla fermata ${stops[position.index].Name}`
+        ? m.routing.atStop(stops[position.index].Name)
         : position.kind === "between"
-          ? `In viaggio verso ${stops[position.from + 1].Name}`
-          : "Arrivato al capolinea";
+          ? m.routing.headingTo(stops[position.from + 1].Name)
+          : m.routing.atTerminus;
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -327,12 +322,12 @@ function TripSummary({
           </p>
           <p className="mt-1 text-2xl font-bold tracking-tight">
             {gone
-              ? "Bus già passato"
+              ? m.routing.gone
               : away === 0 && position.kind === "at"
-                ? "Il bus è qui"
+                ? m.routing.here
                 : minutes !== undefined && minutes > 0
-                  ? `Arriva tra ${minutesLeft(minutes * 60_000)} min`
-                  : "In arrivo"}
+                  ? m.routing.arrivesIn(minutesLeft(minutes * 60_000))
+                  : m.routing.arriving}
           </p>
         </div>
         <span className="pt-0.5">
@@ -350,16 +345,14 @@ function TripSummary({
           {!gone && away === 0 && position.kind === "between" && (
             <>
               {" · "}
-              <span className="font-medium text-foreground">
-                prossima fermata
-              </span>
+              <span className="font-medium text-foreground">{m.routing.nextStop}</span>
             </>
           )}
           {!gone && away > 0 && (
             <>
               {" · "}
               <span className="font-medium text-foreground">
-                {away === 1 ? "1 fermata" : `${away} fermate`} da te
+                {m.routing.stopsAway(away)}
               </span>
             </>
           )}
@@ -392,6 +385,7 @@ function StopRow({
   color: string;
   timetable: string;
 }) {
+  const { m } = useI18n();
   const state = stopState(position, index);
   const previous = index > 0 ? stopState(position, index - 1) : undefined;
   const next = index < count - 1 ? stopState(position, index + 1) : undefined;
@@ -421,14 +415,14 @@ function StopRow({
           <span
             className="absolute left-1/2 top-0 z-10 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-white shadow-md ring-2 ring-card"
             style={{ backgroundColor: color }}
-            aria-label="Bus in viaggio">
+            aria-label={m.routing.busMoving}>
             <Bus className="size-3.5" />
           </span>
         )}
       </div>
 
       <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
-        <Choice onToggle={onToggleGetOff} pressed={getOff} label={`Scendo a ${stop.Name}`}>
+        <Choice onToggle={onToggleGetOff} pressed={getOff} label={m.routing.getOffAt(stop.Name)}>
           <div className="flex min-w-0 flex-1 flex-col">
             <span
               className={cn(
@@ -440,17 +434,17 @@ function StopRow({
             </span>
             <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
               {state === "current" && (
-                <span className="font-semibold text-success">Bus alla fermata</span>
+                <span className="font-semibold text-success">{m.routing.busAtStop}</span>
               )}
               {mine && (
                 <span className="rounded-full bg-primary/10 px-1.5 py-px font-semibold text-primary">
-                  La tua fermata
+                  {m.routing.yourStop}
                 </span>
               )}
               {getOff && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary px-1.5 py-px font-semibold text-primary-foreground">
                   <Flag className="size-3" />
-                  Scendo qui
+                  {m.routing.getOffHere}
                 </span>
               )}
               {state !== "current" && !mine && !getOff && town(stop.Label)}

@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { useGeolocation, useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
+import { useI18n } from "~/i18n/i18n-provider";
 import { findTarget } from "~/hooks/use-targets";
 import { formatDeparture } from "~/lib/format";
 import { cn } from "~/lib/utils";
@@ -29,6 +30,7 @@ const SHOWN = 4;
 // "Adesso" on the home: the next departures of the favorite rides, the ones
 // taken around this time first. Nothing until the local storage is read.
 export function NowRides({ targets }: { targets: ReadonlyArray<Target> }) {
+  const { m } = useI18n();
   const rides = ridesStore.useValue();
   const hintClosed = ridesHintStore.useValue();
   const now = useNow();
@@ -61,7 +63,7 @@ export function NowRides({ targets }: { targets: ReadonlyArray<Target> }) {
   return (
     <section className="px-4 pb-1">
       <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Adesso
+        {m.stops.now}
       </h2>
       <ul role="list" className="space-y-2">
         {shown.map((ride) => (
@@ -78,18 +80,18 @@ export function NowRides({ targets }: { targets: ReadonlyArray<Target> }) {
 }
 
 function RidesHint() {
+  const { m } = useI18n();
   return (
     <section className="px-4 pb-1">
       <div className="flex items-start gap-3 rounded-2xl border border-dashed border-border bg-card/60 py-2.5 pl-3.5 pr-1.5">
         <Star className="mt-0.5 size-4 shrink-0 text-favorite" />
         <p className="flex-1 text-sm leading-snug text-muted-foreground">
-          <span className="font-medium text-foreground">Corse preferite:</span> apri
-          una linea dalla sua fermata e tocca la stella, qui vedrai subito le
-          prossime partenze.
+          <span className="font-medium text-foreground">{m.stops.ridesHintTitle}</span>{" "}
+          {m.stops.ridesHint}
         </p>
         <button
           type="button"
-          aria-label="Chiudi il suggerimento"
+          aria-label={m.stops.closeHint}
           onClick={() => ridesHintStore.set(true)}
           className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted">
           <X className="size-4" />
@@ -110,6 +112,7 @@ function RideCard({
 }) {
   const router = useRouter();
   const timer = useTimer();
+  const { m } = useI18n();
   // Same polling (and SWR cache) as the stop page
   const { data, isLoading, isError } = useMonitored<Departure>(
     "/api/timetable/itineraries",
@@ -157,7 +160,7 @@ function RideCard({
             <span className="truncate">{ride.stop.name}</span>
             {next?.Pred === InTimeStatus.Delayed && (
               <span className="shrink-0 rounded-full bg-destructive/10 px-1.5 py-px font-medium text-destructive">
-                Ritardo
+                {m.common.delay}
               </span>
             )}
           </span>
@@ -168,15 +171,15 @@ function RideCard({
               <When departure={next} now={now} className="text-xl font-bold leading-none" />
               {then !== undefined && (
                 <span className="text-xs text-muted-foreground">
-                  poi <When departure={then} now={now} className="font-medium" />
+                  {m.stops.then} <When departure={then} now={now} className="font-medium" />
                 </span>
               )}
             </>
           ) : isLoading && !isError ? (
-            <span className="h-6 w-12 animate-pulse rounded-lg bg-muted" aria-label="Caricamento" />
+            <span className="h-6 w-12 animate-pulse rounded-lg bg-muted" aria-label={m.common.loading} />
           ) : (
             <span className="max-w-20 text-right text-xs leading-tight text-muted-foreground">
-              {isError ? "Non disponibile" : "Nessuna partenza"}
+              {isError ? m.stops.unavailable : m.stops.noDepartures}
             </span>
           )}
         </div>
@@ -187,8 +190,8 @@ function RideCard({
           onClick={startTimer}
           aria-label={
             timed
-              ? "Apri il timer"
-              : `Avvia timer per la linea ${next.RouteCode} delle ${next.Time}`
+              ? m.common.openTimer
+              : m.common.startTimer(next.RouteCode, next.Time)
           }
           className={cn(
             "grid w-12 shrink-0 place-items-center border-l border-border transition-colors hover:bg-muted active:bg-muted",

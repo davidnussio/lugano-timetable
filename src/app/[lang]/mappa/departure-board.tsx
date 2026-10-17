@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 import { useNow } from "~/hooks/use-now";
+import { useI18n } from "~/i18n/i18n-provider";
 import type { StationDeparture } from "~/journey/models";
 import { formatDeparture } from "~/lib/format";
 import { cn } from "~/lib/utils";
@@ -43,6 +44,7 @@ export function DepartureBoard({
   onPlan: () => void;
 }) {
   const now = useNow();
+  const { m } = useI18n();
   const { data, error } = useSWR<ReadonlyArray<StationDeparture>>(
     code ? `/api/journey/stationboard?id=${code}` : null,
     fetcher,
@@ -64,10 +66,10 @@ export function DepartureBoard({
         <ul className="py-1 text-[13px] uppercase">
           {departures === undefined ? (
             <BoardMessage pulse={error === undefined}>
-              {error === undefined ? "Caricamento…" : "Partenze non disponibili"}
+              {error === undefined ? m.map.loading : m.map.unavailable}
             </BoardMessage>
           ) : departures.length === 0 ? (
-            <BoardMessage>Nessuna partenza</BoardMessage>
+            <BoardMessage>{m.stops.noDepartures}</BoardMessage>
           ) : (
             departures.map((departure) => (
               <BoardRow
@@ -83,13 +85,13 @@ export function DepartureBoard({
       <div className="flex items-center gap-4 border-t border-[#ffb000]/25 px-3 py-2 text-xs font-semibold">
         {href && (
           <Link href={href} className="flex items-center hover:text-[#ffd060]">
-            Partenze
+            {m.map.departures}
             <ChevronRight className="size-3.5" />
           </Link>
         )}
         {code && (
           <button type="button" onClick={onPlan} className="flex items-center hover:text-[#ffd060]">
-            Tragitto da qui
+            {m.common.journeyFromHere}
             <ChevronRight className="size-3.5" />
           </button>
         )}

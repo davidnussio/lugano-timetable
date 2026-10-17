@@ -11,6 +11,7 @@ import {
   Marker,
   Source,
 } from "react-map-gl/maplibre";
+import { useI18n } from "~/i18n/i18n-provider";
 import { MAP_COLORS, MAP_STYLE } from "~/lib/maplibre";
 import { distanceMeters, type Position } from "~/timer/plan";
 
@@ -72,6 +73,7 @@ const moved = (from: Fix | undefined, to: Fix | undefined) =>
 // Where the user is compared to the stop of the timer. Not interactive: it is
 // a glance, and it does not get in the way when scrolling the page.
 export function WalkMap({ stop, position }: WalkMapProps) {
+  const { m } = useI18n();
   const map = useRef<MapRef>(null);
   const [loaded, setLoaded] = useState(false);
   // Where the map was last fitted, with the stop it was fitted for
@@ -131,6 +133,7 @@ export function WalkMap({ stop, position }: WalkMapProps) {
       ref={map}
       initialViewState={{ longitude: stop.lon, latitude: stop.lat, zoom: 16 }}
       mapStyle={MAP_STYLE}
+      locale={m.map.controls}
       style={{ width: "100%", height: "100%" }}
       interactive={false}
       attributionControl={false}

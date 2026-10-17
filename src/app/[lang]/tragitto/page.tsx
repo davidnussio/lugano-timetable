@@ -8,6 +8,7 @@ import { SkeletonList } from "~/app/components/skeleton-list";
 import { StopsHeader } from "~/app/components/stops-header";
 import { useFavorites } from "~/hooks/use-favorites";
 import { useTargets } from "~/hooks/use-targets";
+import { useI18n } from "~/i18n/i18n-provider";
 import type { Connection, Station } from "~/journey/models";
 import { journeySearchStore, rememberJourney } from "~/journey/search-store";
 import { cn } from "~/lib/utils";
@@ -18,14 +19,13 @@ import { StationPicker } from "./station-picker";
 
 type Field = "from" | "to";
 
-const LABELS: Record<Field, string> = { from: "Da", to: "A" };
-
 const navButton =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40";
 
 export default function JourneyPage() {
   const router = useRouter();
   const timer = useTimer();
+  const { m } = useI18n();
   const targets = useTargets();
   const { favorites } = useFavorites();
   const search = journeySearchStore.useValue() ?? { recent: [] };
@@ -105,7 +105,7 @@ export default function JourneyPage() {
 
   return (
     <main className="flex flex-1 flex-col pb-6">
-      <StopsHeader title="Tragitto" current="/tragitto" />
+      <StopsHeader title={m.journey.title} current="/tragitto" />
 
       <div className="px-4 pb-3">
         <div className="flex items-stretch gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
@@ -113,14 +113,14 @@ export default function JourneyPage() {
             {(["from", "to"] as const).map((field) => (
               <div key={field} className="flex items-center gap-2 px-2">
                 <span className="w-5 shrink-0 text-xs font-semibold uppercase text-muted-foreground">
-                  {LABELS[field]}
+                  {m.journey[field]}
                 </span>
                 {editing === field ? (
                   <input
                     ref={input}
                     type="search"
                     value={query}
-                    placeholder={field === "from" ? "Partenza" : "Destinazione"}
+                    placeholder={field === "from" ? m.journey.fromPlaceholder : m.journey.toPlaceholder}
                     autoComplete="off"
                     enterKeyHint="search"
                     className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
@@ -137,13 +137,14 @@ export default function JourneyPage() {
                       "h-11 min-w-0 flex-1 truncate text-left text-base",
                       !search[field] && "text-muted-foreground"
                     )}>
-                    {search[field]?.name ?? (field === "from" ? "Partenza" : "Destinazione")}
+                    {search[field]?.name ??
+                      (field === "from" ? m.journey.fromPlaceholder : m.journey.toPlaceholder)}
                   </button>
                 )}
                 {editing === field && (
                   <button
                     type="button"
-                    aria-label="Chiudi ricerca"
+                    aria-label={m.journey.closeSearch}
                     onClick={() => setEditing(null)}
                     className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted">
                     <X className="size-4" />
@@ -154,7 +155,7 @@ export default function JourneyPage() {
           </div>
           <button
             type="button"
-            aria-label="Inverti partenza e destinazione"
+            aria-label={m.journey.swap}
             onClick={swap}
             disabled={!from && !to}
             className="grid w-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40">
@@ -176,7 +177,7 @@ export default function JourneyPage() {
                 : "border-border bg-card text-foreground hover:bg-muted"
             )}>
             <LocateFixed className="size-4" />
-            Vicino a me
+            {m.common.nearMe}
           </button>
         )}
       </div>
@@ -192,13 +193,13 @@ export default function JourneyPage() {
         <section className="space-y-3 px-4">
           {error && !data ? (
             <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-              Orari non disponibili, nuovo tentativo in corso…
+              {m.journey.unavailable}
             </p>
           ) : isLoading && !data ? (
             <SkeletonList rows={4} />
           ) : data && data.length === 0 ? (
             <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-              Nessun collegamento trovato
+              {m.journey.noConnections}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -212,21 +213,21 @@ export default function JourneyPage() {
               ))}
             </ul>
           )}
-          <nav aria-label="Pagine dei collegamenti" className="grid grid-cols-3 gap-2 pt-1">
+          <nav aria-label={m.journey.pages} className="grid grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               disabled={pages.length === 0}
               onClick={() => setPages((value) => value.slice(0, -1))}
               className={navButton}>
               <ArrowLeft className="size-4" />
-              Prima
+              {m.journey.earlier}
             </button>
             <button
               type="button"
               disabled={pages.length === 0}
               onClick={() => setPages([])}
               className={navButton}>
-              Adesso
+              {m.journey.now}
             </button>
             <button
               type="button"
@@ -235,20 +236,19 @@ export default function JourneyPage() {
                 last && setPages((value) => [...value, last.legs[0].departure.scheduled + 60_000])
               }
               className={navButton}>
-              Più tardi
+              {m.journey.later}
               <ArrowRight className="size-4" />
             </button>
           </nav>
           <p className="px-2 text-center text-xs text-muted-foreground">
-            Orari e ritardi da transport.opendata.ch. Tocca la campanella per
-            seguire il tragitto con il timer.
+            {m.journey.source}
           </p>
         </section>
       ) : search.recent.length > 0 ? (
         <section className="px-4 pt-1">
           <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <History className="size-3.5" />
-            Recenti
+            {m.journey.recent}
           </h2>
           <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             {search.recent.map((journey) => (
@@ -267,8 +267,7 @@ export default function JourneyPage() {
         </section>
       ) : (
         <p className="px-8 py-10 text-center text-sm text-muted-foreground">
-          Scegli partenza e destinazione: anche con cambi, treni e bus regionali.
-          Il timer ti dirà quando uscire e se le coincidenze reggono.
+          {m.journey.intro}
         </p>
       )}
     </main>

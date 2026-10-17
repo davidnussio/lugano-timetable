@@ -21,6 +21,8 @@ import { Switch } from "~/components/ui/switch";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
 import { useReliability } from "~/hooks/use-reliability";
+import { useI18n } from "~/i18n/i18n-provider";
+import type { Messages } from "~/i18n/messages";
 import { formatClimb, formatClock, formatDistance, formatSpeed, formatWeather } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
@@ -52,11 +54,7 @@ function LazyWalkMap(props: ComponentProps<typeof WalkMap>) {
   );
 }
 
-const paces: ReadonlyArray<{ value: Pace; label: string }> = [
-  { value: "slow", label: "Con calma" },
-  { value: "normal", label: "Normale" },
-  { value: "fast", label: "Di fretta" },
-];
+const paces: ReadonlyArray<Pace> = ["slow", "normal", "fast"];
 
 // Share of the time left since the timer started: the ring, or the bar of the
 // compact countdown. Until leaving it counts down to leave, then to the bus.
@@ -95,17 +93,18 @@ function useHeadline(countdown: Countdown) {
 // The pace learned from the walks to the stop, or how far it is from it
 function PaceLearning() {
   const { learnedPace, resetPace } = useTimer();
+  const { m } = useI18n();
   const speed = learnedSpeed(learnedPace);
   return (
     <div className="flex items-center gap-2 px-4 pb-3 pl-12 text-xs text-muted-foreground">
       <p className="min-w-0 flex-1">
         {speed === undefined ? (
-          `Sto imparando il tuo passo (${learnedPace.speeds.length}/${MIN_WALKS})`
+          m.timer.learningPace(learnedPace.speeds.length, MIN_WALKS)
         ) : (
           <>
-            Passo misurato:{" "}
+            {m.timer.measuredPace}{" "}
             <span className="font-medium text-foreground">{formatSpeed(speed)}</span> ·{" "}
-            {learnedPace.count} percorsi
+            {m.timer.walks(learnedPace.count)}
           </>
         )}
       </p>
@@ -114,7 +113,7 @@ function PaceLearning() {
           type="button"
           onClick={resetPace}
           className="shrink-0 rounded-md px-2 py-1 font-medium text-primary transition-colors hover:bg-muted">
-          Azzera
+          {m.timer.resetPace}
         </button>
       )}
     </div>
@@ -122,8 +121,8 @@ function PaceLearning() {
 }
 
 // Once the bus has left there is nothing to cancel: the timer is just over
-function cancelLabel(tone: Tone): string {
-  return tone === "gone" ? "Termina timer" : "Annulla timer";
+function cancelLabel(tone: Tone, m: Messages): string {
+  return tone === "gone" ? m.timer.end : m.timer.cancel;
 }
 
 function marginLabel({ walkingMs, leaveMs }: Countdown): string {
@@ -135,6 +134,7 @@ function marginLabel({ walkingMs, leaveMs }: Countdown): string {
 
 export default function TimerPage() {
   const timer = useTimer();
+  const { m } = useI18n();
   const { timer: active, countdown } = timer;
   // Whether the ring has scrolled away under the header
   const [compact, setCompact] = useState(false);
@@ -145,14 +145,14 @@ export default function TimerPage() {
       <div ref={header} className="sticky top-0 z-20">
         <PageHeader
           back="/"
-          title="Timer"
+          title={m.timer.title}
           actions={
             active &&
             countdown && (
               <button
                 type="button"
                 onClick={timer.cancel}
-                aria-label={cancelLabel(timerTone(countdown, timer.stage))}
+                aria-label={cancelLabel(timerTone(countdown, timer.stage), m)}
                 className="grid size-10 place-items-center rounded-full text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/10">
                 <TimerOff className="size-5" />
               </button>
@@ -175,15 +175,12 @@ export default function TimerPage() {
           <span className="grid size-16 place-items-center rounded-full bg-muted">
             <Bell className="size-7 text-muted-foreground" />
           </span>
-          <h2 className="text-lg font-semibold">Nessun timer attivo</h2>
-          <p className="text-sm text-muted-foreground">
-            Apri una fermata e tocca la campanella accanto a una partenza: ti
-            avviseremo quando è ora di uscire.
-          </p>
+          <h2 className="text-lg font-semibold">{m.timer.none}</h2>
+          <p className="text-sm text-muted-foreground">{m.timer.noneHint}</p>
           <Link
             href="/"
             className="mt-2 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground">
-            Scegli una fermata
+            {m.timer.chooseStop}
           </Link>
         </div>
       )}
@@ -203,6 +200,7 @@ function CompactCountdown({
   show: boolean;
 }) {
   const { stage } = useTimer();
+  const { m } = useI18n();
   const tone = timerTone(countdown, stage);
   const { headline, travel } = useHeadline(countdown);
   // At the stop the headline is already the bus
@@ -217,7 +215,7 @@ function CompactCountdown({
       )}>
       <button
         type="button"
-        aria-label="Torna al timer"
+        aria-label={m.timer.backToTimer}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="flex w-full items-center gap-4 px-4 py-2 text-left">
         <PhaseIcon
@@ -235,15 +233,15 @@ function CompactCountdown({
         <dl className="ml-auto flex gap-4 text-right">
           {travel ? null : walking ? (
             <>
-              <CompactStat label="Bus tra" value={formatClock(Math.max(0, countdown.departureMs))} />
+              <CompactStat label={m.timer.busIn} value={formatClock(Math.max(0, countdown.departureMs))} />
               <CompactStat
-                label="Margine"
+                label={m.timer.margin}
                 value={marginLabel(countdown)}
                 className={toneText[tone]}
               />
             </>
           ) : (
-            <CompactStat label="Partenza" value={active.time} />
+            <CompactStat label={m.timer.departure} value={active.time} />
           )}
         </dl>
       </button>
@@ -304,6 +302,7 @@ function ActiveTimerView({
     enableNotifications,
     ride,
   } = useTimer();
+  const { m } = useI18n();
   const tone = timerTone(countdown, stage);
   const { headline, travel, now } = useHeadline(countdown);
   const clock = formatClock(headline.ms);
@@ -350,8 +349,10 @@ function ActiveTimerView({
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{active.destination}</p>
           <p className="truncate text-xs text-muted-foreground">
-            da {active.stop.name} · alle{" "}
-            <span className="font-mono tabular-nums">{active.time}</span>
+            {m.timer.fromAt(
+              active.stop.name,
+              <span className="font-mono tabular-nums">{active.time}</span>
+            )}
           </p>
         </div>
         <span
@@ -359,7 +360,7 @@ function ActiveTimerView({
             "rounded-full px-2 py-0.5 text-[11px] font-semibold",
             live ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
           )}>
-          {live ? "Live" : "Ultimo dato"}
+          {live ? m.timer.live : m.timer.lastData}
         </span>
         {active.routing !== "" && (
           <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
@@ -412,29 +413,29 @@ function ActiveTimerView({
               {travel
                 ? active.journey === undefined && active.getOff
                   ? rideSummary(active.getOff, ride)
-                  : `In viaggio verso ${active.journey?.to.name ?? active.destination}`
+                  : m.routing.headingTo(active.journey?.to.name ?? active.destination)
                 : tone === "gone"
-                ? "Il bus è partito"
+                ? m.timer.busLeft
                 : countdown.departureMs <= 0
-                  ? "Il bus sta arrivando"
+                  ? m.timer.busComing
                   : far !== undefined
-                    ? `Sei a ${formatDistance(far)} dalla fermata`
+                    ? m.timer.farFromStop(formatDistance(far))
                     : stage === "arrived"
-                      ? `Sei alla fermata ${active.stop.name}`
+                      ? m.timer.atYourStop(active.stop.name)
                       : walking === undefined
-                        ? `alla fermata ${active.stop.name}`
-                        : `Bus tra ${formatClock(countdown.departureMs)}`}
+                        ? m.timer.atStop(active.stop.name)
+                        : m.timer.busInClock(formatClock(countdown.departureMs))}
             </span>
           </div>
         </div>
 
         <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border text-center">
-          <Stat label="Partenza" value={active.time} mono />
+          <Stat label={m.timer.departure} value={active.time} mono />
           <Stat
-            label="A piedi"
+            label={m.timer.onFoot}
             value={
               stage === "arrived"
-                ? "Arrivato"
+                ? m.timer.arrived
                 : walking === undefined
                   ? "—"
                   : `${Math.max(1, Math.round(walking / 60_000))} min`
@@ -452,7 +453,7 @@ function ActiveTimerView({
             }
           />
           <Stat
-            label="Margine"
+            label={m.timer.margin}
             value={marginLabel(countdown)}
             className={walking === undefined ? undefined : toneText[tone]}
           />
@@ -466,15 +467,13 @@ function ActiveTimerView({
 
       {nextAlert !== undefined && tone !== "gone" && stage === "away" && far === undefined && (
         <p className="px-1 text-center text-xs text-muted-foreground">
-          Prossimo avviso tra{" "}
-          <span className="font-medium text-foreground">
-            {formatClock((reference - nextAlert) * 60_000)}
-          </span>
-          {nextAlert === 0
-            ? walking === undefined
-              ? ", alla partenza"
-              : ", quando devi uscire"
-            : `, a ${nextAlert} min ${walking === undefined ? "dalla partenza" : "dall'uscita"}`}
+          {m.timer.nextAlert(
+            <span className="font-medium text-foreground">
+              {formatClock((reference - nextAlert) * 60_000)}
+            </span>,
+            nextAlert,
+            walking !== undefined
+          )}
         </p>
       )}
 
@@ -503,23 +502,23 @@ function ActiveTimerView({
         <div className="flex items-center gap-3 p-4">
           <LocateFixed className="size-5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">Calcola quando uscire</p>
+            <p className="text-sm font-semibold">{m.timer.whenToLeave}</p>
             <p className="text-xs text-muted-foreground">
               {!active.coordinates
-                ? "Posizione della fermata non disponibile"
+                ? m.timer.stopPositionUnavailable
                 : !settings.useLocation
-                  ? "Usa il GPS per stimare il tempo a piedi fino alla fermata"
+                  ? m.timer.useGpsHint
                   : geolocation.error === "denied"
-                    ? "Posizione non autorizzata nelle impostazioni del browser"
+                    ? m.timer.locationDeniedBrowser
                     : geolocation.error
-                      ? "Posizione non disponibile"
+                      ? m.common.locationUnavailable
                       : geolocation.position
-                        ? `Precisione ±${Math.round(geolocation.position.accuracy)} m`
-                        : "Localizzazione in corso…"}
+                        ? m.timer.accuracy(Math.round(geolocation.position.accuracy))
+                        : m.timer.locating}
             </p>
           </div>
           <Switch
-            label="Usa la mia posizione"
+            label={m.timer.useMyLocation}
             checked={settings.useLocation}
             disabled={!active.coordinates}
             onCheckedChange={(useLocation) => updateSettings({ useLocation })}
@@ -531,17 +530,17 @@ function ActiveTimerView({
             <div className="grid flex-1 grid-cols-3 gap-1 rounded-xl bg-muted p-1">
               {paces.map((pace) => (
                 <button
-                  key={pace.value}
+                  key={pace}
                   type="button"
-                  aria-pressed={settings.pace === pace.value}
-                  onClick={() => updateSettings({ pace: pace.value })}
+                  aria-pressed={settings.pace === pace}
+                  onClick={() => updateSettings({ pace })}
                   className={cn(
                     "rounded-lg py-1.5 text-xs font-medium transition-colors",
-                    settings.pace === pace.value
+                    settings.pace === pace
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground"
                   )}>
-                  {pace.label}
+                  {m.timer.paces[pace]}
                 </button>
               ))}
             </div>
@@ -558,10 +557,7 @@ function ActiveTimerView({
         onEnable={() => void enableNotifications()}
       />
 
-      <p className="px-2 text-center text-xs text-muted-foreground">
-        Tieni aperta l&apos;app: lo schermo resta acceso e gli avvisi arrivano
-        puntuali.
-      </p>
+      <p className="px-2 text-center text-xs text-muted-foreground">{m.timer.keepOpen}</p>
 
       <div className={cn("grid gap-2 pt-1", active.routing !== "" && "grid-cols-2")}>
         {active.routing !== "" && (
@@ -569,7 +565,7 @@ function ActiveTimerView({
           href={routingHref}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
           <Bus className="size-4" />
-          Dov&apos;è il bus?
+          {m.timer.whereIsBus}
         </Link>
         )}
         <button
@@ -577,7 +573,7 @@ function ActiveTimerView({
           onClick={cancel}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-destructive/10 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/15">
           <TimerOff className="size-4" />
-          {cancelLabel(tone)}
+          {cancelLabel(tone, m)}
         </button>
       </div>
     </div>
@@ -592,6 +588,7 @@ function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMarg
       ? null
       : { target: active.target, route: active.route, dir: active.dir, time: active.time }
   );
+  const { m } = useI18n();
   const note = reliabilityNote(stats);
   if (note === undefined) return null;
 
@@ -603,7 +600,7 @@ function ReliabilityLine({ active, showMargin }: { active: ActiveTimer; showMarg
       </p>
       {showMargin && note.margin !== undefined && (
         <p className="font-medium text-warning">
-          Margine consigliato {note.margin} min: il bus può recuperare il ritardo
+          {m.timer.suggestedMargin(note.margin)}
         </p>
       )}
     </div>
@@ -627,6 +624,7 @@ function BusCard({ href, children }: { href: string | undefined; children: React
 // Where to get off the bus, chosen on the line page
 function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
   const { ride } = useTimer();
+  const { m } = useI18n();
   const { getOff } = active;
   return (
     <Link
@@ -635,19 +633,21 @@ function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
       <Flag className="size-5 shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">
-          {getOff ? `Scendi a ${getOff.name}` : "Dove scendi?"}
+          {getOff ? m.timer.getOffAt(getOff.name) : m.timer.whereGetOff}
         </p>
         <p className="truncate text-xs text-muted-foreground">
           {getOff
             ? [
                 getOff.arrivalAt === undefined
                   ? undefined
-                  : `${getOff.arrivedAt === undefined ? "Arrivo alle" : "Arrivato alle"} ${formatTime(getOff.arrivedAt ?? getOff.arrivalAt)}`,
-                ride ? rideSummary(getOff, ride) : "ti avviseremo",
+                  : getOff.arrivedAt === undefined
+                    ? m.timer.arrivalAt(formatTime(getOff.arrivalAt))
+                    : m.timer.arrivedAt(formatTime(getOff.arrivedAt)),
+                ride ? rideSummary(getOff, ride) : m.timer.willAlert,
               ]
                 .filter(Boolean)
                 .join(" · ")
-            : "Scegli la fermata, ti avviseremo prima"}
+            : m.timer.chooseGetOff}
         </p>
       </div>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

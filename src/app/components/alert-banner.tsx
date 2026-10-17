@@ -2,6 +2,7 @@
 
 import { BellRing, X } from "lucide-react";
 import { useNow } from "~/hooks/use-now";
+import { useI18n } from "~/i18n/i18n-provider";
 import { cn } from "~/lib/utils";
 import { useTimer } from "~/timer/timer-provider";
 
@@ -11,6 +12,7 @@ const VISIBLE_MS = 60_000;
 // The latest timer alert, in the page (notifications may be off)
 export function AlertBanner({ className }: { className?: string }) {
   const { timer, dismissAlert } = useTimer();
+  const { m } = useI18n();
   const alert = timer?.lastAlert;
   const now = useNow(alert !== undefined);
   if (!alert || now === 0 || now - alert.at > VISIBLE_MS) return null;
@@ -29,7 +31,7 @@ export function AlertBanner({ className }: { className?: string }) {
       </div>
       <button
         type="button"
-        aria-label="Chiudi avviso"
+        aria-label={m.common.dismissAlert}
         className="rounded-full p-1 text-muted-foreground hover:bg-muted"
         onClick={dismissAlert}>
         <X className="size-4" />

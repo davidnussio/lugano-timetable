@@ -4,6 +4,7 @@ import { Bus, LocateFixed, MapPin, Ship, Star, TrainFront } from "lucide-react";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useGeolocation } from "~/hooks/use-geolocation";
+import { useI18n } from "~/i18n/i18n-provider";
 import { formatDistance } from "~/lib/format";
 import type { Station } from "~/journey/models";
 import { fetcher } from "~/utils/fetcher";
@@ -43,6 +44,7 @@ export function StationPicker({
   favorites: ReadonlyArray<Station>;
   onPick: (station: Station) => void;
 }) {
+  const { m } = useI18n();
   const trimmed = query.trim();
   const searching = trimmed.length >= MIN_QUERY;
   const search = useDebounced(trimmed, SEARCH_DELAY_MS);
@@ -67,25 +69,25 @@ export function StationPicker({
   const title = searching
     ? undefined
     : nearby
-      ? "Vicino a te"
+      ? m.journey.nearYou
       : favorites.length > 0
-        ? "Fermate preferite"
+        ? m.journey.favoriteStops
         : undefined;
   const status =
     nearby && !searching && error
       ? error === "denied"
-        ? "Posizione non autorizzata"
-        : "Posizione non disponibile"
+        ? m.common.locationDenied
+        : m.common.locationUnavailable
       : requestError
-        ? "Ricerca non disponibile, riprova tra poco"
+        ? m.journey.searchUnavailable
         : nearby && !searching && !position
-          ? "Localizzazione…"
+          ? m.common.locating
           : (typing || isLoading) && stations.length === 0
-            ? "Ricerca…"
+            ? m.journey.searching
             : key !== null && stations.length === 0
-              ? "Nessuna fermata trovata"
+              ? m.journey.noStops
               : !searching && !nearby && favorites.length === 0
-                ? "Scrivi il nome di una fermata o di una stazione"
+                ? m.journey.typeHint
                 : undefined;
 
   return (

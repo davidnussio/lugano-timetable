@@ -25,6 +25,7 @@ import useSWR from "swr";
 import { Switch } from "~/components/ui/switch";
 import { useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useTargets } from "~/hooks/use-targets";
+import { useI18n } from "~/i18n/i18n-provider";
 import type { Station } from "~/journey/models";
 import { journeySearchStore } from "~/journey/search-store";
 import { town } from "~/lib/format";
@@ -243,6 +244,7 @@ interface Selected extends StopProperties {
 
 export function StopsMap() {
   const router = useRouter();
+  const { m } = useI18n();
   const targets = useTargets();
   const allStops = allStopsStore.useValue() ?? false;
   const { data: stations } = useSWR<ReadonlyArray<Station>>(
@@ -316,6 +318,7 @@ export function StopsMap() {
       ref={map}
       initialViewState={LUGANO}
       mapStyle={MAP_STYLE}
+      locale={m.map.controls}
       style={{ position: "absolute", inset: 0 }}
       attributionControl={false}
       interactiveLayerIds={["clusters", "stops", "other-stops"]}
@@ -336,11 +339,11 @@ export function StopsMap() {
       />
       <AttributionControl position="bottom-right" compact />
       <label className="absolute left-2.5 top-2.5 flex items-center gap-2 rounded-md bg-white py-1 pl-3 pr-1 text-sm font-medium text-neutral-900 shadow-[0_0_0_2px_rgba(0,0,0,0.1)]">
-        Tutte le fermate
+        {m.stops.all}
         <Switch
           checked={allStops}
           onCheckedChange={allStopsStore.set}
-          label="Mostra anche le fermate degli altri operatori"
+          label={m.map.otherOperators}
         />
       </label>
       {data && (
@@ -371,7 +374,9 @@ export function StopsMap() {
           onClose={() => setSelected(undefined)}>
           <DepartureBoard
             name={selected.name}
-            subtitle={[selected.town, selected.operator].filter(Boolean).join(" · ")}
+            subtitle={[selected.town, selected.operator && m.map.operator(selected.operator)]
+              .filter(Boolean)
+              .join(" · ")}
             code={selected.code}
             href={selected.href}
             onPlan={() => planFrom(selected)}

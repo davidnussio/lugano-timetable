@@ -2,6 +2,8 @@
 
 import { Bell, BellOff, ChevronDown, Smartphone } from "lucide-react";
 import { useState } from "react";
+import { useI18n } from "~/i18n/i18n-provider";
+import type { Messages } from "~/i18n/messages";
 import { cn } from "~/lib/utils";
 
 type Device = "android" | "ios" | "desktop";
@@ -20,25 +22,22 @@ const installed = () => window.matchMedia("(display-mode: standalone)").matches;
 
 // Once denied, a site cannot ask again: only the user can allow it from the
 // settings, which are hard to find. The steps for the device in use.
-function unblockSteps(device: Device): ReadonlyArray<string> {
+// The names of the menus are the ones of the device in the language of the
+// app, as most people use the two in the same language.
+function unblockSteps(device: Device, m: Messages["notifications"]): ReadonlyArray<string> {
   const host = window.location.host;
   switch (device) {
     case "android":
       return [
-        ...(installed()
-          ? [`Apri ${host} in Chrome: l'app installata usa le autorizzazioni di Chrome.`]
-          : []),
-        "Tocca l'icona a sinistra dell'indirizzo, poi Autorizzazioni → Notifiche → Consenti.",
-        `Se non compare: menu ⋮ → Impostazioni → Impostazioni sito → Notifiche → ${host} → Consenti.`,
-        "Controlla che Chrome possa inviare notifiche: Impostazioni Android → App → Chrome → Notifiche.",
+        ...(installed() ? [m.androidInstalled(host)] : []),
+        m.androidSiteIcon,
+        m.androidSiteSettings(host),
+        m.androidChrome,
       ];
     case "ios":
-      return ["Apri Impostazioni → Notifiche → Lugano Bus e attiva Consenti notifiche."];
+      return [m.ios];
     case "desktop":
-      return [
-        "Clicca sull'icona a sinistra dell'indirizzo, poi Notifiche → Consenti.",
-        "Ricarica la pagina.",
-      ];
+      return [m.desktopSiteIcon, m.desktopReload];
   }
 }
 
@@ -49,6 +48,7 @@ export function NotificationsCard({
   permission: NotificationPermission | "unsupported";
   onEnable: () => void;
 }) {
+  const { m } = useI18n();
   const [open, setOpen] = useState(false);
   const denied = permission === "denied";
 
@@ -62,15 +62,15 @@ export function NotificationsCard({
         <BellOff className="size-5 shrink-0 text-muted-foreground" />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">Notifiche</p>
+        <p className="text-sm font-semibold">{m.notifications.title}</p>
         <p className="text-xs text-muted-foreground">
           {permission === "granted"
-            ? "Avvisi sempre più frequenti man mano che si avvicina l'ora"
+            ? m.notifications.granted
             : denied
-              ? "Bloccate: tocca per vedere come riattivarle"
+              ? m.notifications.denied
               : permission === "unsupported"
-                ? "Su iPhone aggiungi l'app alla schermata Home per riceverle"
-                : "Ricevi un avviso anche con l'app in secondo piano"}
+                ? m.notifications.unsupported
+                : m.notifications.ask}
         </p>
       </div>
     </>
@@ -100,26 +100,20 @@ export function NotificationsCard({
               type="button"
               onClick={onEnable}
               className="h-9 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground">
-              Attiva
+              {m.notifications.enable}
             </button>
           )}
         </div>
       )}
       {denied && open && (
         <div className="space-y-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          <p>
-            Il browser non lascia all&apos;app chiedere di nuovo il permesso: va dato dalle
-            impostazioni.
-          </p>
+          <p>{m.notifications.cannotAskAgain}</p>
           <ol className="list-decimal space-y-1 pl-4 text-foreground">
-            {unblockSteps(currentDevice()).map((step) => (
+            {unblockSteps(currentDevice(), m.notifications).map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ol>
-          <p>
-            Scegli Consenti: lasciare &quot;Chiedi&quot; non basta se il browser ha bloccato il
-            sito per qualche giorno. Poi torna qui, la scheda si aggiorna da sola.
-          </p>
+          <p>{m.notifications.chooseAllow}</p>
         </div>
       )}
     </section>

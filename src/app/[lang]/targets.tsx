@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState, useSyncExternalStore } from "react";
 import { useFavorites } from "~/hooks/use-favorites";
 import { useGeolocation } from "~/hooks/use-geolocation";
+import { useI18n } from "~/i18n/i18n-provider";
 import { formatDistance, town } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { distanceMeters, type Position } from "~/timer/plan";
@@ -60,6 +61,7 @@ export interface FiltrableListTargetsProps {
 export function FiltrableListTargets({
   targets,
 }: FiltrableListTargetsProps): React.JSX.Element {
+  const { m } = useI18n();
   const [search, setSearch] = useState<string>("");
   // Until the user picks, follow the shortcut (off on the server and during
   // hydration, so the static HTML still matches)
@@ -93,7 +95,7 @@ export function FiltrableListTargets({
 
   return (
     <div className="flex flex-col pb-6">
-      <StopsHeader title="Fermate" current="/" />
+      <StopsHeader title={m.stops.title} current="/" />
       <NowRides targets={targets} />
 
       <div className="sticky top-0 z-20 space-y-2.5 bg-background/85 px-4 pb-3 pt-2 backdrop-blur-xl">
@@ -102,14 +104,14 @@ export function FiltrableListTargets({
           <input
             type="search"
             value={search}
-            placeholder="Cerca una fermata"
+            placeholder={m.stops.search}
             className="h-12 w-full rounded-2xl border border-border bg-card pl-11 pr-11 text-base shadow-sm outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary/50 focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
             onChange={(e) => setSearch(e.target.value)}
           />
           {search !== "" && (
             <button
               type="button"
-              aria-label="Cancella ricerca"
+              aria-label={m.stops.clearSearch}
               className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted"
               onClick={() => setSearch("")}>
               <X className="size-4" />
@@ -132,23 +134,23 @@ export function FiltrableListTargets({
                 : "border-border bg-card text-foreground hover:bg-muted"
             )}>
             <LocateFixed className={cn("size-4", locating && "animate-pulse")} />
-            Vicino a me
+            {m.common.nearMe}
           </button>
           {nearby && error && (
             <span className="text-xs text-destructive">
               {error === "denied"
-                ? "Posizione non autorizzata"
-                : "Posizione non disponibile"}
+                ? m.common.locationDenied
+                : m.common.locationUnavailable}
             </span>
           )}
           {locating && (
-            <span className="text-xs text-muted-foreground">Localizzazione…</span>
+            <span className="text-xs text-muted-foreground">{m.common.locating}</span>
           )}
         </div>
       </div>
 
       {favorites.length > 0 && (
-        <Section title="Preferiti">
+        <Section title={m.stops.favorites}>
           {favorites.map((row) => (
             <TargetRow key={rowKey(row)} row={row} favorite />
           ))}
@@ -156,20 +158,20 @@ export function FiltrableListTargets({
       )}
 
       <Section
-        title={position ? "Più vicine" : favorites.length > 0 ? "Tutte le fermate" : undefined}>
+        title={position ? m.stops.nearest : favorites.length > 0 ? m.stops.all : undefined}>
         {others.map((row) => (
           <TargetRow key={rowKey(row)} row={row} />
         ))}
         {rows.length === 0 && (
           <li className="flex flex-col items-center gap-3 px-4 py-10 text-center">
             <p className="text-sm text-muted-foreground">
-              Nessuna fermata per “{search}”
+              {m.stops.noResults(search)}
             </p>
             <button
               type="button"
               onClick={() => setSearch("")}
               className="text-sm font-medium text-primary">
-              Cancella ricerca
+              {m.stops.clearSearch}
             </button>
           </li>
         )}

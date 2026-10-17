@@ -13,6 +13,7 @@ import { useGeolocation, useGeolocationGranted } from "~/hooks/use-geolocation";
 import { useMonitored } from "~/hooks/use-monitored";
 import { useNow } from "~/hooks/use-now";
 import { findTarget, useTargets } from "~/hooks/use-targets";
+import { useI18n } from "~/i18n/i18n-provider";
 import { journeySearchStore } from "~/journey/search-store";
 import { formatClimb, formatDeparture, formatDistance, town } from "~/lib/format";
 import { lineColor } from "~/lib/lines";
@@ -48,6 +49,7 @@ function byDeparture(a: Departure, b: Departure): number {
 // The platforms of the stop, as in the URL
 export function FermataView({ fermata }: { fermata: string[] }) {
   const router = useRouter();
+  const { m } = useI18n();
   const { data, isLoading, isError } = useMonitored<Departure>(
     "/api/timetable/itineraries",
     "itineraries",
@@ -116,7 +118,7 @@ export function FermataView({ fermata }: { fermata: string[] }) {
     <main className="flex flex-1 flex-col">
       <PageHeader
         back="/"
-        title={stop?.Name ?? "Fermata"}
+        title={stop?.Name ?? m.stop.title}
         subtitle={stop && town(stop.Label)}
         actions={
           stop && (
@@ -126,7 +128,7 @@ export function FermataView({ fermata }: { fermata: string[] }) {
                   type="button"
                   onClick={planFrom}
                   className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
-                  aria-label="Tragitto da qui">
+                  aria-label={m.common.journeyFromHere}>
                   <Route className="size-5" />
                 </button>
               )}
@@ -142,7 +144,7 @@ export function FermataView({ fermata }: { fermata: string[] }) {
                 className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
                 aria-pressed={currentIsFavorite}
                 aria-label={
-                  currentIsFavorite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"
+                  currentIsFavorite ? m.stop.removeFavorite : m.stop.addFavorite
                 }>
                 <Star
                   className={cn(
@@ -160,15 +162,15 @@ export function FermataView({ fermata }: { fermata: string[] }) {
 
       <div className="flex items-center justify-between px-5 pb-1 pt-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Prossime partenze
+          {m.stop.nextDepartures}
         </h2>
         <LiveStatus error={isError} />
       </div>
-      {nearest !== undefined && (
+      {nearest !== undefined && walkMinutes !== undefined && (
         <p className="flex items-center gap-1.5 px-5 pb-1 text-xs text-muted-foreground">
           <Footprints className="size-3.5" />
           {formatDistance(nearest.meters)}
-          {climbLabel && ` ${climbLabel}`} · circa {walkMinutes} min a piedi
+          {climbLabel && ` ${climbLabel}`} · {m.stop.walk(walkMinutes)}
         </p>
       )}
 
@@ -211,19 +213,19 @@ export function FermataView({ fermata }: { fermata: string[] }) {
           })}
           {sorted.length === 0 ? (
             <li className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-              Nessuna partenza nei prossimi minuti
+              {m.common.noDeparturesSoon}
             </li>
           ) : (
             departures.length === 0 && (
               <li className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
                 {selected.length === 1
-                  ? `Nessuna partenza della linea ${selected[0].line} nei prossimi minuti`
-                  : "Nessuna partenza delle linee scelte nei prossimi minuti"}
+                  ? m.stop.noDeparturesOfLine(selected[0].line)
+                  : m.stop.noDeparturesOfLines}
                 <button
                   type="button"
                   onClick={() => setLines([])}
                   className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
-                  Mostra tutte le linee
+                  {m.stop.showAllLines}
                 </button>
               </li>
             )
@@ -244,11 +246,12 @@ function LineFilter({
   onToggle: (line: LineChip) => void;
   onAll: () => void;
 }) {
+  const { m } = useI18n();
   const filtering = chips.some((chip) => chip.selected);
   return (
     <div
       role="group"
-      aria-label="Filtra per linea"
+      aria-label={m.stop.filterByLine}
       className="flex gap-2 overflow-x-auto px-4 pb-1 pt-2 [scrollbar-width:none]">
       <button
         type="button"
@@ -260,7 +263,7 @@ function LineFilter({
             ? "border-border bg-card text-foreground hover:bg-muted"
             : "border-primary bg-primary text-primary-foreground"
         )}>
-        Tutte
+        {m.stop.allLines}
       </button>
       {chips.map((chip) => (
         <button
@@ -268,9 +271,7 @@ function LineFilter({
           type="button"
           aria-pressed={chip.selected}
           aria-label={
-            chip.absent
-              ? `Linea ${chip.line}, nessuna partenza ora`
-              : `Linea ${chip.line}`
+            chip.absent ? m.stop.lineNotRunning(chip.line) : m.common.line(chip.line)
           }
           onClick={() => onToggle(chip)}
           className={cn(
@@ -326,6 +327,7 @@ function DepartureRow({
     departure.DepartureAt !== undefined && now > 0
       ? departure.DepartureAt - now
       : undefined;
+  const { m } = useI18n();
   const imminent = ms !== undefined && ms < 2 * 60_000;
   const delayed = departure.Pred === InTimeStatus.Delayed;
 
@@ -345,10 +347,10 @@ function DepartureRow({
             <span className="font-mono tabular-nums">{departure.Time}</span>
             {delayed && (
               <span className="rounded-full bg-destructive/10 px-1.5 py-px font-medium text-destructive">
-                Ritardo
+                {m.common.delay}
               </span>
             )}
-            {timed && <span className="font-medium text-primary">Timer attivo</span>}
+            {timed && <span className="font-medium text-primary">{m.common.timerOn}</span>}
           </span>
         </div>
         <div className="flex shrink-0 flex-col items-end">
@@ -371,7 +373,7 @@ function DepartureRow({
         <button
           type="button"
           onClick={onTimer}
-          aria-label={`Avvia timer per la linea ${departure.RouteCode} delle ${departure.Time}`}
+          aria-label={m.common.startTimer(departure.RouteCode, departure.Time)}
           className={cn(
             "grid w-12 shrink-0 place-items-center border-l border-border transition-colors hover:bg-muted active:bg-muted",
             timed ? "text-primary" : "text-muted-foreground"

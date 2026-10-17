@@ -2,6 +2,7 @@
 
 import { LineBadge } from "~/app/components/line-badge";
 import { findTarget, useTargets } from "~/hooks/use-targets";
+import { useI18n } from "~/i18n/i18n-provider";
 import { minutesLeft } from "~/timer/plan";
 import { useTimer } from "~/timer/timer-provider";
 import type { Coordinates } from "~/timetable/models";
@@ -10,6 +11,7 @@ import type { Coordinates } from "~/timetable/models";
 // onto it, as if started from the stop page
 export function NextBusCard({ now }: { now: number }) {
   const { timer, next, start } = useTimer();
+  const { m } = useI18n();
   const stop = findTarget(useTargets(), timer?.stop.identifiers ?? []);
   if (!timer || !next) return null;
 
@@ -28,11 +30,13 @@ export function NextBusCard({ now }: { now: number }) {
         <LineBadge img={next.Img} route={next.Route} line={next.RouteCode} size={36} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">
-            Prossimo {next.RouteCode} per {next.Dest}
+            {m.timer.nextBus(next.RouteCode, next.Dest)}
           </p>
           <p className="text-xs text-muted-foreground">
-            alle <span className="font-mono tabular-nums">{next.Time}</span> · tra{" "}
-            {minutesLeft(next.DepartureAt - now)} min
+            {m.timer.nextBusAt(
+              <span className="font-mono tabular-nums">{next.Time}</span>,
+              minutesLeft(next.DepartureAt - now)
+            )}
           </p>
         </div>
       </div>
@@ -40,7 +44,7 @@ export function NextBusCard({ now }: { now: number }) {
         type="button"
         onClick={() => start(next, timer.stop, platform)}
         className="h-10 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
-        Passa a questo bus
+        {m.timer.switchBus}
       </button>
     </section>
   );

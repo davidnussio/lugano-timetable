@@ -3,6 +3,7 @@
 import { Bell, BellRing, ChevronDown, ChevronRight, Footprints } from "lucide-react";
 import { Fragment, useState } from "react";
 import { TransportBadge } from "~/app/components/transport-badge";
+import { useI18n } from "~/i18n/i18n-provider";
 import { formatDuration } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import type { Connection, PlannedLeg } from "~/journey/models";
@@ -43,6 +44,7 @@ export function ConnectionCard({
   timed: boolean;
   onStart: () => void;
 }) {
+  const { m } = useI18n();
   const [open, setOpen] = useState(false);
   const { legs, walkAfterMs } = connection;
   const first = legs[0];
@@ -90,17 +92,17 @@ export function ConnectionCard({
             )}
           </span>
           <span className="flex w-full items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="truncate">da {first.from.name}</span>
+            <span className="truncate">{m.journey.fromStop(first.from.name)}</span>
             <span aria-hidden>·</span>
             <span className="shrink-0">
-              {transfers === 0 ? "diretto" : transfers === 1 ? "1 cambio" : `${transfers} cambi`}
+              {m.journey.transfers(transfers)}
             </span>
             {atRisk && (
               <span className="shrink-0 rounded-full bg-destructive/10 px-1.5 py-px font-medium text-destructive">
-                Coincidenza a rischio
+                {m.journey.atRisk}
               </span>
             )}
-            {timed && <span className="shrink-0 font-medium text-primary">Timer attivo</span>}
+            {timed && <span className="shrink-0 font-medium text-primary">{m.common.timerOn}</span>}
             <ChevronDown
               className={cn("ml-auto size-4 shrink-0 transition-transform", open && "rotate-180")}
             />
@@ -109,7 +111,7 @@ export function ConnectionCard({
         <button
           type="button"
           onClick={onStart}
-          aria-label={`Avvia timer per il tragitto delle ${formatTime(expected(first.departure))}`}
+          aria-label={m.journey.startTimer(formatTime(expected(first.departure)))}
           className={cn(
             "grid w-12 shrink-0 place-items-center border-l border-border transition-colors hover:bg-muted active:bg-muted",
             timed ? "text-primary" : "text-muted-foreground"
@@ -124,13 +126,15 @@ export function ConnectionCard({
 
 // Every leg with its stops and times
 export function LegList({ connection }: { connection: Connection }) {
+  const { m } = useI18n();
   return (
     <ol className="space-y-2 border-t border-border bg-muted/30 px-3 py-3 text-sm">
       {connection.legs.map((leg, index) => (
         <Fragment key={`${leg.trip}-${index}`}>
           {leg.walkBeforeMs !== undefined && (
             <li className="flex items-center gap-2 pl-14 text-xs text-muted-foreground">
-              <Footprints className="size-3.5" />A piedi {walkMinutes(leg.walkBeforeMs)} min
+              <Footprints className="size-3.5" />
+              {m.journey.walk(walkMinutes(leg.walkBeforeMs))}
             </li>
           )}
           <li className="flex gap-3">
@@ -147,7 +151,7 @@ export function LegList({ connection }: { connection: Connection }) {
                 <span className="truncate">{leg.from.name}</span>
               </p>
               <p className="truncate pl-[5.25rem] text-xs text-muted-foreground">
-                direzione {leg.destination}
+                {m.journey.towards(leg.destination)}
               </p>
               <p className="flex items-baseline gap-2">
                 <Time timing={leg.arrival} className="w-[4.75rem] shrink-0 font-semibold" />
@@ -159,7 +163,8 @@ export function LegList({ connection }: { connection: Connection }) {
       ))}
       {connection.walkAfterMs !== undefined && (
         <li className="flex items-center gap-2 pl-14 text-xs text-muted-foreground">
-          <Footprints className="size-3.5" />A piedi {walkMinutes(connection.walkAfterMs)} min
+          <Footprints className="size-3.5" />
+          {m.journey.walk(walkMinutes(connection.walkAfterMs))}
         </li>
       )}
     </ol>
