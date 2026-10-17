@@ -42,6 +42,10 @@ export interface LegQuery {
   readonly to: string;
 }
 
+export interface ConnectionsOptions {
+  readonly arrival?: boolean;
+}
+
 export class OpendataError extends Schema.TaggedError<OpendataError>()(
   "OpendataError",
   {
@@ -64,11 +68,13 @@ export class Opendata extends Context.Service<
     stations(
       query: StationQuery
     ): Effect.Effect<ReadonlyArray<Station>, OpendataError>;
-    // Journeys leaving from `from` at `at` (epoch milliseconds) or later
+    // Journeys leaving from `from` at `at` (epoch milliseconds) or later;
+    // with `arrival`, the latest ones arriving by `at`
     connections(
       from: string,
       to: string,
-      at?: number
+      at?: number,
+      options?: ConnectionsOptions
     ): Effect.Effect<ReadonlyArray<Connection>, OpendataError>;
     // Latest timings of planned legs: `null` for the legs not found
     legs(legs: ReadonlyArray<LegQuery>): Effect.Effect<ReadonlyArray<LegUpdate>>;
@@ -135,12 +141,13 @@ export class Opendata extends Context.Service<
                 .slice(0, STATIONS)
             )
           ),
-        connections: (from, to, at) =>
+        connections: (from, to, at, options) =>
           request("connections", ConnectionsResponse, {
             from,
             to,
             limit: String(CONNECTIONS),
             ...(at === undefined ? {} : { datetime: opendataDateTime(at) }),
+            ...(options?.arrival ? { isArrivalTime: "1" } : {}),
           }).pipe(
             Effect.map((response) =>
               response.connections.map(toConnection).filter(isDefined)
