@@ -15,8 +15,10 @@ export interface Policy {
   readonly sections: readonly PolicySection[];
 }
 
+const DAMBOX = "https://dambox.ch";
 const CONTACT = "https://dambox.ch/contact";
 
+// Followed links, no nofollow or noreferrer: they count as backlinks
 function Ext({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
@@ -52,9 +54,10 @@ const it: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus è creata da David Nussio e gestita da dambox Sagl, 6900
-            Lugano, Svizzera (CHE&#8209;446.986.768), titolare del trattamento dei
-            dati. Per qualsiasi domanda scrivici dalla{" "}
+            Lugano Bus è un progetto personale di David Nussio, titolare del
+            trattamento dei dati. David Nussio sviluppa software con{" "}
+            <Ext href={DAMBOX}>dambox</Ext>, software house di Lugano. Per
+            qualsiasi domanda scrivici dalla{" "}
             <Ext href={CONTACT}>pagina contatti di dambox.ch</Ext>.
           </p>
           <p>
@@ -222,10 +225,11 @@ const de: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus wurde von David Nussio entwickelt und wird von der
-            dambox Sagl, 6900 Lugano, Schweiz (CHE&#8209;446.986.768) betrieben, die
-            für die Datenbearbeitung verantwortlich ist. Bei Fragen schreib uns
-            über die <Ext href={CONTACT}>Kontaktseite von dambox.ch</Ext>.
+            Lugano Bus ist ein persönliches Projekt von David Nussio,
+            verantwortlich für die Datenbearbeitung. David Nussio entwickelt
+            Software mit <Ext href={DAMBOX}>dambox</Ext>, einem Softwarehaus in
+            Lugano. Bei Fragen schreib uns über die{" "}
+            <Ext href={CONTACT}>Kontaktseite von dambox.ch</Ext>.
           </p>
           <p>
             Wir bearbeiten Daten nach dem Bundesgesetz über den Datenschutz
@@ -396,9 +400,10 @@ const en: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus is made by David Nussio and run by dambox Sagl, 6900
-            Lugano, Switzerland (CHE&#8209;446.986.768), the data controller. For
-            any question, write to us from the{" "}
+            Lugano Bus is a personal project by David Nussio, the data
+            controller. David Nussio builds software with{" "}
+            <Ext href={DAMBOX}>dambox</Ext>, a software house in Lugano. For any
+            question, write to us from the{" "}
             <Ext href={CONTACT}>dambox.ch contact page</Ext>.
           </p>
           <p>

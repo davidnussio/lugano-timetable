@@ -19,7 +19,7 @@ export async function SiteFooter() {
       <p>
         {m.footer.createdBy}{" "}
         {/* A followed link, no nofollow or noreferrer: the backlink counts */}
-        <a href="https://dambox.ch/projects" target="_blank" rel="noopener" className={link}>
+        <a href="https://dambox.ch/projects/lugano-bus" target="_blank" rel="noopener" className={link}>
           David Nussio (dambox)
         </a>
       </p>
