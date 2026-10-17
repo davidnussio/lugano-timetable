@@ -28,8 +28,8 @@ export const it = {
     journey: "Tragitto",
   },
   footer: {
-    disclaimer:
-      "App non ufficiale, non affiliata a Trasporti Pubblici Luganesi (TPL). Orari e posizioni vengono dai dati in tempo reale di TPL e, per i tragitti, da transport.opendata.ch: possono essere imprecisi, verifica sempre alla fermata.",
+    unofficial: "App non ufficiale, non affiliata a TPL",
+    privacy: "Privacy",
     createdBy: "Creato da",
     language: "Lingua",
   },

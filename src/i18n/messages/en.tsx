@@ -30,8 +30,8 @@ export const en: Messages = {
     journey: "Journey",
   },
   footer: {
-    disclaimer:
-      "Unofficial app, not affiliated with Trasporti Pubblici Luganesi (TPL). Times and positions come from TPL's real-time data and, for journeys, from transport.opendata.ch: they may be inaccurate, always check at the stop.",
+    unofficial: "Unofficial app, not affiliated with TPL",
+    privacy: "Privacy",
     createdBy: "Made by",
     language: "Language",
   },

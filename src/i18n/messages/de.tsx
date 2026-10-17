@@ -31,8 +31,8 @@ export const de: Messages = {
     journey: "Verbindung",
   },
   footer: {
-    disclaimer:
-      "Inoffizielle App, nicht verbunden mit den Trasporti Pubblici Luganesi (TPL). Fahrzeiten und Positionen stammen aus den Echtzeitdaten der TPL und, für Verbindungen, von transport.opendata.ch: Sie können ungenau sein, prüfe sie immer an der Haltestelle.",
+    unofficial: "Inoffizielle App, nicht mit den TPL verbunden",
+    privacy: "Datenschutz",
     createdBy: "Erstellt von",
     language: "Sprache",
   },
