@@ -17,11 +17,11 @@ import {
   type SavedJourney,
   toggleFavoriteJourney,
 } from "~/journey/search-store";
-import { stopName } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
 import { ConnectionCard, sameStart } from "./connection-card";
+import { FavoriteJourneys } from "./favorite-journeys";
 import {
   type ChosenTime,
   chooseTime,
@@ -247,33 +247,6 @@ export default function JourneyPage() {
             />
           </div>
         )}
-        {editing === null && favoriteJourneys.length > 0 && (
-          <ul className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
-            {favoriteJourneys.map((journey) => {
-              const current = from?.id === journey.from.id && to?.id === journey.to.id;
-              return (
-                <li key={`${journey.from.id}-${journey.to.id}`} className="shrink-0">
-                  <button
-                    type="button"
-                    aria-pressed={current}
-                    title={`${journey.from.name} → ${journey.to.name}`}
-                    onClick={() => choose(journey)}
-                    className={cn(
-                      "inline-flex h-8 max-w-[16rem] items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
-                      current
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card hover:bg-muted"
-                    )}>
-                    <Star className="size-3.5 shrink-0 fill-favorite text-favorite" />
-                    <span className="truncate">
-                      {stopName(journey.from.name)} → {stopName(journey.to.name)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
         {editing !== null && (
           <button
             type="button"
@@ -359,27 +332,34 @@ export default function JourneyPage() {
             {m.journey.source}
           </p>
         </section>
-      ) : search.recent.length > 0 ? (
-        <section className="px-4 pt-1">
-          <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <History className="size-3.5" />
-            {m.journey.recent}
-          </h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            {search.recent.map((journey) => (
-              <li key={`${journey.from.id}-${journey.to.id}`}>
-                <button
-                  type="button"
-                  onClick={() => choose(journey)}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted">
-                  <span className="min-w-0 flex-1 truncate font-medium">{journey.from.name}</span>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-right font-medium">{journey.to.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      ) : favoriteJourneys.length > 0 || search.recent.length > 0 ? (
+        <div className="space-y-4">
+          {favoriteJourneys.length > 0 && (
+            <FavoriteJourneys journeys={favoriteJourneys} onChoose={choose} />
+          )}
+          {search.recent.length > 0 && (
+            <section className="px-4 pt-1">
+              <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <History className="size-3.5" />
+                {m.journey.recent}
+              </h2>
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                {search.recent.map((journey) => (
+                  <li key={`${journey.from.id}-${journey.to.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => choose(journey)}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted">
+                      <span className="min-w-0 flex-1 truncate font-medium">{journey.from.name}</span>
+                      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-right font-medium">{journey.to.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       ) : (
         <p className="px-8 py-10 text-center text-sm text-muted-foreground">
           {m.journey.intro}

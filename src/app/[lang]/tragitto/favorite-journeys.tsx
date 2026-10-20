@@ -1,46 +1,48 @@
 "use client";
 
 import { ChevronRight, Star } from "lucide-react";
-import Link from "next/link";
 import useSWR from "swr";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { Connection } from "~/journey/models";
-import { journeySearchStore, type SavedJourney } from "~/journey/search-store";
+import type { SavedJourney } from "~/journey/search-store";
 import { formatDuration, stopName } from "~/lib/format";
 import { expected, formatTime } from "~/timer/journey";
 import { fetcher } from "~/utils/fetcher";
-import { connectionEnd, connectionStart } from "./tragitto/connection-card";
+import { connectionEnd, connectionStart } from "./connection-card";
 
-// More would push the stop list off the screen
-const SHOWN = 4;
-
-// The journeys saved on the journey page, with their next connection as on
-// that page: a tap opens it there. Nothing until the local storage is read.
-export function FavoriteJourneys() {
+// The journeys saved, with their next connection: a tap searches it
+export function FavoriteJourneys({
+  journeys,
+  onChoose,
+}: {
+  journeys: ReadonlyArray<SavedJourney>;
+  onChoose: (journey: SavedJourney) => void;
+}) {
   const { m } = useI18n();
-  const search = journeySearchStore.useValue();
-  const journeys = search?.favorites ?? [];
-  if (journeys.length === 0) return null;
-
   return (
-    <section className="px-4 pb-1 pt-2">
-      <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {m.stops.favoriteJourneys}
+    <section className="px-4 pt-1">
+      <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Star className="size-3.5" />
+        {m.journey.favorites}
       </h2>
       <ul role="list" className="space-y-2">
-        {journeys.slice(0, SHOWN).map((journey) => (
-          <JourneyCard key={`${journey.from.id}-${journey.to.id}`} journey={journey} />
+        {journeys.map((journey) => (
+          <JourneyCard
+            key={`${journey.from.id}-${journey.to.id}`}
+            journey={journey}
+            onChoose={() => onChoose(journey)}
+          />
         ))}
       </ul>
     </section>
   );
 }
 
-function JourneyCard({ journey }: { journey: SavedJourney }) {
+function JourneyCard({ journey, onChoose }: { journey: SavedJourney; onChoose: () => void }) {
   const { m } = useI18n();
   const { from, to } = journey;
-  // Same request (and SWR cache) as the journey page searching from now
+  // Same request (and SWR cache) as the search from now
   const { data, error } = useSWR<ReadonlyArray<Connection>>(
     `/api/journey/connections?from=${from.id}&to=${to.id}`,
     fetcher,
@@ -50,11 +52,11 @@ function JourneyCard({ journey }: { journey: SavedJourney }) {
 
   return (
     <li>
-      <Link
-        href="/tragitto"
-        onClick={() => journeySearchStore.set((s) => ({ ...s, from, to }))}
+      <button
+        type="button"
+        onClick={onChoose}
         title={`${from.name} → ${to.name}`}
-        className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/60 active:bg-muted">
+        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted">
         <Star className="size-4 shrink-0 fill-favorite text-favorite" />
         <div className="min-w-0 flex-1 space-y-1">
           <p className="truncate font-medium">
@@ -92,7 +94,7 @@ function JourneyCard({ journey }: { journey: SavedJourney }) {
           )}
         </div>
         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
-      </Link>
+      </button>
     </li>
   );
 }

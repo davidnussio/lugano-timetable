@@ -149,6 +149,7 @@ export const de: Messages = {
     source:
       "Fahrzeiten und Verspätungen von transport.opendata.ch. Tippe auf die Glocke, um die Verbindung mit dem Timer zu verfolgen.",
     recent: "Zuletzt",
+    favorites: "Favoriten",
     intro:
       "Wähle Start und Ziel: auch mit Umsteigen, Zügen und Regionalbussen. Der Timer sagt dir, wann du losgehen musst und ob die Anschlüsse klappen.",
     fromStop: (stop: string) => `ab ${stop}`,

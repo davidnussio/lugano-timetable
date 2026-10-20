@@ -143,6 +143,7 @@ export const it = {
     source:
       "Orari e ritardi da transport.opendata.ch. Tocca la campanella per seguire il tragitto con il timer.",
     recent: "Recenti",
+    favorites: "Preferiti",
     intro:
       "Scegli partenza e destinazione: anche con cambi, treni e bus regionali. Il timer ti dirà quando uscire e se le coincidenze reggono.",
     fromStop: (stop: string) => `da ${stop}`,

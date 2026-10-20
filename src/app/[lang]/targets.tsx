@@ -11,7 +11,7 @@ import { cn } from "~/lib/utils";
 import { distanceMeters, type Position } from "~/timer/plan";
 import type { Target } from "~/timetable/models";
 import { StopsHeader } from "~/app/components/stops-header";
-import { FavoriteJourneys } from "./favorite-journeys";
+import { JourneyChips } from "./journey-chips";
 import { NowRides } from "./now-rides";
 
 function bySearchValue(search: string): (target: Target) => boolean {
@@ -93,12 +93,12 @@ export function FiltrableListTargets({
     ? rows.filter((row) => !isFavorite(row.target.Identifiers))
     : rows;
   const locating = nearby && !position && !error;
+  // Looking for a stop: its results right under the search
+  const finding = deferredSearch !== "" || nearby;
 
   return (
     <div className="flex flex-col pb-6">
       <StopsHeader title={m.stops.title} current="/" />
-      <NowRides targets={targets} />
-      <FavoriteJourneys />
 
       <div className="sticky top-0 z-20 space-y-2.5 bg-background/85 px-4 pb-3 pt-2 backdrop-blur-xl">
         <label className="relative block">
@@ -151,6 +151,8 @@ export function FiltrableListTargets({
         </div>
       </div>
 
+      {!finding && <NowRides targets={targets} />}
+
       {favorites.length > 0 && (
         <Section title={m.stops.favorites}>
           {favorites.map((row) => (
@@ -158,6 +160,8 @@ export function FiltrableListTargets({
           ))}
         </Section>
       )}
+
+      {!finding && <JourneyChips />}
 
       <Section
         title={position ? m.stops.nearest : favorites.length > 0 ? m.stops.all : undefined}>

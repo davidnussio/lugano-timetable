@@ -143,6 +143,7 @@ export const en: Messages = {
     source:
       "Times and delays from transport.opendata.ch. Tap the bell to follow the journey with the timer.",
     recent: "Recent",
+    favorites: "Favourites",
     intro:
       "Choose a start and a destination: with changes, trains and regional buses too. The timer will tell you when to leave and whether the connections hold.",
     fromStop: (stop: string) => `from ${stop}`,
