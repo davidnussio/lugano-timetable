@@ -201,3 +201,72 @@ export function nextStop(
   const { getOff } = timer;
   return getOff === undefined || now < timer.departureAt ? undefined : located("getOff", getOff);
 }
+
+// What tells most about the ride under the countdown, next to its departure
+// and arrival
+export type TravelExtra =
+  // Late (or early) at the next stop of the leg: undefined without real-time
+  // data
+  | { readonly kind: "delay"; readonly ms: number | undefined }
+  // Stops still to reach on a single bus, once the routing tells
+  | { readonly kind: "stops"; readonly stops: number | undefined }
+  // The whole trip, once there
+  | { readonly kind: "duration"; readonly ms: number }
+  // The walk left from the last stop to the destination
+  | { readonly kind: "walk"; readonly ms: number };
+
+export interface TravelStats {
+  readonly departureAt: number;
+  readonly arrivalAt: number | undefined;
+  readonly extra: TravelExtra;
+}
+
+const delayOf = (timing: PlannedLeg["departure"]) =>
+  timing.estimated === undefined ? undefined : delayMs(timing);
+
+// The ride under way (or the next bus at a transfer) once the bus of the
+// timer has left: undefined before, when the countdown is about the walk.
+// `stopsLeft`: from the routing of a single bus, when followed.
+export function travelStats(
+  timer: ActiveTimer,
+  legs: ReadonlyArray<PlannedLeg> | undefined,
+  stopsLeft: number | undefined,
+  now: number
+): TravelStats | undefined {
+  if (timer.journey !== undefined) {
+    const first = legs?.[0];
+    const last = legs?.at(-1);
+    if (legs === undefined || first === undefined || last === undefined) return undefined;
+    if (expected(first.departure) > now) return undefined;
+    const leg = legs.find((each) => expected(each.arrival) > now);
+    if (leg !== undefined) {
+      const departed = expected(leg.departure) <= now;
+      return {
+        departureAt: expected(leg.departure),
+        arrivalAt: expected(leg.arrival),
+        // Waiting at a transfer the next departure matters, on board the
+        // arrival
+        extra: { kind: "delay", ms: delayOf(departed ? leg.arrival : leg.departure) },
+      };
+    }
+    const walkAfterMs = timer.journey.walkAfterMs ?? 0;
+    return {
+      departureAt: expected(first.departure),
+      arrivalAt: expected(last.arrival),
+      extra:
+        walkAfterMs > 0
+          ? { kind: "walk", ms: walkAfterMs }
+          : { kind: "duration", ms: expected(last.arrival) - expected(first.departure) },
+    };
+  }
+  const { getOff } = timer;
+  if (getOff === undefined || now < timer.departureAt) return undefined;
+  return {
+    departureAt: timer.departureAt,
+    arrivalAt: getOff.arrivedAt ?? getOff.arrivalAt,
+    extra:
+      getOff.arrivedAt === undefined
+        ? { kind: "stops", stops: stopsLeft }
+        : { kind: "duration", ms: getOff.arrivedAt - timer.departureAt },
+  };
+}

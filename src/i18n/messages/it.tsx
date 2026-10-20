@@ -257,13 +257,20 @@ export const it = {
     stepWait: (stop: string) => `Attesa a ${stop}`,
     stepRide: (stop: string) => `Fino a ${stop}`,
     ongoing: (duration: string) => `in corso da ${duration}`,
-    departedLate: (minutes: number) => `partito con ${minutes} min di ritardo`,
-    departedEarly: (minutes: number) => `partito ${minutes} min in anticipo`,
+    departedLate: (minutes: number) => `${minutes} min di ritardo`,
+    departedEarly: (minutes: number) => `${minutes} min in anticipo`,
     onTime: "puntuale",
     // Where the map leads once on board
     boardAt: (stop: string) => `Sali a ${stop}`,
     destinationAt: (stop: string) => `Arrivo a ${stop}`,
     fromYou: (distance: string) => `a ${distance} da te`,
+    // Under the countdown once on board
+    arrival: "Arrivo",
+    delay: "Ritardo",
+    stops: "Fermate",
+    duration: "Durata",
+    punctual: "Puntuale",
+    walkTo: (minutes: number) => `Ancora ${minutes} min a piedi`,
   },
   notifications: {
     title: "Notifiche",

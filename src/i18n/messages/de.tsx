@@ -264,13 +264,20 @@ export const de: Messages = {
     stepWait: (stop: string) => `Warten in ${stop}`,
     stepRide: (stop: string) => `Bis ${stop}`,
     ongoing: (duration: string) => `seit ${duration}`,
-    departedLate: (minutes: number) => `mit ${minutes} min Verspätung abgefahren`,
-    departedEarly: (minutes: number) => `${minutes} min zu früh abgefahren`,
+    departedLate: (minutes: number) => `${minutes} min Verspätung`,
+    departedEarly: (minutes: number) => `${minutes} min zu früh`,
     onTime: "pünktlich",
     // Where the map leads once on board
     boardAt: (stop: string) => `Einsteigen in ${stop}`,
     destinationAt: (stop: string) => `Ankunft in ${stop}`,
     fromYou: (distance: string) => `${distance} von dir`,
+    // Under the countdown once on board
+    arrival: "Ankunft",
+    delay: "Verspätung",
+    stops: "Halte",
+    duration: "Dauer",
+    punctual: "Pünktlich",
+    walkTo: (minutes: number) => `Noch ${minutes} min zu Fuss`,
   },
   notifications: {
     title: "Benachrichtigungen",

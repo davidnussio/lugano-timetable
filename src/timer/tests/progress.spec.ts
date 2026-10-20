@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Connection, PlannedLeg, Station } from "~/journey/models";
 import { InTimeStatus } from "~/timetable/models";
 import { transfer } from "../journey";
-import { nextStop, reachStop, tripSteps } from "../progress";
+import { nextStop, reachStop, travelStats, tripSteps } from "../progress";
 import { type ActiveTimer, createJourneyTimer, createTimer } from "../store";
 
 const MIN = 60_000;
@@ -236,5 +236,60 @@ describe("nextStop", () => {
     expect(nextStop(single(), undefined, 12 * MIN)).toBeUndefined();
     const { position: _, ...unknown } = getOff;
     expect(nextStop(single({ getOff: unknown }), undefined, 12 * MIN)).toBeUndefined();
+  });
+});
+
+describe("travelStats", () => {
+  it("is about the walk until the bus leaves", () => {
+    const timer = journey();
+    expect(travelStats(timer, timer.journey?.legs, undefined, 5 * MIN)).toBeUndefined();
+    expect(travelStats(single(), undefined, undefined, 12 * MIN)).toBeUndefined();
+  });
+
+  it("tells the times of the leg on board, with its delay at the arrival", () => {
+    const timer = journey();
+    expect(travelStats(timer, timer.journey?.legs, undefined, 15 * MIN)).toEqual({
+      departureAt: 11 * MIN,
+      arrivalAt: 19 * MIN,
+      extra: { kind: "delay", ms: MIN },
+    });
+  });
+
+  it("tells the next departure at a transfer, without a delay unknown", () => {
+    const timer = journey();
+    expect(travelStats(timer, timer.journey?.legs, undefined, 21 * MIN)).toEqual({
+      departureAt: 25 * MIN,
+      arrivalAt: 45 * MIN,
+      extra: { kind: "delay", ms: undefined },
+    });
+  });
+
+  it("tells the whole trip once there, or the walk left to the destination", () => {
+    const timer = journey();
+    expect(travelStats(timer, timer.journey?.legs, undefined, 50 * MIN)).toEqual({
+      departureAt: 11 * MIN,
+      arrivalAt: 45 * MIN,
+      extra: { kind: "duration", ms: 34 * MIN },
+    });
+    const walking = journey();
+    const withWalk = walking.journey && { ...walking.journey, walkAfterMs: 9 * MIN };
+    expect(
+      travelStats({ ...walking, journey: withWalk }, withWalk?.legs, undefined, 50 * MIN)?.extra
+    ).toEqual({ kind: "walk", ms: 9 * MIN });
+  });
+
+  it("counts the stops left on a single bus, then the ride once there", () => {
+    const getOff = { target: "40", name: "Lugano, Stazione", arrivalAt: 18 * MIN, alerted: [] };
+    expect(travelStats(single({ getOff }), undefined, 3, 12 * MIN)).toEqual({
+      departureAt: 10 * MIN,
+      arrivalAt: 18 * MIN,
+      extra: { kind: "stops", stops: 3 },
+    });
+    const arrived = single({ getOff: { ...getOff, arrivedAt: 19 * MIN } });
+    expect(travelStats(arrived, undefined, 0, 20 * MIN)).toEqual({
+      departureAt: 10 * MIN,
+      arrivalAt: 19 * MIN,
+      extra: { kind: "duration", ms: 9 * MIN },
+    });
   });
 });

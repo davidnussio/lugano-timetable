@@ -24,13 +24,20 @@ import { useNow } from "~/hooks/use-now";
 import { useReliability } from "~/hooks/use-reliability";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { Messages } from "~/i18n/messages";
-import { formatClimb, formatClock, formatDistance, formatSpeed, formatWeather } from "~/lib/format";
+import {
+  formatClimb,
+  formatClock,
+  formatDistance,
+  formatDuration,
+  formatSpeed,
+  formatWeather,
+} from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { formatTime, journeyHeadline } from "~/timer/journey";
 import { learnedSpeed, MIN_WALKS } from "~/timer/pace";
 import { type Countdown, distanceMeters, minutesLeft, type Pace, type Stage } from "~/timer/plan";
-import { type NextStop, nextStop } from "~/timer/progress";
+import { type NextStop, nextStop, type TravelStats, travelStats } from "~/timer/progress";
 import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
@@ -323,6 +330,8 @@ function ActiveTimerView({
   const progress = timerProgress(m, active, countdown, stage);
   // Once on board the map leads to the next stop
   const next = now === 0 ? undefined : nextStop(active, legs, now);
+  // On board the stats are about the ride, not the walk to the stop
+  const stats = travel && now > 0 ? travelStats(active, legs, ride?.stopsLeft, now) : undefined;
   const showMap = settings.useLocation && active.coordinates !== undefined && !geolocation.error;
   // On board the pace does not matter: it comes back for the walk of a transfer
   const showPace = showMap && (next === undefined || next.kind === "board");
@@ -426,11 +435,16 @@ function ActiveTimerView({
               )}>
               {clock}
             </span>
-            <span className="mt-1 text-xs text-muted-foreground">
+            {/* Short enough to stay in the ring */}
+            <span className="mt-1 max-w-48 truncate text-center text-xs text-muted-foreground">
               {travel
                 ? active.journey === undefined && active.getOff
                   ? rideSummary(m.ride, active.getOff, ride)
-                  : m.routing.headingTo(active.journey?.to.name ?? active.destination)
+                  : stats?.extra.kind === "walk"
+                    ? m.timer.walkTo(Math.max(1, Math.round(stats.extra.ms / 60_000)))
+                    : stats?.extra.kind === "duration"
+                      ? active.journey?.to.name
+                      : m.timer.towards(active.journey?.to.name ?? active.destination)
                 : tone === "gone"
                 ? m.timer.busLeft
                 : countdown.departureMs <= 0
@@ -447,33 +461,39 @@ function ActiveTimerView({
         </div>
 
         <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border text-center">
-          <Stat label={m.timer.departure} value={active.time} mono />
-          <Stat
-            label={m.timer.onFoot}
-            value={
-              stage === "arrived"
-                ? m.timer.arrived
-                : walking === undefined
-                  ? "—"
-                  : `${Math.max(1, Math.round(walking / 60_000))} min`
-            }
-            hint={
-              stage === "arrived" || meters === undefined
-                ? undefined
-                : [
-                    formatDistance(m, meters),
-                    far === undefined ? formatClimb(climb) : undefined,
-                    formatWeather(m, weather),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-            }
-          />
-          <Stat
-            label={m.timer.margin}
-            value={marginLabel(countdown)}
-            className={walking === undefined ? undefined : toneText[tone]}
-          />
+          {stats ? (
+            <TravelStatList stats={stats} />
+          ) : (
+            <>
+              <Stat label={m.timer.departure} value={active.time} mono />
+              <Stat
+                label={m.timer.onFoot}
+                value={
+                  stage === "arrived"
+                    ? m.timer.arrived
+                    : walking === undefined
+                      ? "—"
+                      : `${Math.max(1, Math.round(walking / 60_000))} min`
+                }
+                hint={
+                  stage === "arrived" || meters === undefined
+                    ? undefined
+                    : [
+                        formatDistance(m, meters),
+                        far === undefined ? formatClimb(climb) : undefined,
+                        formatWeather(m, weather),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                }
+              />
+              <Stat
+                label={m.timer.margin}
+                value={marginLabel(countdown)}
+                className={walking === undefined ? undefined : toneText[tone]}
+              />
+            </>
+          )}
         </dl>
 
         {/* A journey follows the times of SBB, not of the stop */}
@@ -640,6 +660,62 @@ function BusCard({ href, children }: { href: string | undefined; children: React
       className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
       {children}
     </Link>
+  );
+}
+
+// The ride under the countdown once on board: when it left and arrives, with
+// its delay, the stops left, or the trip once over
+function TravelStatList({ stats }: { stats: TravelStats }) {
+  const { m } = useI18n();
+  const { departureAt, arrivalAt, extra } = stats;
+  let third: ComponentProps<typeof Stat>;
+  switch (extra.kind) {
+    case "delay": {
+      const minutes = extra.ms === undefined ? undefined : Math.round(extra.ms / 60_000);
+      third = {
+        label: m.timer.delay,
+        value:
+          minutes === undefined
+            ? "—"
+            : minutes === 0
+              ? m.timer.punctual
+              : minutes > 0
+                ? `+${minutes} min`
+                : `−${-minutes} min`,
+        className:
+          minutes === undefined
+            ? undefined
+            : minutes <= 0
+              ? "text-success"
+              : minutes < 5
+                ? "text-warning"
+                : "text-destructive",
+      };
+      break;
+    }
+    case "stops":
+      third = { label: m.timer.stops, value: extra.stops === undefined ? "—" : `${extra.stops}` };
+      break;
+    case "duration":
+      third = { label: m.timer.duration, value: formatDuration(extra.ms) };
+      break;
+    case "walk":
+      third = {
+        label: m.timer.onFoot,
+        value: `${Math.max(1, Math.round(extra.ms / 60_000))} min`,
+      };
+      break;
+  }
+  return (
+    <>
+      <Stat label={m.timer.departure} value={formatTime(departureAt)} mono />
+      <Stat
+        label={m.timer.arrival}
+        value={arrivalAt === undefined ? "—" : formatTime(arrivalAt)}
+        mono={arrivalAt !== undefined}
+      />
+      <Stat {...third} />
+    </>
   );
 }
 
