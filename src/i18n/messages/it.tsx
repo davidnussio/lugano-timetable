@@ -270,7 +270,6 @@ export const it = {
     stops: "Fermate",
     duration: "Durata",
     punctual: "Puntuale",
-    walkTo: (minutes: number) => `Ancora ${minutes} min a piedi`,
   },
   notifications: {
     title: "Notifiche",
@@ -361,6 +360,7 @@ export const it = {
     arrived: "Arrivato",
     lineIn: (line: string) => `Linea ${line} tra`,
     arrivalIn: "Arrivo tra",
+    destinationIn: "A destinazione tra",
   },
   // What is left of the ride, at the start of a sentence…
   ride: {

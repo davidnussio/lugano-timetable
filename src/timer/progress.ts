@@ -161,6 +161,25 @@ export function tripSteps(
       ...(ride.delayMs === undefined ? {} : { delayMs: ride.delayMs }),
     });
   }
+
+  // From the last stop to the destination of a journey, on foot
+  const last = all.at(-1);
+  const walkAfterMs = timer.journey?.walkAfterMs ?? 0;
+  if (
+    timer.journey !== undefined &&
+    walkAfterMs > 0 &&
+    last?.arrivalAt !== undefined &&
+    last.arrivalAt <= now
+  ) {
+    const end = last.arrivalAt + walkAfterMs;
+    steps.push({
+      kind: "walk",
+      at: last.arrivalAt,
+      ms: Math.min(now, end) - last.arrivalAt,
+      done: now >= end,
+      to: timer.journey.to.name,
+    });
+  }
   return steps;
 }
 
@@ -212,7 +231,7 @@ export type TravelExtra =
   | { readonly kind: "stops"; readonly stops: number | undefined }
   // The whole trip, once there
   | { readonly kind: "duration"; readonly ms: number }
-  // The walk left from the last stop to the destination
+  // The walk from the last stop to the destination, while under way
   | { readonly kind: "walk"; readonly ms: number };
 
 export interface TravelStats {
@@ -250,13 +269,15 @@ export function travelStats(
       };
     }
     const walkAfterMs = timer.journey.walkAfterMs ?? 0;
+    // At the last stop until the walk to the destination is over
+    const walking = expected(last.arrival) + walkAfterMs > now;
+    const arrivalAt = expected(last.arrival) + (walking ? 0 : walkAfterMs);
     return {
       departureAt: expected(first.departure),
-      arrivalAt: expected(last.arrival),
-      extra:
-        walkAfterMs > 0
-          ? { kind: "walk", ms: walkAfterMs }
-          : { kind: "duration", ms: expected(last.arrival) - expected(first.departure) },
+      arrivalAt,
+      extra: walking
+        ? { kind: "walk", ms: walkAfterMs }
+        : { kind: "duration", ms: arrivalAt - expected(first.departure) },
     };
   }
   const { getOff } = timer;

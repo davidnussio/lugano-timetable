@@ -277,7 +277,6 @@ export const de: Messages = {
     stops: "Halte",
     duration: "Dauer",
     punctual: "Pünktlich",
-    walkTo: (minutes: number) => `Noch ${minutes} min zu Fuss`,
   },
   notifications: {
     title: "Benachrichtigungen",
@@ -364,6 +363,7 @@ export const de: Messages = {
     arrived: "Angekommen",
     lineIn: (line: string) => `Linie ${line} in`,
     arrivalIn: "Ankunft in",
+    destinationIn: "Am Ziel in",
   },
   ride: {
     headingTo: (stop: string) => `Unterwegs nach ${stop}`,

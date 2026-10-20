@@ -324,16 +324,23 @@ export function transferMessage(
   }
 }
 
-// What comes next once on board: getting off for a transfer, or the arrival.
+// What comes next once on board: getting off for a transfer, the arrival,
+// then the walk from the last stop to the destination (`walkAfterMs`).
 // Undefined before the first departure, when the timer counts down to it.
 export function journeyHeadline(
   m: Messages,
   legs: ReadonlyArray<Leg>,
-  now: number
+  now: number,
+  walkAfterMs = 0
 ): Headline | undefined {
   if (legs.length === 0 || expected(legs[0].departure) > now) return undefined;
   const index = legs.findIndex((leg) => expected(leg.arrival) > now);
-  if (index === -1) return { label: m.headline.arrived, ms: 0, phase: "arrival" };
+  if (index === -1) {
+    const left = expected(legs[legs.length - 1].arrival) + walkAfterMs - now;
+    return left > 0
+      ? { label: m.headline.destinationIn, ms: left, phase: "walk" }
+      : { label: m.headline.arrived, ms: 0, phase: "arrival" };
+  }
   const leg = legs[index];
   // Between two legs: waiting for the next bus
   if (expected(leg.departure) > now) {

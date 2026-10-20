@@ -32,7 +32,7 @@ export function TimerBar() {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(m, legs, now)
+        ? journeyHeadline(m, legs, now, timer.journey?.walkAfterMs)
         : getOff && getOffHeadline(m, getOff, ride, now >= timer.departureAt, now);
   const headline = travel ?? timerHeadline(m, countdown, stage);
   const accuracy = geolocation.position?.accuracy;

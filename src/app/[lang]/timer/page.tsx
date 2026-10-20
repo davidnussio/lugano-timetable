@@ -95,7 +95,7 @@ function useHeadline(countdown: Countdown) {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(m, legs, now)
+        ? journeyHeadline(m, legs, now, timer?.journey?.walkAfterMs)
         : getOff && timer
           ? getOffHeadline(m, getOff, ride, now >= timer.departureAt, now)
           : undefined;
@@ -440,11 +440,9 @@ function ActiveTimerView({
               {travel
                 ? active.journey === undefined && active.getOff
                   ? rideSummary(m.ride, active.getOff, ride)
-                  : stats?.extra.kind === "walk"
-                    ? m.timer.walkTo(Math.max(1, Math.round(stats.extra.ms / 60_000)))
-                    : stats?.extra.kind === "duration"
-                      ? active.journey?.to.name
-                      : m.timer.towards(active.journey?.to.name ?? active.destination)
+                  : stats?.extra.kind === "duration"
+                    ? active.journey?.to.name
+                    : m.timer.towards(active.journey?.to.name ?? active.destination)
                 : tone === "gone"
                 ? m.timer.busLeft
                 : countdown.departureMs <= 0

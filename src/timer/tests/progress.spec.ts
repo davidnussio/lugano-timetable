@@ -157,6 +157,26 @@ describe("tripSteps", () => {
     expect(steps[1]).toMatchObject({ walkingMs: 3 * MIN });
   });
 
+  it("ends with the walk from the last stop to the destination", () => {
+    const timer = journey();
+    const onFoot = timer.journey && { ...timer.journey, walkAfterMs: 9 * MIN };
+    const steps = tripSteps({ ...timer, journey: onFoot }, onFoot?.legs, 50 * MIN);
+    expect(steps.at(-1)).toEqual({
+      kind: "walk",
+      at: 45 * MIN,
+      ms: 5 * MIN,
+      done: false,
+      to: "Bellinzona",
+    });
+    expect(tripSteps({ ...timer, journey: onFoot }, onFoot?.legs, 60 * MIN).at(-1)).toMatchObject({
+      kind: "walk",
+      ms: 9 * MIN,
+      done: true,
+    });
+    // Without a walk planned the journey ends at the last stop
+    expect(tripSteps(timer, timer.journey?.legs, 50 * MIN).at(-1)?.kind).toBe("ride");
+  });
+
   it("has nothing to tell before the stop is reached", () => {
     const timer = journey();
     expect(tripSteps(timer, timer.journey?.legs, 5 * MIN)).toEqual([]);
@@ -273,9 +293,17 @@ describe("travelStats", () => {
     });
     const walking = journey();
     const withWalk = walking.journey && { ...walking.journey, walkAfterMs: 9 * MIN };
-    expect(
-      travelStats({ ...walking, journey: withWalk }, withWalk?.legs, undefined, 50 * MIN)?.extra
-    ).toEqual({ kind: "walk", ms: 9 * MIN });
+    const onFoot = { ...walking, journey: withWalk };
+    expect(travelStats(onFoot, withWalk?.legs, undefined, 50 * MIN)?.extra).toEqual({
+      kind: "walk",
+      ms: 9 * MIN,
+    });
+    // Door to door once the walk is over
+    expect(travelStats(onFoot, withWalk?.legs, undefined, 55 * MIN)).toEqual({
+      departureAt: 11 * MIN,
+      arrivalAt: 54 * MIN,
+      extra: { kind: "duration", ms: 43 * MIN },
+    });
   });
 
   it("counts the stops left on a single bus, then the ride once there", () => {

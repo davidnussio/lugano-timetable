@@ -392,4 +392,17 @@ describe("journeyHeadline", () => {
     });
     expect(journeyHeadline(m, legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
   });
+
+  it("counts down the walk to the destination after the last stop", () => {
+    expect(journeyHeadline(m, legs, 28 * MIN, 8 * MIN)).toEqual({
+      label: "A destinazione tra",
+      ms: 5 * MIN,
+      phase: "walk",
+    });
+    expect(journeyHeadline(m, legs, 33 * MIN, 8 * MIN)).toEqual({
+      label: "Arrivato",
+      ms: 0,
+      phase: "arrival",
+    });
+  });
 });
