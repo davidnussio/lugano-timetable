@@ -99,13 +99,20 @@ function rides(
   ];
 }
 
+// The walks of a journey at the pace of the user: between the legs, and
+// from the last stop to the destination
+export interface JourneyWalks {
+  readonly transfers?: ReadonlyArray<Transfer>;
+  readonly walkAfterMs?: number;
+}
+
 // The steps of the trip up to `now`, the last one possibly still going on.
-// `transfers`: the walks between the legs measured at the pace of the user.
+// Without `walks` the walks are the ones of the timetable.
 export function tripSteps(
   timer: ActiveTimer,
   legs: ReadonlyArray<PlannedLeg> | undefined,
   now: number,
-  transfers?: ReadonlyArray<Transfer>
+  { transfers, walkAfterMs = timer.journey?.walkAfterMs ?? 0 }: JourneyWalks = {}
 ): ReadonlyArray<Step> {
   const all = rides(timer, legs);
   const departureAt = all[0]?.departureAt ?? timer.departureAt;
@@ -164,7 +171,6 @@ export function tripSteps(
 
   // From the last stop to the destination of a journey, on foot
   const last = all.at(-1);
-  const walkAfterMs = timer.journey?.walkAfterMs ?? 0;
   if (
     timer.journey !== undefined &&
     walkAfterMs > 0 &&
@@ -246,11 +252,13 @@ const delayOf = (timing: PlannedLeg["departure"]) =>
 // The ride under way (or the next bus at a transfer) once the bus of the
 // timer has left: undefined before, when the countdown is about the walk.
 // `stopsLeft`: from the routing of a single bus, when followed.
+// `walkAfterMs`: the walk to the destination at the pace of the user.
 export function travelStats(
   timer: ActiveTimer,
   legs: ReadonlyArray<PlannedLeg> | undefined,
   stopsLeft: number | undefined,
-  now: number
+  now: number,
+  walkAfterMs = timer.journey?.walkAfterMs ?? 0
 ): TravelStats | undefined {
   if (timer.journey !== undefined) {
     const first = legs?.[0];
@@ -268,7 +276,6 @@ export function travelStats(
         extra: { kind: "delay", ms: delayOf(departed ? leg.arrival : leg.departure) },
       };
     }
-    const walkAfterMs = timer.journey.walkAfterMs ?? 0;
     // At the last stop until the walk to the destination is over
     const walking = expected(last.arrival) + walkAfterMs > now;
     const arrivalAt = expected(last.arrival) + (walking ? 0 : walkAfterMs);

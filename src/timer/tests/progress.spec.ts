@@ -134,7 +134,7 @@ describe("tripSteps", () => {
     const timer = journey({ atStop });
     const legs = timer.journey?.legs ?? [];
     const transfers = [transfer(legs[0], legs[1])];
-    const steps = tripSteps(timer, legs, 30 * MIN, transfers);
+    const steps = tripSteps(timer, legs, 30 * MIN, { transfers });
     expect(steps.map((step) => [step.kind, step.at / MIN, step.ms / MIN, step.done])).toEqual([
       ["walk", 1, 6, true],
       ["wait", 7, 4, true],
@@ -173,6 +173,10 @@ describe("tripSteps", () => {
       ms: 9 * MIN,
       done: true,
     });
+    // At the pace of the user: a slow walk takes longer than planned
+    expect(
+      tripSteps({ ...timer, journey: onFoot }, onFoot?.legs, 55 * MIN, { walkAfterMs: 12 * MIN }).at(-1)
+    ).toMatchObject({ kind: "walk", ms: 10 * MIN, done: false });
     // Without a walk planned the journey ends at the last stop
     expect(tripSteps(timer, timer.journey?.legs, 50 * MIN).at(-1)?.kind).toBe("ride");
   });
@@ -297,6 +301,10 @@ describe("travelStats", () => {
     expect(travelStats(onFoot, withWalk?.legs, undefined, 50 * MIN)?.extra).toEqual({
       kind: "walk",
       ms: 9 * MIN,
+    });
+    expect(travelStats(onFoot, withWalk?.legs, undefined, 55 * MIN, 12 * MIN)?.extra).toEqual({
+      kind: "walk",
+      ms: 12 * MIN,
     });
     // Door to door once the walk is over
     expect(travelStats(onFoot, withWalk?.legs, undefined, 55 * MIN)).toEqual({

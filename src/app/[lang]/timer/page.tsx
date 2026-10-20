@@ -87,7 +87,7 @@ function timerProgress(
 // The countdown to leave, or what comes next once on board: of a journey, or
 // of a single bus with a stop to get off
 function useHeadline(countdown: Countdown) {
-  const { timer, legs, stage, ride } = useTimer();
+  const { timer, legs, stage, ride, walkAfterMs } = useTimer();
   const { m } = useI18n();
   const now = useNow();
   const getOff = timer?.journey === undefined ? timer?.getOff : undefined;
@@ -95,7 +95,7 @@ function useHeadline(countdown: Countdown) {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(m, legs, now, timer?.journey?.walkAfterMs)
+        ? journeyHeadline(m, legs, now, walkAfterMs)
         : getOff && timer
           ? getOffHeadline(m, getOff, ride, now >= timer.departureAt, now)
           : undefined;
@@ -318,6 +318,7 @@ function ActiveTimerView({
     enableNotifications,
     ride,
     legs,
+    walkAfterMs,
   } = useTimer();
   const { m } = useI18n();
   const tone = timerTone(countdown, stage);
@@ -331,7 +332,7 @@ function ActiveTimerView({
   // Once on board the map leads to the next stop
   const next = now === 0 ? undefined : nextStop(active, legs, now);
   // On board the stats are about the ride, not the walk to the stop
-  const stats = travel && now > 0 ? travelStats(active, legs, ride?.stopsLeft, now) : undefined;
+  const stats = travel && now > 0 ? travelStats(active, legs, ride?.stopsLeft, now, walkAfterMs) : undefined;
   const showMap = settings.useLocation && active.coordinates !== undefined && !geolocation.error;
   // On board the pace does not matter: it comes back for the walk of a transfer
   const showPace = showMap && (next === undefined || next.kind === "board");

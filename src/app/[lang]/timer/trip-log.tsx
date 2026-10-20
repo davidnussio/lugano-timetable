@@ -83,10 +83,10 @@ function StepIcon({ step, timer }: { step: Step; timer: ActiveTimer }) {
 // The trip so far, above the countdown: when the user left, how long the
 // walk, the waits and the rides took. Shown once a step is behind.
 export function TripLog({ timer, now }: { timer: ActiveTimer; now: number }) {
-  const { legs, journey } = useTimer();
+  const { legs, journey, walkAfterMs } = useTimer();
   const { m } = useI18n();
   if (now === 0) return null;
-  const steps = tripSteps(timer, legs, now, journey?.transfers);
+  const steps = tripSteps(timer, legs, now, { transfers: journey?.transfers, walkAfterMs });
   const first = steps[0];
   const last = steps.at(-1);
   if (first === undefined || last === undefined || !steps.some((step) => step.done)) {

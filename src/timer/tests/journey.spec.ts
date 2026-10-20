@@ -12,6 +12,7 @@ import {
   journeyState,
   laterPlan,
   type Leg,
+  plannedWalkMs,
   transfer,
   transferMessage,
   transferWalkingMs,
@@ -364,6 +365,19 @@ describe("transferMessage", () => {
   it("formats times in Lugano", () => {
     // 2026-10-11 06:14 UTC is 08:14 in summer time
     expect(formatTime(Date.UTC(2026, 9, 11, 6, 14))).toBe("08:14");
+  });
+});
+
+describe("plannedWalkMs", () => {
+  it("takes the walk of the timetable at the pace of the user", () => {
+    expect(plannedWalkMs(6 * MIN, cornaredo, centro)).toBe(6 * MIN);
+    expect(plannedWalkMs(6 * MIN, cornaredo, centro, PACE_SPEED.normal / 2)).toBe(12 * MIN);
+  });
+
+  it("slows it down uphill, when the heights are known", () => {
+    const heightOf: HeightOf = (position) => (position.lat === centro.position.lat ? 300 : 280);
+    const flat = plannedWalkMs(6 * MIN, bellavista, centro);
+    expect(plannedWalkMs(6 * MIN, bellavista, centro, PACE_SPEED.normal, heightOf)).toBeGreaterThan(flat);
   });
 });
 

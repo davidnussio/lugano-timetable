@@ -368,10 +368,11 @@ export function followsTrip(
 }
 
 // When the timer is over: the departure, the arrival at the stop to get off,
-// or the arrival of a journey
+// or the arrival of a journey after the walk to its destination
 export function timerEndsAt(
   timer: ActiveTimer,
-  legs: ReadonlyArray<PlannedLeg> | undefined = timer.journey?.legs
+  legs: ReadonlyArray<PlannedLeg> | undefined = timer.journey?.legs,
+  walkAfterMs = timer.journey?.walkAfterMs
 ): number {
   const { getOff } = timer;
   if (getOff !== undefined && timer.journey === undefined) {
@@ -380,7 +381,7 @@ export function timerEndsAt(
   const last = legs?.at(-1);
   return last === undefined
     ? timer.departureAt
-    : expected(last.arrival) + (timer.journey?.walkAfterMs ?? 0);
+    : expected(last.arrival) + (walkAfterMs ?? 0);
 }
 
 export interface TransferAlert {

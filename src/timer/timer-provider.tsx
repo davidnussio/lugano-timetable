@@ -47,6 +47,7 @@ import {
   formatTime,
   type JourneyState,
   journeyState,
+  plannedWalkMs,
   transferMessage,
 } from "./journey";
 import {
@@ -137,6 +138,9 @@ export interface TimerContextValue {
   // transfers are going
   readonly legs: ReadonlyArray<PlannedLeg> | undefined;
   readonly journey: JourneyState | undefined;
+  // The walk from the last stop to the destination of a journey, at the pace
+  // of the user and slower uphill
+  readonly walkAfterMs: number | undefined;
   // The way to fall back on when a connection is lost, from its stop
   readonly fallback: { readonly index: number; readonly plan: Connection } | undefined;
   // The next bus of the same line from the stop that can still be caught, to
@@ -429,12 +433,23 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     () => (timer && now > 0 ? liveLegs(timer, now) : undefined),
     [timer, now]
   );
-  // The stops of the transfers, for the climb of the walks between them
-  const heightOf = useStopHeights(
-    (timer?.journey?.legs ?? []).flatMap((leg, index, all) =>
+  // The stops of the transfers and of the walk to the destination, for the
+  // climb of the walks between them
+  const lastStop = timer?.journey?.legs.at(-1)?.to;
+  const destination = timer?.journey?.to;
+  const plannedWalkAfter = timer?.journey?.walkAfterMs;
+  const heightOf = useStopHeights([
+    ...(timer?.journey?.legs ?? []).flatMap((leg, index, all) =>
       index === 0 ? [] : [all[index - 1].to.position, leg.from.position].filter(isDefined)
-    )
-  );
+    ),
+    ...(plannedWalkAfter === undefined
+      ? []
+      : [lastStop?.position, destination?.position].filter(isDefined)),
+  ]);
+  const walkAfterMs =
+    plannedWalkAfter === undefined || lastStop === undefined || destination === undefined
+      ? plannedWalkAfter
+      : plannedWalkMs(plannedWalkAfter, lastStop, destination, speed, heightOf);
   const journey = useMemo(
     () =>
       legs && legs.length > 1
@@ -522,7 +537,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const stored = timerStore.get();
     if (!stored || !current) return;
-    if (timerEndsAt(stored, legs) < Date.now() - EXPIRES_AFTER_MS) {
+    if (timerEndsAt(stored, legs, walkAfterMs) < Date.now() - EXPIRES_AFTER_MS) {
       timerStore.set(null);
       return;
     }
@@ -549,7 +564,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walkSource, far, legs, stage, weather?.kind, m]);
+  }, [current, walkSource, far, legs, walkAfterMs, stage, weather?.kind, m]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -691,6 +706,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     notifications,
     legs,
     journey,
+    walkAfterMs,
     fallback,
     next,
     ride,

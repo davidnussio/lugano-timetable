@@ -17,7 +17,8 @@ import { TimerBadge } from "./timer-badge";
 
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, far, geolocation, legs, stage, ride } = useTimer();
+  const { timer, countdown, distance, far, geolocation, legs, stage, ride, walkAfterMs } =
+    useTimer();
   const pathname = usePathname();
   const { m } = useI18n();
   const now = useNow(timer !== null);
@@ -32,7 +33,7 @@ export function TimerBar() {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(m, legs, now, timer.journey?.walkAfterMs)
+        ? journeyHeadline(m, legs, now, walkAfterMs)
         : getOff && getOffHeadline(m, getOff, ride, now >= timer.departureAt, now);
   const headline = travel ?? timerHeadline(m, countdown, stage);
   const accuracy = geolocation.position?.accuracy;

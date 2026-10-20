@@ -94,6 +94,23 @@ export function stopClimb(
   return start === undefined || end === undefined ? undefined : end - start;
 }
 
+// A walk planned by the timetable from `from` to `to` (a fixed time at the
+// default normal pace) at the pace of the user, slower uphill
+export function plannedWalkMs(
+  plannedMs: number,
+  from: JourneyStop,
+  to: JourneyStop,
+  speed = PACE_SPEED.normal,
+  heightOf?: HeightOf
+): number {
+  const climb = stopClimb(from, to, heightOf);
+  const uphill =
+    climb === undefined || from.position === undefined || to.position === undefined
+      ? 1
+      : climbFactor(distanceMeters(from.position, to.position), climb);
+  return ((plannedMs * PACE_SPEED.normal) / speed) * uphill;
+}
+
 // Walk between the stop where a leg ends and where the next one starts.
 // Platforms of the same stop without a position are assumed to be close.
 export function transferWalkingMs(
@@ -135,18 +152,13 @@ export function transfer(
 ): Transfer {
   const planned = departing.walkBeforeMs;
   const climb = stopClimb(arriving.to, departing.from, heightOf);
-  // The walk of the timetable is a fixed time: slow it down uphill as ours
-  const uphill =
-    climb === undefined || arriving.to.position === undefined || departing.from.position === undefined
-      ? 1
-      : climbFactor(distanceMeters(arriving.to.position, departing.from.position), climb);
   // The walk of the timetable is already its minimum transfer time: no
   // margin on top, and a slower pace or a climb leaves no slack but does not
   // make the connection impossible
   const walkingMs =
     planned === undefined
       ? transferWalkingMs(arriving.to, departing.from, speed, climb)
-      : ((planned * PACE_SPEED.normal) / speed) * uphill;
+      : plannedWalkMs(planned, arriving.to, departing.from, speed, heightOf);
   const neededMs = walkingMs + (planned === undefined ? minimumMs : 0);
   const toleranceMs = planned === undefined ? 0 : Math.max(walkingMs - planned, 0);
   const slackMs =

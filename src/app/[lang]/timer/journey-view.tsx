@@ -42,7 +42,7 @@ function slackLabel({ slackMs, status }: Transfer, m: Messages): string {
 
 // The legs of the journey with the state of every transfer
 export function JourneySection({ now }: { now: number }) {
-  const { timer, legs, journey } = useTimer();
+  const { timer, legs, journey, walkAfterMs } = useTimer();
   const { m } = useI18n();
   if (!timer?.journey || !legs || !journey) return null;
 
@@ -57,7 +57,7 @@ export function JourneySection({ now }: { now: number }) {
           <p className="text-xs text-muted-foreground">
             {m.timer.expectedArrival(
               <span className="font-mono font-medium tabular-nums text-foreground">
-                {formatTime(journey.arrivalAt + (timer.journey.walkAfterMs ?? 0))}
+                {formatTime(journey.arrivalAt + (walkAfterMs ?? 0))}
               </span>
             )}
           </p>
