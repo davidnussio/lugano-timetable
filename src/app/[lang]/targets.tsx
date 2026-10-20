@@ -93,8 +93,9 @@ export function FiltrableListTargets({
     ? rows.filter((row) => !isFavorite(row.target.Identifiers))
     : rows;
   const locating = nearby && !position && !error;
-  // Looking for a stop: its results right under the search
-  const finding = deferredSearch !== "" || nearby;
+  // Looking for a stop by name: its results right under the search. Near
+  // me only sorts the stops: the favourites stay.
+  const finding = deferredSearch !== "";
 
   return (
     <div className="flex flex-col pb-6">
