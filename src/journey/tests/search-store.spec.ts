@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Station } from "../models";
-import { rememberJourney } from "../search-store";
+import { isFavoriteJourney, rememberJourney, toggleFavoriteJourney } from "../search-store";
 
 const station = (id: string): Station => ({ id, name: `Stop ${id}` });
 
@@ -17,5 +17,18 @@ describe("rememberJourney", () => {
     let search: Parameters<typeof rememberJourney>[0] = { recent: [] };
     for (let i = 0; i < 7; i++) search = rememberJourney(search, station(`${i}`), station("x"));
     expect(search.recent.map((journey) => journey.from.id)).toEqual(["6", "5", "4", "3", "2"]);
+  });
+});
+
+describe("toggleFavoriteJourney", () => {
+  it("saves a journey, each way on its own, and forgets it again", () => {
+    const [a, b] = [station("1"), station("2")];
+    const saved = toggleFavoriteJourney({ recent: [] }, a, b);
+    expect(saved.favorites).toEqual([{ from: a, to: b }]);
+    expect(isFavoriteJourney(saved, a, b)).toBe(true);
+    expect(isFavoriteJourney(saved, b, a)).toBe(false);
+    const both = toggleFavoriteJourney(saved, b, a);
+    expect(both.favorites).toHaveLength(2);
+    expect(toggleFavoriteJourney(both, a, b).favorites).toEqual([{ from: b, to: a }]);
   });
 });

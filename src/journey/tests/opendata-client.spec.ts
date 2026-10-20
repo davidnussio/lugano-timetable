@@ -59,7 +59,23 @@ describe("Opendata", () => {
       const params = requested[0].searchParams;
       assert.strictEqual(params.get("from"), "8591577");
       assert.strictEqual(params.get("to"), "8505213");
-      assert.strictEqual(params.get("datetime"), "2026-10-11 19:28");
+      assert.strictEqual(params.get("date"), "2026-10-11");
+      assert.strictEqual(params.get("time"), "19:28");
+      assert.isNull(params.get("isArrivalTime"));
+    }).pipe(
+      Effect.provide(opendata(json({ connections: [connection] }), requested))
+    );
+  });
+
+  it.effect("plans connections arriving by a given time", () => {
+    const requested: Array<URL> = [];
+    return Effect.gen(function* () {
+      const client = yield* Opendata;
+      yield* client.connections("8591577", "8505213", Date.UTC(2026, 9, 11, 6, 0), true);
+      const params = requested[0].searchParams;
+      assert.strictEqual(params.get("date"), "2026-10-11");
+      assert.strictEqual(params.get("time"), "08:00");
+      assert.strictEqual(params.get("isArrivalTime"), "1");
     }).pipe(
       Effect.provide(opendata(json({ connections: [connection] }), requested))
     );

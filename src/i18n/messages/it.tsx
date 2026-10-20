@@ -156,6 +156,17 @@ export const it = {
     searching: "Ricerca…",
     noStops: "Nessuna fermata trovata",
     typeHint: "Scrivi il nome di una fermata o di una stazione",
+    // When to search, and the journeys saved
+    leave: "Parti",
+    arrive: "Arriva",
+    departAt: "Partenza",
+    arriveBy: "Arrivo entro",
+    whenNow: "adesso",
+    today: "Oggi",
+    tomorrow: "Domani",
+    time: "Orario",
+    saveFavorite: "Salva tra i preferiti",
+    removeFavorite: "Togli dai preferiti",
   },
   timer: {
     title: "Timer",

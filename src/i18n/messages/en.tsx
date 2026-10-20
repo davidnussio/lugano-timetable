@@ -156,6 +156,17 @@ export const en: Messages = {
     searching: "Searching…",
     noStops: "No stops found",
     typeHint: "Type the name of a stop or a station",
+    // When to search, and the journeys saved
+    leave: "Depart",
+    arrive: "Arrive",
+    departAt: "Departure",
+    arriveBy: "Arrive by",
+    whenNow: "now",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    time: "Time",
+    saveFavorite: "Save as a favourite",
+    removeFavorite: "Remove from favourites",
   },
   timer: {
     title: "Timer",

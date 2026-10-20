@@ -162,6 +162,17 @@ export const de: Messages = {
     searching: "Suche…",
     noStops: "Keine Haltestelle gefunden",
     typeHint: "Gib den Namen einer Haltestelle oder eines Bahnhofs ein",
+    // When to search, and the journeys saved
+    leave: "Abfahrt",
+    arrive: "Ankunft",
+    departAt: "Abfahrt",
+    arriveBy: "Ankunft bis",
+    whenNow: "jetzt",
+    today: "Heute",
+    tomorrow: "Morgen",
+    time: "Zeit",
+    saveFavorite: "Als Favorit speichern",
+    removeFavorite: "Aus den Favoriten entfernen",
   },
   timer: {
     title: "Timer",

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownUp, ArrowLeft, ArrowRight, History, LocateFixed, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, History, LocateFixed, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -10,14 +10,30 @@ import { useFavorites } from "~/hooks/use-favorites";
 import { useTargets } from "~/hooks/use-targets";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { Connection, Station } from "~/journey/models";
-import { journeySearchStore, rememberJourney } from "~/journey/search-store";
+import {
+  isFavoriteJourney,
+  journeySearchStore,
+  rememberJourney,
+  type SavedJourney,
+  toggleFavoriteJourney,
+} from "~/journey/search-store";
 import { cn } from "~/lib/utils";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
 import { ConnectionCard, sameStart } from "./connection-card";
+import {
+  type ChosenTime,
+  chooseTime,
+  NOW_CHOSEN,
+  SearchTimeButton,
+  SearchTimePanel,
+} from "./search-time";
 import { StationPicker } from "./station-picker";
 
 type Field = "from" | "to";
+
+// "Lugano, Via Brentani" → "Via Brentani": the stop, short enough for a chip
+const shortName = (name: string) => name.split(", ").at(-1) ?? name;
 
 const navButton =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40";
@@ -36,7 +52,17 @@ export default function JourneyPage() {
   // The start of every page of departures browsed after the first one, the
   // current page last: back to the previous page, the first one from now
   const [pages, setPages] = useState<ReadonlyArray<number>>([]);
-  const at = pages.at(-1);
+  const page = pages.at(-1);
+  // Leaving now, or at (or arriving by) the time chosen
+  const [when, setWhen] = useState<ChosenTime>(NOW_CHOSEN);
+  const [choosingTime, setChoosingTime] = useState(false);
+  // The pages after the first one leave after its last connection
+  const timeQuery =
+    page !== undefined
+      ? `&at=${page}`
+      : when.at === undefined
+        ? ""
+        : `&at=${when.at}${when.arrive ? "&arrive=1" : ""}`;
   const input = useRef<HTMLInputElement>(null);
 
   // The favorite TPL stops, as stops of the timetable
@@ -64,7 +90,7 @@ export default function JourneyPage() {
   const ready = from && to && from.id !== to.id;
   const { data, error, isLoading } = useSWR<ReadonlyArray<Connection>>(
     ready && editing === null
-      ? `/api/journey/connections?from=${from.id}&to=${to.id}${at === undefined ? "" : `&at=${at}`}`
+      ? `/api/journey/connections?from=${from.id}&to=${to.id}${timeQuery}`
       : null,
     fetcher,
     { refreshInterval: 60_000 }
@@ -98,6 +124,13 @@ export default function JourneyPage() {
     timer.startJourney(connection, from, to, targets);
     journeySearchStore.set((s) => rememberJourney(s, from, to));
     router.push("/timer");
+  };
+
+  const favorite = ready ? isFavoriteJourney(search, from, to) : false;
+  const favoriteJourneys = search.favorites ?? [];
+  const choose = (journey: SavedJourney) => {
+    journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to }));
+    setPages([]);
   };
 
   const timed = timer.timer?.journey?.legs[0];
@@ -162,6 +195,68 @@ export default function JourneyPage() {
             <ArrowDownUp className="size-5" />
           </button>
         </div>
+        {editing === null && (
+          <div className="mt-2 flex gap-2">
+            <SearchTimeButton
+              value={when}
+              open={choosingTime}
+              onToggle={() => setChoosingTime((open) => !open)}
+            />
+            {ready && (
+              <button
+                type="button"
+                aria-pressed={favorite}
+                aria-label={favorite ? m.journey.removeFavorite : m.journey.saveFavorite}
+                onClick={() => journeySearchStore.set((s) => toggleFavoriteJourney(s, from, to))}
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-card shadow-sm transition-colors hover:bg-muted">
+                <Star
+                  className={cn(
+                    "size-5 transition-colors",
+                    favorite ? "fill-favorite text-favorite" : "text-muted-foreground"
+                  )}
+                />
+              </button>
+            )}
+          </div>
+        )}
+        {editing === null && choosingTime && (
+          <div className="mt-2">
+            <SearchTimePanel
+              value={when}
+              onChange={(time) => {
+                setWhen(chooseTime(time, Date.now()));
+                setPages([]);
+              }}
+            />
+          </div>
+        )}
+        {editing === null && favoriteJourneys.length > 0 && (
+          <ul className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+            {favoriteJourneys.map((journey) => {
+              const current = from?.id === journey.from.id && to?.id === journey.to.id;
+              return (
+                <li key={`${journey.from.id}-${journey.to.id}`} className="shrink-0">
+                  <button
+                    type="button"
+                    aria-pressed={current}
+                    title={`${journey.from.name} → ${journey.to.name}`}
+                    onClick={() => choose(journey)}
+                    className={cn(
+                      "inline-flex h-8 max-w-[16rem] items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+                      current
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card hover:bg-muted"
+                    )}>
+                    <Star className="size-3.5 shrink-0 fill-favorite text-favorite" />
+                    <span className="truncate">
+                      {shortName(journey.from.name)} → {shortName(journey.to.name)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
         {editing !== null && (
           <button
             type="button"
@@ -224,8 +319,11 @@ export default function JourneyPage() {
             </button>
             <button
               type="button"
-              disabled={pages.length === 0}
-              onClick={() => setPages([])}
+              disabled={pages.length === 0 && when === NOW_CHOSEN}
+              onClick={() => {
+                setPages([]);
+                setWhen(NOW_CHOSEN);
+              }}
               className={navButton}>
               {m.journey.now}
             </button>
@@ -255,7 +353,7 @@ export default function JourneyPage() {
               <li key={`${journey.from.id}-${journey.to.id}`}>
                 <button
                   type="button"
-                  onClick={() => journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to }))}
+                  onClick={() => choose(journey)}
                   className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted">
                   <span className="min-w-0 flex-1 truncate font-medium">{journey.from.name}</span>
                   <ArrowRight className="size-4 shrink-0 text-muted-foreground" />

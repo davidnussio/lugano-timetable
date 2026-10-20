@@ -5,6 +5,7 @@ import {
   HttpClientResponse,
 } from "effect/http";
 import {
+  opendataDateAndTime,
   opendataDateTime,
   toConnection,
   toLegUpdate,
@@ -65,10 +66,12 @@ export class Opendata extends Context.Service<
       query: StationQuery
     ): Effect.Effect<ReadonlyArray<Station>, OpendataError>;
     // Journeys leaving from `from` at `at` (epoch milliseconds) or later
+    // Leaving from `at` (now when missing), or arriving by it
     connections(
       from: string,
       to: string,
-      at?: number
+      at?: number,
+      arrival?: boolean
     ): Effect.Effect<ReadonlyArray<Connection>, OpendataError>;
     // Latest timings of planned legs: `null` for the legs not found
     legs(legs: ReadonlyArray<LegQuery>): Effect.Effect<ReadonlyArray<LegUpdate>>;
@@ -135,12 +138,13 @@ export class Opendata extends Context.Service<
                 .slice(0, STATIONS)
             )
           ),
-        connections: (from, to, at) =>
+        connections: (from, to, at, arrival = false) =>
           request("connections", ConnectionsResponse, {
             from,
             to,
             limit: String(CONNECTIONS),
-            ...(at === undefined ? {} : { datetime: opendataDateTime(at) }),
+            ...(at === undefined ? {} : opendataDateAndTime(at)),
+            ...(arrival ? { isArrivalTime: "1" } : {}),
           }).pipe(
             Effect.map((response) =>
               response.connections.map(toConnection).filter(isDefined)
