@@ -324,6 +324,8 @@ function ActiveTimerView({
   // Once on board the map leads to the next stop
   const next = now === 0 ? undefined : nextStop(active, legs, now);
   const showMap = settings.useLocation && active.coordinates !== undefined && !geolocation.error;
+  // On board the pace does not matter: it comes back for the walk of a transfer
+  const showPace = showMap && (next === undefined || next.kind === "board");
   const routingHref = `/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`;
 
   // Switch to the compact countdown once a fifth of the ring is under the
@@ -539,7 +541,7 @@ function ActiveTimerView({
             onCheckedChange={(useLocation) => updateSettings({ useLocation })}
           />
         </div>
-        {showMap && (
+        {showPace && (
           <div className="flex items-center gap-3 border-t border-border px-4 py-3">
             <Footprints className="size-5 shrink-0 text-muted-foreground" />
             <div className="grid flex-1 grid-cols-3 gap-1 rounded-xl bg-muted p-1">
@@ -561,7 +563,7 @@ function ActiveTimerView({
             </div>
           </div>
         )}
-        {showMap && <PaceLearning />}
+        {showPace && <PaceLearning />}
         {showMap && next && <NextStopRow stop={next} position={geolocation.position} />}
         {showMap && active.coordinates && (
           <LazyWalkMap
