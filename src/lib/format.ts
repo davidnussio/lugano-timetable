@@ -69,6 +69,12 @@ export function minutesUntilClock(time: string, now: Date): number | undefined {
   return diff;
 }
 
+// The stop without its town, short enough for a chip: "Lugano, Via
+// Brentani" → "Via Brentani", "Bellinzona" as it is
+export function stopName(label: string): string {
+  return label.split(", ").at(-1) ?? label;
+}
+
 // Town of a stop label: "Lugano, Bellavista" → "Lugano"
 export function town(label: string): string {
   return label.split(",")[0].trim();

@@ -87,6 +87,7 @@ export const de: Messages = {
     then: "dann",
     unavailable: "Nicht verfügbar",
     noDepartures: "Keine Abfahrt",
+    favoriteJourneys: "Favorisierte Verbindungen",
   },
   stop: {
     title: "Haltestelle",

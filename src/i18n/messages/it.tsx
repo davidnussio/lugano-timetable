@@ -84,6 +84,7 @@ export const it = {
     then: "poi",
     unavailable: "Non disponibile",
     noDepartures: "Nessuna partenza",
+    favoriteJourneys: "Percorsi preferiti",
   },
   stop: {
     title: "Fermata",

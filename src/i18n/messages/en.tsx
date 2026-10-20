@@ -84,6 +84,7 @@ export const en: Messages = {
     then: "then",
     unavailable: "Unavailable",
     noDepartures: "No departures",
+    favoriteJourneys: "Favourite journeys",
   },
   stop: {
     title: "Stop",

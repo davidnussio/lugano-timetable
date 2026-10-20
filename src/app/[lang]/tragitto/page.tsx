@@ -17,6 +17,7 @@ import {
   type SavedJourney,
   toggleFavoriteJourney,
 } from "~/journey/search-store";
+import { stopName } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
@@ -31,9 +32,6 @@ import {
 import { StationPicker } from "./station-picker";
 
 type Field = "from" | "to";
-
-// "Lugano, Via Brentani" → "Via Brentani": the stop, short enough for a chip
-const shortName = (name: string) => name.split(", ").at(-1) ?? name;
 
 const navButton =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40";
@@ -249,7 +247,7 @@ export default function JourneyPage() {
                     )}>
                     <Star className="size-3.5 shrink-0 fill-favorite text-favorite" />
                     <span className="truncate">
-                      {shortName(journey.from.name)} → {shortName(journey.to.name)}
+                      {stopName(journey.from.name)} → {stopName(journey.to.name)}
                     </span>
                   </button>
                 </li>
