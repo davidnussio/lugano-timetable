@@ -250,6 +250,20 @@ export const en: Messages = {
       </>
     ),
     switchBus: "Switch to this bus",
+    // The trip so far, above the countdown
+    trip: "Your trip",
+    tripTotal: (duration: string) => `${duration} in all`,
+    stepWalk: (stop: string) => `Walk to ${stop}`,
+    stepWait: (stop: string) => `Wait at ${stop}`,
+    stepRide: (stop: string) => `To ${stop}`,
+    ongoing: (duration: string) => `for ${duration} so far`,
+    departedLate: (minutes: number) => `left ${minutes} min late`,
+    departedEarly: (minutes: number) => `left ${minutes} min early`,
+    onTime: "on time",
+    // Where the map leads once on board
+    boardAt: (stop: string) => `Board at ${stop}`,
+    destinationAt: (stop: string) => `Arrival at ${stop}`,
+    fromYou: (distance: string) => `${distance} from you`,
   },
   notifications: {
     title: "Notifications",

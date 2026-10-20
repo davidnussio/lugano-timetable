@@ -18,6 +18,7 @@ import { PageHeader } from "~/app/components/page-header";
 import { PhaseIcon } from "~/app/components/phase-icon";
 import { TimerBadge } from "~/app/components/timer-badge";
 import { Switch } from "~/components/ui/switch";
+import type { GeolocationState } from "~/hooks/use-geolocation";
 import { useInView } from "~/hooks/use-in-view";
 import { useNow } from "~/hooks/use-now";
 import { useReliability } from "~/hooks/use-reliability";
@@ -28,7 +29,8 @@ import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
 import { formatTime, journeyHeadline } from "~/timer/journey";
 import { learnedSpeed, MIN_WALKS } from "~/timer/pace";
-import { type Countdown, minutesLeft, type Pace, type Stage } from "~/timer/plan";
+import { type Countdown, distanceMeters, minutesLeft, type Pace, type Stage } from "~/timer/plan";
+import { type NextStop, nextStop } from "~/timer/progress";
 import { reliabilityNote } from "~/timer/reliability";
 import type { ActiveTimer } from "~/timer/store";
 import { useTimer } from "~/timer/timer-provider";
@@ -36,6 +38,7 @@ import { type Tone, timerHeadline, timerTone, toneBackground, toneText } from "~
 import { JourneySection, LaterSuggestion } from "./journey-view";
 import { NextBusCard } from "./next-bus-card";
 import { NotificationsCard } from "./notifications-card";
+import { TripLog } from "./trip-log";
 
 // MapLibre needs the browser (WebGL) and is large: load it only when shown
 const WalkMap = dynamic(() => import("./walk-map").then((module) => module.WalkMap), {
@@ -307,6 +310,7 @@ function ActiveTimerView({
     updateSettings,
     enableNotifications,
     ride,
+    legs,
   } = useTimer();
   const { m } = useI18n();
   const tone = timerTone(countdown, stage);
@@ -317,6 +321,9 @@ function ActiveTimerView({
   const meters = distance ?? far;
 
   const progress = timerProgress(m, active, countdown, stage);
+  // Once on board the map leads to the next stop
+  const next = now === 0 ? undefined : nextStop(active, legs, now);
+  const showMap = settings.useLocation && active.coordinates !== undefined && !geolocation.error;
   const routingHref = `/routing/${active.target}/${active.route}/${active.dir}/${active.routing}`;
 
   // Switch to the compact countdown once a fifth of the ring is under the
@@ -372,6 +379,8 @@ function ActiveTimerView({
           <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
         )}
       </BusCard>
+
+      <TripLog timer={active} now={now} />
 
       {/* Countdown */}
       <section className="flex flex-col items-center rounded-3xl border border-border bg-card px-4 py-6 shadow-sm">
@@ -530,7 +539,7 @@ function ActiveTimerView({
             onCheckedChange={(useLocation) => updateSettings({ useLocation })}
           />
         </div>
-        {settings.useLocation && active.coordinates && !geolocation.error && (
+        {showMap && (
           <div className="flex items-center gap-3 border-t border-border px-4 py-3">
             <Footprints className="size-5 shrink-0 text-muted-foreground" />
             <div className="grid flex-1 grid-cols-3 gap-1 rounded-xl bg-muted p-1">
@@ -552,9 +561,14 @@ function ActiveTimerView({
             </div>
           </div>
         )}
-        {settings.useLocation && active.coordinates && !geolocation.error && <PaceLearning />}
-        {settings.useLocation && active.coordinates && !geolocation.error && (
-          <LazyWalkMap stop={active.coordinates} position={geolocation.position} />
+        {showMap && <PaceLearning />}
+        {showMap && next && <NextStopRow stop={next} position={geolocation.position} />}
+        {showMap && active.coordinates && (
+          <LazyWalkMap
+            stop={next?.position ?? active.coordinates}
+            kind={next?.kind}
+            position={geolocation.position}
+          />
         )}
       </section>
 
@@ -624,6 +638,40 @@ function BusCard({ href, children }: { href: string | undefined; children: React
       className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
       {children}
     </Link>
+  );
+}
+
+// The stop the map leads to once on board, with how far it is
+function NextStopRow({
+  stop,
+  position,
+}: {
+  stop: NextStop;
+  position: GeolocationState["position"];
+}) {
+  const { m } = useI18n();
+  const title =
+    stop.kind === "board"
+      ? m.timer.boardAt(stop.name)
+      : stop.kind === "getOff"
+        ? m.timer.getOffAt(stop.name)
+        : m.timer.destinationAt(stop.name);
+  return (
+    <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+      {stop.kind === "board" ? (
+        <Bus className="size-5 shrink-0 text-primary" />
+      ) : (
+        <Flag className="size-5 shrink-0 text-primary" />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{title}</p>
+        {position && (
+          <p className="text-xs text-muted-foreground">
+            {m.timer.fromYou(formatDistance(m, distanceMeters(position, stop.position)))}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 

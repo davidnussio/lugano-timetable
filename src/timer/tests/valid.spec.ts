@@ -54,7 +54,8 @@ describe("isActiveTimer", () => {
       ...single,
       walk: { at: 0, meters: 600, climb: 12, pace: "normal", lastAt: 0 },
     } as const;
-    for (const timer of [single, journey, walking]) {
+    const atStop = { ...single, atStop: { at: 5 * MIN, leftAt: 0, meters: 420 } };
+    for (const timer of [single, journey, walking, atStop]) {
       expect(isActiveTimer(JSON.parse(JSON.stringify(timer)))).toBe(true);
     }
   });
@@ -64,6 +65,7 @@ describe("isActiveTimer", () => {
     expect(isActiveTimer({ ...single, stop: { name: "Centro" } })).toBe(false);
     expect(isActiveTimer({ ...journey, journey: { ...journey.journey, legs: [] } })).toBe(false);
     expect(isActiveTimer({ ...single, walk: { at: 0, meters: 600 } })).toBe(false);
+    expect(isActiveTimer({ ...single, atStop: { leftAt: 0 } })).toBe(false);
     expect(isActiveTimer([])).toBe(false);
     expect(isActiveTimer("timer")).toBe(false);
   });

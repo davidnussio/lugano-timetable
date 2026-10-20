@@ -257,6 +257,20 @@ export const de: Messages = {
       </>
     ),
     switchBus: "Zu diesem Bus wechseln",
+    // The trip so far, above the countdown
+    trip: "Deine Reise",
+    tripTotal: (duration: string) => `Insgesamt ${duration}`,
+    stepWalk: (stop: string) => `Zu Fuss bis ${stop}`,
+    stepWait: (stop: string) => `Warten in ${stop}`,
+    stepRide: (stop: string) => `Bis ${stop}`,
+    ongoing: (duration: string) => `seit ${duration}`,
+    departedLate: (minutes: number) => `mit ${minutes} min Verspätung abgefahren`,
+    departedEarly: (minutes: number) => `${minutes} min zu früh abgefahren`,
+    onTime: "pünktlich",
+    // Where the map leads once on board
+    boardAt: (stop: string) => `Einsteigen in ${stop}`,
+    destinationAt: (stop: string) => `Ankunft in ${stop}`,
+    fromYou: (distance: string) => `${distance} von dir`,
   },
   notifications: {
     title: "Benachrichtigungen",

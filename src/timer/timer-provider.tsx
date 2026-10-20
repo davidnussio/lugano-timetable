@@ -70,6 +70,7 @@ import {
   weatherDelay,
   weatherWalk,
 } from "./plan";
+import { reachStop } from "./progress";
 import { recordStart, ridesStore } from "./rides";
 import {
   followWalk,
@@ -380,8 +381,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       climb,
       pace,
     });
-    if (next !== current.approach || walk !== current.walk) {
-      timerStore.set({ ...current, approach: next, walk });
+    // The walk ends at the stop: keep when it started, for the trip so far
+    const atStop = reachStop(current.atStop, current.approach?.stage ?? "away", next.stage, current.walk, {
+      meters: rawDistance,
+      at: fixAt,
+    });
+    if (next !== current.approach || walk !== current.walk || atStop !== current.atStop) {
+      timerStore.set({ ...current, approach: next, walk, atStop });
     }
     // A walk in the rain is slower than the pace of the user: learn it as dry
     if (walked !== undefined) {

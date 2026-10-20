@@ -20,6 +20,7 @@ import {
 } from "./plan";
 import type { GetOff } from "./get-off";
 import { type LearnedPace, NO_PACE, type WalkTrack } from "./pace";
+import type { AtStop } from "./progress";
 import { isLearnedPace, isStoredTimer } from "./valid";
 
 // A journey with transfers planned with transport.opendata.ch. The timer
@@ -71,6 +72,8 @@ export interface ActiveTimer {
   readonly approach?: Approach;
   // The walk to the stop, measured to learn the pace of the user
   readonly walk?: WalkTrack;
+  // When the user reached the stop, with the walk there: the trip so far
+  readonly atStop?: AtStop;
   // Where the user gets off a single bus: the timer then follows the ride
   readonly getOff?: GetOff;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Feature, LineString, Polygon } from "geojson";
-import { Bus } from "lucide-react";
+import { Bus, Flag } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AttributionControl,
@@ -14,6 +14,7 @@ import {
 import { useI18n } from "~/i18n/i18n-provider";
 import { MAP_COLORS, MAP_STYLE } from "~/lib/maplibre";
 import { distanceMeters, type Position } from "~/timer/plan";
+import type { StopKind } from "~/timer/progress";
 
 // Blue of the "you are here" dot, as on the phone maps
 const USER = "#0ea5e9";
@@ -62,6 +63,8 @@ type Fix = Position & { readonly accuracy: number };
 interface WalkMapProps {
   readonly stop: Position;
   readonly position: Fix | undefined;
+  // A bus to catch at the stop, or on board the stop to get off
+  readonly kind?: StopKind;
 }
 
 const moved = (from: Fix | undefined, to: Fix | undefined) =>
@@ -70,9 +73,10 @@ const moved = (from: Fix | undefined, to: Fix | undefined) =>
     : distanceMeters(from, to) >= REDRAW_METERS ||
       Math.abs(from.accuracy - to.accuracy) >= REDRAW_METERS;
 
-// Where the user is compared to the stop of the timer. Not interactive: it is
-// a glance, and it does not get in the way when scrolling the page.
-export function WalkMap({ stop, position }: WalkMapProps) {
+// Where the user is compared to the stop of the timer, then to the next stop
+// once on board. Not interactive: it is a glance, and it does not get in the
+// way when scrolling the page.
+export function WalkMap({ stop, position, kind = "board" }: WalkMapProps) {
   const { m } = useI18n();
   const map = useRef<MapRef>(null);
   const [loaded, setLoaded] = useState(false);
@@ -84,6 +88,9 @@ export function WalkMap({ stop, position }: WalkMapProps) {
   const userLat = shown?.lat;
   const userLon = shown?.lon;
   const accuracy = shown?.accuracy;
+  // On the way to the stop it is a walk: on board, a ride
+  const riding = kind !== "board";
+  const color = riding ? MAP_COLORS.primary : MAP_COLORS.foreground;
 
   // New GeoJSON only when the user moves: the page re-renders every second,
   // and a new object makes the source set its data again
@@ -154,7 +161,7 @@ export function WalkMap({ stop, position }: WalkMapProps) {
               type="line"
               layout={{ "line-cap": "round" }}
               paint={{
-                "line-color": MAP_COLORS.foreground,
+                "line-color": color,
                 "line-opacity": 0.6,
                 "line-width": 2,
                 "line-dasharray": [1, 2],
@@ -172,8 +179,8 @@ export function WalkMap({ stop, position }: WalkMapProps) {
       <Marker longitude={stop.lon} latitude={stop.lat}>
         <span
           className="grid size-8 place-items-center rounded-full border-2 border-white text-white shadow-md"
-          style={{ backgroundColor: MAP_COLORS.foreground }}>
-          <Bus className="size-4" />
+          style={{ backgroundColor: color }}>
+          {riding ? <Flag className="size-4" /> : <Bus className="size-4" />}
         </span>
       </Marker>
     </MapView>
