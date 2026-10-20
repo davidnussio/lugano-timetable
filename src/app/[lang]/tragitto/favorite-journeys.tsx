@@ -7,16 +7,20 @@ import { useI18n } from "~/i18n/i18n-provider";
 import type { Connection } from "~/journey/models";
 import type { SavedJourney } from "~/journey/search-store";
 import { formatDuration, stopName } from "~/lib/format";
+import { cn } from "~/lib/utils";
 import { expected, formatTime } from "~/timer/journey";
 import { fetcher } from "~/utils/fetcher";
 import { connectionEnd, connectionStart } from "./connection-card";
 
-// The journeys saved, with their next connection: a tap searches it
+// The journeys saved, with their next connection: a tap searches it.
+// `current`: the journey searched, marked.
 export function FavoriteJourneys({
   journeys,
+  current,
   onChoose,
 }: {
   journeys: ReadonlyArray<SavedJourney>;
+  current?: SavedJourney;
   onChoose: (journey: SavedJourney) => void;
 }) {
   const { m } = useI18n();
@@ -31,6 +35,11 @@ export function FavoriteJourneys({
           <JourneyCard
             key={`${journey.from.id}-${journey.to.id}`}
             journey={journey}
+            current={
+              current !== undefined &&
+              current.from.id === journey.from.id &&
+              current.to.id === journey.to.id
+            }
             onChoose={() => onChoose(journey)}
           />
         ))}
@@ -39,7 +48,15 @@ export function FavoriteJourneys({
   );
 }
 
-function JourneyCard({ journey, onChoose }: { journey: SavedJourney; onChoose: () => void }) {
+function JourneyCard({
+  journey,
+  current,
+  onChoose,
+}: {
+  journey: SavedJourney;
+  current: boolean;
+  onChoose: () => void;
+}) {
   const { m } = useI18n();
   const { from, to } = journey;
   // Same request (and SWR cache) as the search from now
@@ -54,9 +71,13 @@ function JourneyCard({ journey, onChoose }: { journey: SavedJourney; onChoose: (
     <li>
       <button
         type="button"
+        aria-pressed={current}
         onClick={onChoose}
         title={`${from.name} → ${to.name}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted">
+        className={cn(
+          "flex w-full items-center gap-3 rounded-2xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
+          current ? "border-primary ring-2 ring-primary/20" : "border-border"
+        )}>
         <Star className="size-4 shrink-0 fill-favorite text-favorite" />
         <div className="min-w-0 flex-1 space-y-1">
           <p className="truncate font-medium">
