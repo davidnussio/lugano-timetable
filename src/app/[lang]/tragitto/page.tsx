@@ -285,7 +285,12 @@ export default function JourneyPage() {
               <FavoriteJourneys
                 journeys={favoriteJourneys}
                 current={{ from, to }}
-                onChoose={choose}
+                // The journey searched again: unselected, as with the clear button
+                onChoose={(journey) =>
+                  journey.from.id === from.id && journey.to.id === to.id
+                    ? clear()
+                    : choose(journey)
+                }
               />
             </div>
           )}
