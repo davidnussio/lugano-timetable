@@ -13,19 +13,17 @@ const views = [
 
 type View = (typeof views)[number]["href"];
 
-// Title of the stop list, the map and the journey planner, with the switch
-// between them. Only the current view shows its label on narrow screens.
-// A title too long to share the line ("Haltestellen") pushes the switch
-// below it rather than being cut.
+// The switch between the stop list, the map and the journey planner, which
+// names the view: its title is only for screen readers. Only the current
+// view shows its label on narrow screens; labels too long to share the line
+// push the switch below the name of the app rather than being cut.
 export function StopsHeader({ title, current }: { title: string; current: View }) {
   const { m } = useI18n();
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3 px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <header className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <div>
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Lugano Bus
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+        <p className="text-xl font-bold tracking-tight">Lugano Bus</p>
+        <h1 className="sr-only">{title}</h1>
       </div>
       <nav aria-label={m.nav.label} className="flex shrink-0 rounded-full bg-muted p-1">
         {views.map(({ href, label, Icon }) => (

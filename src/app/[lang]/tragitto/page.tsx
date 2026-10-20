@@ -148,10 +148,13 @@ export default function JourneyPage() {
 
       <div className="px-4 pb-3">
         <div className="flex items-stretch gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
-          <div className="min-w-0 flex-1 divide-y divide-border">
+          {/* The labels share a column as wide as the longest ("NACH") */}
+          <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] divide-y divide-border">
             {(["from", "to"] as const).map((field) => (
-              <div key={field} className="flex items-center gap-2 px-2">
-                <span className="w-5 shrink-0 text-xs font-semibold uppercase text-muted-foreground">
+              <div
+                key={field}
+                className="col-span-3 grid grid-cols-subgrid items-center gap-x-2 px-2">
+                <span className="col-start-1 text-xs font-semibold uppercase text-muted-foreground">
                   {m.journey[field]}
                 </span>
                 {editing === field ? (
@@ -162,7 +165,7 @@ export default function JourneyPage() {
                     placeholder={field === "from" ? m.journey.fromPlaceholder : m.journey.toPlaceholder}
                     autoComplete="off"
                     enterKeyHint="search"
-                    className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+                    className="col-start-2 h-11 min-w-0 bg-transparent text-base outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
                     onChange={(e) => {
                       setQuery(e.target.value);
                       setNearby(false);
@@ -173,7 +176,7 @@ export default function JourneyPage() {
                     type="button"
                     onClick={() => edit(field)}
                     className={cn(
-                      "h-11 min-w-0 flex-1 truncate text-left text-base",
+                      "col-start-2 h-11 min-w-0 truncate text-left text-base",
                       !search[field] && "text-muted-foreground"
                     )}>
                     {search[field]?.name ??
@@ -185,7 +188,7 @@ export default function JourneyPage() {
                     type="button"
                     aria-label={m.journey.closeSearch}
                     onClick={() => setEditing(null)}
-                    className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+                    className="col-start-3 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-muted">
                     <X className="size-4" />
                   </button>
                 )}
