@@ -31,7 +31,7 @@ export const it = {
   },
   nav: {
     label: "Vista",
-    list: "Lista",
+    list: "Fermate",
     map: "Mappa",
     journey: "Tragitto",
   },

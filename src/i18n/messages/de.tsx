@@ -34,7 +34,7 @@ export const de: Messages = {
   },
   nav: {
     label: "Ansicht",
-    list: "Liste",
+    list: "Haltestellen",
     map: "Karte",
     journey: "Verbindung",
   },

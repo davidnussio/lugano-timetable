@@ -32,7 +32,7 @@ export const en: Messages = {
   },
   nav: {
     label: "View",
-    list: "List",
+    list: "Stops",
     map: "Map",
     journey: "Journey",
   },
