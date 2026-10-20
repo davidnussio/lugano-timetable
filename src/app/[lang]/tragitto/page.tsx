@@ -117,6 +117,14 @@ export default function JourneyPage() {
     setPages([]);
   };
 
+  // A new search: the recent and favourite journeys stay
+  const clear = () => {
+    journeySearchStore.set((s) => ({ ...s, from: undefined, to: undefined }));
+    setPages([]);
+    setWhen(NOW_CHOSEN);
+    setChoosingTime(false);
+  };
+
   const start = (connection: Connection) => {
     if (!from || !to) return;
     timer.startJourney(connection, from, to, targets);
@@ -184,14 +192,25 @@ export default function JourneyPage() {
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            aria-label={m.journey.swap}
-            onClick={swap}
-            disabled={!from && !to}
-            className="grid w-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40">
-            <ArrowDownUp className="size-5" />
-          </button>
+          {/* One button for each row: swap them, or start again */}
+          <div className="flex w-10 shrink-0 flex-col gap-1">
+            <button
+              type="button"
+              aria-label={m.journey.swap}
+              onClick={swap}
+              disabled={!from && !to}
+              className="grid flex-1 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40">
+              <ArrowDownUp className="size-5" />
+            </button>
+            <button
+              type="button"
+              aria-label={m.journey.clear}
+              onClick={clear}
+              disabled={!from && !to}
+              className="grid flex-1 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40">
+              <X className="size-5" />
+            </button>
+          </div>
         </div>
         {editing === null && (
           <div className="mt-2 flex gap-2">

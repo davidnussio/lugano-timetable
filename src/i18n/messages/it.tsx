@@ -133,6 +133,7 @@ export const it = {
     toPlaceholder: "Destinazione",
     closeSearch: "Chiudi ricerca",
     swap: "Inverti partenza e destinazione",
+    clear: "Cancella partenza e destinazione",
     unavailable: "Orari non disponibili, nuovo tentativo in corso…",
     noConnections: "Nessun collegamento trovato",
     pages: "Pagine dei collegamenti",

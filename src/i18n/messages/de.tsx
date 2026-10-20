@@ -139,6 +139,7 @@ export const de: Messages = {
     toPlaceholder: "Ziel",
     closeSearch: "Suche schliessen",
     swap: "Start und Ziel tauschen",
+    clear: "Start und Ziel löschen",
     unavailable: "Fahrzeiten nicht verfügbar, neuer Versuch läuft…",
     noConnections: "Keine Verbindung gefunden",
     pages: "Seiten der Verbindungen",

@@ -133,6 +133,7 @@ export const en: Messages = {
     toPlaceholder: "Destination",
     closeSearch: "Close search",
     swap: "Swap start and destination",
+    clear: "Clear start and destination",
     unavailable: "Times unavailable, trying again…",
     noConnections: "No connections found",
     pages: "Pages of connections",
