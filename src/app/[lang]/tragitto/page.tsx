@@ -17,6 +17,7 @@ import {
   type SavedJourney,
   toggleFavoriteJourney,
 } from "~/journey/search-store";
+import { stopName } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
@@ -246,6 +247,34 @@ export default function JourneyPage() {
               }}
             />
           </div>
+        )}
+        {/* Switch to another saved journey: with none searched, they are listed below */}
+        {editing === null && ready && favoriteJourneys.length > 0 && (
+          <ul className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+            {favoriteJourneys.map((journey) => {
+              const current = from.id === journey.from.id && to.id === journey.to.id;
+              return (
+                <li key={`${journey.from.id}-${journey.to.id}`} className="shrink-0">
+                  <button
+                    type="button"
+                    aria-pressed={current}
+                    title={`${journey.from.name} → ${journey.to.name}`}
+                    onClick={() => choose(journey)}
+                    className={cn(
+                      "inline-flex h-8 max-w-[16rem] items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+                      current
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card hover:bg-muted"
+                    )}>
+                    <Star className="size-3.5 shrink-0 fill-favorite text-favorite" />
+                    <span className="truncate">
+                      {stopName(journey.from.name)} → {stopName(journey.to.name)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
         {editing !== null && (
           <button
