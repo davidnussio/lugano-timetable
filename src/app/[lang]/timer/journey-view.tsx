@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Clock, Flag, Footprints, Route, TriangleAlert } from "lucide-react";
+import { ArrowRight, Clock, Flag, Footprints, MapPinned, Route, TriangleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Fragment } from "react";
 import useSWR from "swr";
 import { Time } from "~/app/components/leg-time";
@@ -9,10 +10,12 @@ import { useTargets } from "~/hooks/use-targets";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { Messages } from "~/i18n/messages";
 import type { Connection } from "~/journey/models";
+import { journeySearchStore } from "~/journey/search-store";
 import { formatClimb } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import {
   type ConnectionStatus,
+  currentLeg,
   expected,
   formatTime,
   laterPlan,
@@ -130,7 +133,27 @@ export function JourneySection({ now }: { now: number }) {
         })}
       </ol>
       <FallbackCard />
+      {currentLeg(legs, now) !== undefined && <ChangeDestination />}
     </section>
+  );
+}
+
+// Somewhere else from the bus the user is on: the journey page searches from
+// where it gets off
+function ChangeDestination() {
+  const router = useRouter();
+  const { m } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        journeySearchStore.set((search) => ({ ...search, onBoard: true, to: undefined }));
+        router.push("/tragitto");
+      }}
+      className="flex h-11 w-full items-center justify-center gap-2 border-t border-border text-sm font-semibold text-primary transition-colors hover:bg-muted">
+      <MapPinned className="size-4" />
+      {m.timer.changeDestination}
+    </button>
   );
 }
 

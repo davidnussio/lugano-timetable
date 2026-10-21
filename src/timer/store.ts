@@ -186,6 +186,24 @@ export function createJourneyTimer(
   };
 }
 
+// The journey continued after the leg `index` with another plan: a way
+// around a lost connection, or the way to another destination `to`
+export function rerouteJourney(
+  journey: ActiveJourney,
+  index: number,
+  plan: Connection,
+  to: Station = journey.to
+): ActiveJourney {
+  return {
+    from: journey.from,
+    to,
+    legs: [...journey.legs.slice(0, index + 1), ...plan.legs],
+    ...(plan.walkAfterMs === undefined ? {} : { walkAfterMs: plan.walkAfterMs }),
+    // The transfers after `index` are new
+    alerted: journey.alerted.filter((key) => Number(key.split(":")[0]) < index),
+  };
+}
+
 // Without a trip id, a bus counts as the one of the timer only this close to
 // its last known time: farther away it is another run of the line
 const FOLLOW_TOLERANCE_MS = 10 * 60_000;

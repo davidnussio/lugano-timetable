@@ -170,6 +170,9 @@ export const it = {
     time: "Orario",
     saveFavorite: "Salva tra i preferiti",
     removeFavorite: "Togli dai preferiti",
+    // Staying on the bus of the running journey to go somewhere else
+    fromTimer: "Dal timer",
+    onBoard: (line: string, stop: string) => `Linea ${line} fino a ${stop}`,
   },
   timer: {
     title: "Timer",
@@ -250,6 +253,7 @@ export const it = {
       </>
     ),
     useThisRoute: "Usa questo percorso",
+    changeDestination: "Cambia destinazione",
     leaveLater: "Puoi uscire più tardi",
     laterPlan: (line: string, departure: ReactNode, arrival: ReactNode) => (
       <>

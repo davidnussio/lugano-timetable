@@ -6,6 +6,9 @@ import type { Station } from "./models";
 export interface JourneySearch {
   readonly from?: Station;
   readonly to?: Station;
+  // Leaving from the bus (or train) of the running journey instead of
+  // `from`: the search starts where it gets off, when it arrives there
+  readonly onBoard?: boolean;
   // Latest journeys started, most recent first
   readonly recent: ReadonlyArray<SavedJourney>;
   // Journeys saved by the user, in the order they were saved: absent from

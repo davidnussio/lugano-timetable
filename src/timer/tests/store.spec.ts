@@ -13,6 +13,7 @@ import {
   liveLegs,
   nextTimerDeparture,
   planAlerts,
+  rerouteJourney,
   timerEndsAt,
 } from "../store";
 
@@ -27,6 +28,7 @@ const centro = station("8591603", "Lugano, Centro", 46.00495, 8.95153);
 const besso = station("8575286", "Lugano, Stazione Piazza Besso");
 const lugano = station("8505300", "Lugano");
 const bellinzona = station("8505213", "Bellinzona");
+const balerna = station("8505313", "Balerna");
 
 const leg = (
   line: string,
@@ -347,5 +349,37 @@ describe("dueTransferAlert", () => {
 
   it("stops once the bus has arrived", () => {
     expect(dueTransferAlert(transfers(8), late(8), [], 29 * MIN)).toBeUndefined();
+  });
+});
+
+describe("rerouteJourney", () => {
+  const journey = timer({
+    journey: { ...timer().journey!, alerted: ["0:tight", "1:missed"] },
+  }).journey!;
+  const toBalerna: Connection = {
+    legs: [{ ...leg("S10", lugano, balerna, 32, 50, "SBB"), walkBeforeMs: 5 * MIN }],
+  };
+
+  it("keeps the legs up to the one ridden, then the new plan", () => {
+    const next = rerouteJourney(journey, 0, toBalerna, balerna);
+    expect(next.legs).toEqual([connection.legs[0], toBalerna.legs[0]]);
+    expect(next.from).toBe(centro);
+    expect(next.to).toBe(balerna);
+  });
+
+  it("takes the walk after of the new plan, none when it has none", () => {
+    expect(rerouteJourney(journey, 0, toBalerna, balerna)).not.toHaveProperty("walkAfterMs");
+    expect(
+      rerouteJourney(journey, 0, { ...toBalerna, walkAfterMs: 3 * MIN }, balerna).walkAfterMs
+    ).toBe(3 * MIN);
+  });
+
+  it("keeps the destination around a lost connection", () => {
+    expect(rerouteJourney(journey, 0, toBalerna).to).toBe(bellinzona);
+  });
+
+  it("forgets the alerts of the transfers replaced", () => {
+    expect(rerouteJourney(journey, 1, toBalerna).alerted).toEqual(["0:tight"]);
+    expect(rerouteJourney(journey, 0, toBalerna).alerted).toEqual([]);
   });
 });
