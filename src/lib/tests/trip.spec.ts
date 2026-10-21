@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { busIndex, busPosition, stopState, tripDeparture } from "../trip";
+import { busIndex, busPosition, reachedIndex, stopState, tripDeparture } from "../trip";
 import { InTimeStatus, RoutingStatus } from "../../timetable/models";
 
 const stops = (...statuses: RoutingStatus[]) =>
@@ -34,6 +34,21 @@ describe("busPosition", () => {
   it("knows when the bus has not left or has arrived", () => {
     expect(busPosition(stops(F, F, F))).toEqual({ kind: "origin" });
     expect(busPosition(stops(O, P, P))).toEqual({ kind: "arrived" });
+  });
+});
+
+describe("reachedIndex", () => {
+  const reached = (...statuses: RoutingStatus[]) =>
+    reachedIndex(busPosition(stops(...statuses)), statuses.length);
+
+  it("is the stop the bus is at, or the last one it has left", () => {
+    expect(reached(O, P, C, F, F)).toBe(2);
+    expect(reached(O, P, P, F, F)).toBe(2);
+  });
+
+  it("is the first stop before the bus leaves, the last once arrived", () => {
+    expect(reached(F, F, F)).toBe(0);
+    expect(reached(O, P, P)).toBe(2);
   });
 });
 

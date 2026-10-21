@@ -124,6 +124,9 @@ export const it = {
     yourStop: "La tua fermata",
     getOffAt: (stop: string) => `Scendo a ${stop}`,
     getOffHere: "Scendo qui",
+    // Already on the bus, without a timer
+    onThisBus: "Sono su questo bus",
+    whereGetOff: "Tocca la fermata dove scendi: il timer ti avviserà",
   },
   journey: {
     title: "Tragitto",

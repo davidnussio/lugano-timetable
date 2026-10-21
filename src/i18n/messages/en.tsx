@@ -124,6 +124,9 @@ export const en: Messages = {
     yourStop: "Your stop",
     getOffAt: (stop: string) => `Get off at ${stop}`,
     getOffHere: "Getting off here",
+    // Already on the bus, without a timer
+    onThisBus: "I'm on this bus",
+    whereGetOff: "Tap the stop where you get off: the timer will alert you",
   },
   journey: {
     title: "Journey",

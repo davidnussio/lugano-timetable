@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin, Star } from "lucide-react";
+import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LineBadge } from "~/app/components/line-badge";
@@ -18,6 +18,7 @@ import {
   type BusPosition,
   busIndex,
   busPosition,
+  reachedIndex,
   stopState,
   tripDeparture,
 } from "~/lib/trip";
@@ -136,20 +137,49 @@ export function RoutingView({ routing }: { routing: string[] }) {
     mine !== -1 &&
     followsTrip(timer.timer, { target, route, dir, routing: routingId });
   const getOff = riding ? timer.timer?.getOff : undefined;
-  const toggleGetOff = (chosen: RoutingStop) => {
-    if (getOff?.target === chosen.UID) {
-      timer.chooseGetOff(undefined);
-      return;
-    }
-    const platform = targets
-      ?.find((t) => t.Identifiers.includes(chosen.UID))
-      ?.Coordinates.find((c) => c.Id === chosen.UID);
-    timer.chooseGetOff({
+  const platformOf = (uid: string) =>
+    targets?.find((t) => t.Identifiers.includes(uid))?.Coordinates.find((c) => c.Id === uid);
+  const getOffChoice = (chosen: RoutingStop) => {
+    const platform = platformOf(chosen.UID);
+    return {
       target: chosen.UID,
       name: chosen.Name,
       position: platform && { lat: platform.Lat, lon: platform.Lon },
       time: chosen.Time,
+    };
+  };
+  const toggleGetOff = (chosen: RoutingStop) => {
+    timer.chooseGetOff(getOff?.target === chosen.UID ? undefined : getOffChoice(chosen));
+  };
+
+  // Already on this bus without a timer: from the last stop it has reached,
+  // a stop after it is tapped to get off there
+  const [boarding, setBoarding] = useState(false);
+  const reached = reachedIndex(position, data.length);
+  const boardable =
+    !riding && lineDeparture !== undefined && reached < data.length - 1;
+  const board = (chosen: RoutingStop) => {
+    const from = data[reached];
+    if (!lineDeparture || !from) return;
+    const at = targets?.find((t) => t.Identifiers.includes(from.UID));
+    timer.board({
+      trip: { target: from.UID, route, dir, routing: routingId },
+      line: {
+        RouteCode: lineDeparture.RouteCode,
+        Img: lineDeparture.Img,
+        Dest: lineDeparture.Dest,
+      },
+      stop: {
+        name: at?.Name ?? from.Name,
+        label: at?.Label ?? from.Label,
+        identifiers: at?.Identifiers ?? [from.UID],
+      },
+      coordinates: platformOf(from.UID),
+      // The first stop has no time of its own
+      boardedTime: from.Status === RoutingStatus.Origin ? undefined : from.Time,
+      getOff: getOffChoice(chosen),
     });
+    router.push("/timer");
   };
 
   // Stops hidden above the bus until the user asks for them
@@ -233,6 +263,29 @@ export function RoutingView({ routing }: { routing: string[] }) {
             />
           )}
 
+          {boardable &&
+            (boarding ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 py-2 pl-3 pr-1 text-sm">
+                <Flag className="size-4 shrink-0 text-primary" />
+                <p className="min-w-0 flex-1 font-medium">{m.routing.whereGetOff}</p>
+                <button
+                  type="button"
+                  aria-label={m.common.close}
+                  onClick={() => setBoarding(false)}
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBoarding(true)}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
+                <Bus className="size-4" />
+                {m.routing.onThisBus}
+              </button>
+            ))}
+
           {riding && mine < data.length - 1 && (
             <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
               <Flag className="size-3.5 shrink-0 text-primary" />
@@ -266,7 +319,11 @@ export function RoutingView({ routing }: { routing: string[] }) {
                   mine={index === mine}
                   getOff={getOff?.target === stop.UID}
                   onToggleGetOff={
-                    riding && index > mine ? () => toggleGetOff(stop) : undefined
+                    riding && index > mine
+                      ? () => toggleGetOff(stop)
+                      : boardable && boarding && index > reached
+                        ? () => board(stop)
+                        : undefined
                   }
                   color={color}
                   timetable={timetableImageUrl(stop.Code, route, dir)}

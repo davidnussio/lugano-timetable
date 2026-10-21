@@ -130,6 +130,9 @@ export const de: Messages = {
     yourStop: "Deine Haltestelle",
     getOffAt: (stop: string) => `Ausstieg in ${stop}`,
     getOffHere: "Hier aussteigen",
+    // Already on the bus, without a timer
+    onThisBus: "Ich bin in diesem Bus",
+    whereGetOff: "Tippe auf die Haltestelle, an der du aussteigst: der Timer erinnert dich",
   },
   journey: {
     title: "Verbindung",

@@ -35,7 +35,6 @@ import {
   clockAt,
   dueGetOffAlert,
   followRide,
-  type GetOff,
   getOffMessage,
   type Ride,
   rideState,
@@ -85,6 +84,7 @@ import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
+  createOnBoardTimer,
   createTimer,
   dueTransferAlert,
   findTimerDeparture,
@@ -94,6 +94,8 @@ import {
   paceStore,
   planAlerts,
   rerouteJourney,
+  type GetOffChoice,
+  type OnBoard,
   type ScheduledDeparture,
   settingsStore,
   type TimerSettings,
@@ -155,6 +157,8 @@ export interface TimerContextValue {
     stop: ActiveTimer["stop"],
     coordinates: Coordinates | undefined
   ): void;
+  // A bus the user is already on, getting off at the stop chosen
+  board(ride: OnBoard): void;
   startJourney(
     connection: Connection,
     from: Station,
@@ -166,9 +170,7 @@ export interface TimerContextValue {
   reroute(index: number, plan: Connection, to?: Station): void;
   // Sets the stop to get off a single bus, with its time in the routing, or
   // clears it
-  chooseGetOff(
-    stop: (Pick<GetOff, "target" | "name" | "position"> & { readonly time: string }) | undefined
-  ): void;
+  chooseGetOff(stop: GetOffChoice | undefined): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
   // Forgets the walks measured: back to the default paces
@@ -627,6 +629,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const board = useCallback<TimerContextValue["board"]>((ride) => {
+    unlockAudio();
+    timerStore.set(createOnBoardTimer(ride, Date.now()));
+  }, []);
+
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
     (connection, from, to, targets) => {
       unlockAudio();
@@ -703,6 +710,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     next,
     ride,
     start,
+    board,
     startJourney,
     reroute,
     chooseGetOff,

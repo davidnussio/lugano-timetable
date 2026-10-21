@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { Connection, PlannedLeg, Station } from "~/journey/models";
 import { InTimeStatus, type Departure, type Target } from "~/timetable/models";
 import { transfer } from "../journey";
+import { isStoredTimer } from "../valid";
 import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
+  createOnBoardTimer,
   dueTransferAlert,
   findTimerDeparture,
   followsTrip,
@@ -381,5 +383,57 @@ describe("rerouteJourney", () => {
   it("forgets the alerts of the transfers replaced", () => {
     expect(rerouteJourney(journey, 1, toBalerna).alerted).toEqual(["0:tight"]);
     expect(rerouteJourney(journey, 0, toBalerna).alerted).toEqual([]);
+  });
+});
+
+describe("createOnBoardTimer", () => {
+  // 08:20 in Lugano (summer time)
+  const now = Date.UTC(2026, 9, 16, 6, 20, 0);
+  const ride = {
+    trip: { target: "40", route: "21", dir: "2", routing: "700" },
+    line: { RouteCode: "6", Img: "6.jpg", Dest: "Lugano, Stazione" },
+    stop: { name: "Brentani", label: "Lugano, Via Brentani", identifiers: ["40", "41"] },
+    coordinates: { Id: "40", Lat: 46.012, Lon: 8.958 },
+    boardedTime: "08:16",
+    getOff: { target: "52", name: "Lugano, Stazione", time: "08:27" },
+  };
+
+  it("follows the ride to the stop to get off from the start", () => {
+    const timer = createOnBoardTimer(ride, now);
+    expect(timer).toMatchObject({
+      target: "40",
+      route: "21",
+      routing: "700",
+      line: "6",
+      destination: "Lugano, Stazione",
+      coordinates: { lat: 46.012, lon: 8.958 },
+      departureAt: now - 4 * MIN,
+      time: "08:16",
+      getOff: {
+        target: "52",
+        name: "Lugano, Stazione",
+        arrivalAt: now + 7 * MIN,
+        left: true,
+        alerted: [],
+      },
+    });
+    expect(timer.uid).toBeUndefined();
+    expect(timerEndsAt(timer)).toBe(now + 7 * MIN);
+  });
+
+  it("has nothing to walk to and no alert to leave", () => {
+    const timer = createOnBoardTimer(ride, now);
+    expect(timer.approach).toEqual({ stage: "arrived" });
+    expect(timer.thresholds).toEqual([]);
+    expect(planAlerts(timer, "gps", -4 * MIN)).toBe(timer);
+  });
+
+  it("has left by now, also with a time still to come or unknown", () => {
+    expect(createOnBoardTimer({ ...ride, boardedTime: "08:21" }, now).departureAt).toBe(now);
+    expect(createOnBoardTimer({ ...ride, boardedTime: undefined }, now).departureAt).toBe(now);
+  });
+
+  it("is a valid stored timer", () => {
+    expect(isStoredTimer(JSON.parse(JSON.stringify(createOnBoardTimer(ride, now))))).toBe(true);
   });
 });
