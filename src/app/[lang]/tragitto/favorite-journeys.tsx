@@ -27,7 +27,7 @@ export function FavoriteJourneys({
   return (
     <section className="px-4 pt-1">
       <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <Star className="size-3.5" />
+        <Star className="size-3.5 fill-favorite text-favorite" />
         {m.journey.favorites}
       </h2>
       <ul role="list" className="space-y-2">
@@ -75,16 +75,19 @@ function JourneyCard({
         onClick={onChoose}
         title={`${from.name} → ${to.name}`}
         className={cn(
-          "flex w-full items-center gap-3 rounded-2xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
+          "flex w-full items-stretch overflow-hidden rounded-2xl border bg-card text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
           current ? "border-primary ring-2 ring-primary/20" : "border-border"
         )}>
-        <Star className="size-4 shrink-0 fill-favorite text-favorite" />
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="truncate font-medium">
+        {/* The star on its own column: a favourite, apart from the connections below */}
+        <span className="grid w-14 shrink-0 place-items-center border-r border-border bg-favorite/10">
+          <Star className="size-5 fill-favorite text-favorite" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1.5 py-3 pl-3">
+          <p className="truncate font-semibold">
             {stopName(from.name)} → {stopName(to.name)}
           </p>
           {next ? (
-            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
               <span className="flex shrink-0 items-center gap-1">
                 {next.legs.map((leg, index) => (
                   <TransportBadge
@@ -92,12 +95,12 @@ function JourneyCard({
                     line={leg.line}
                     category={leg.category}
                     operator={leg.operator}
-                    size={20}
+                    size={22}
                   />
                 ))}
               </span>
               <span className="truncate">
-                <span className="font-mono font-medium tabular-nums text-foreground">
+                <span className="font-mono font-bold tabular-nums text-foreground">
                   {formatTime(expected(next.legs[0].departure))} →{" "}
                   {formatTime(expected(next.legs[next.legs.length - 1].arrival))}
                 </span>{" "}
@@ -105,7 +108,7 @@ function JourneyCard({
               </span>
             </div>
           ) : (
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="truncate text-sm text-muted-foreground">
               {error
                 ? m.stops.unavailable
                 : data
@@ -114,7 +117,7 @@ function JourneyCard({
             </p>
           )}
         </div>
-        <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+        <ChevronRight className="mx-3 size-4 shrink-0 self-center text-muted-foreground/60" />
       </button>
     </li>
   );
