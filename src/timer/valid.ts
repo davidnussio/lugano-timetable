@@ -79,6 +79,12 @@ const isWalk = (value: unknown): value is Shape =>
   isNumber(value.lastAt) &&
   isOptional(value.spoiled, (spoiled) => typeof spoiled === "boolean");
 
+const isAtStop = (value: unknown): value is Shape =>
+  isObject(value) &&
+  isNumber(value.at) &&
+  isOptional(value.leftAt, isNumber) &&
+  isOptional(value.meters, isNumber);
+
 export function isActiveTimer(value: unknown): value is ActiveTimer {
   return (
     isObject(value) &&
@@ -101,6 +107,7 @@ export function isActiveTimer(value: unknown): value is ActiveTimer {
     isOptional(value.journey, isJourney) &&
     isOptional(value.approach, isObject) &&
     isOptional(value.walk, isWalk) &&
+    isOptional(value.atStop, isAtStop) &&
     isOptional(value.getOff, isGetOff)
   );
 }

@@ -56,6 +56,20 @@ export function busIndex(position: BusPosition, length: number): number {
   }
 }
 
+// Index of the last stop the bus has reached: it is there or has left it
+export function reachedIndex(position: BusPosition, length: number): number {
+  switch (position.kind) {
+    case "origin":
+      return 0;
+    case "at":
+      return position.index;
+    case "between":
+      return position.from;
+    case "arrived":
+      return length - 1;
+  }
+}
+
 // The departure of the trip from the stop of the user: the run passing at
 // `time` (the stop's time in the routing), else the soonest of the line
 export function tripDeparture(

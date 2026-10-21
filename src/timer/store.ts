@@ -18,8 +18,9 @@ import {
   type Pace,
   type WalkSource,
 } from "./plan";
-import type { GetOff } from "./get-off";
+import { clockAt, type GetOff } from "./get-off";
 import { type LearnedPace, NO_PACE, type WalkTrack } from "./pace";
+import type { AtStop } from "./progress";
 import { isLearnedPace, isStoredTimer } from "./valid";
 
 // A journey with transfers planned with transport.opendata.ch. The timer
@@ -71,6 +72,8 @@ export interface ActiveTimer {
   readonly approach?: Approach;
   // The walk to the stop, measured to learn the pace of the user
   readonly walk?: WalkTrack;
+  // When the user reached the stop, with the walk there: the trip so far
+  readonly atStop?: AtStop;
   // Where the user gets off a single bus: the timer then follows the ride
   readonly getOff?: GetOff;
 }
@@ -134,6 +137,71 @@ export function createTimer(
   };
 }
 
+// The stop chosen to get off, with the time of the bus there in the routing
+export type GetOffChoice = Pick<GetOff, "target" | "name" | "position"> & {
+  readonly time: string;
+};
+
+// A bus the user is already on, from the line page
+export interface OnBoard {
+  // The trip, from the last stop the bus has reached: where the user counts
+  // as boarded
+  readonly trip: {
+    readonly target: string;
+    readonly route: string;
+    readonly dir: string;
+    readonly routing: string;
+  };
+  // Without its trip id: the departure of the line page may be another run
+  readonly line: Pick<Departure, "RouteCode" | "Img" | "Dest">;
+  readonly stop: ActiveTimer["stop"];
+  readonly coordinates?: Coordinates;
+  // Time of the bus at that stop in the routing, unknown at the first stop
+  readonly boardedTime?: string;
+  readonly getOff: GetOffChoice;
+}
+
+// The timer of a bus the user is already on, getting off at the stop chosen.
+// Nothing to walk to: the timer follows the ride from the start.
+export function createOnBoardTimer(
+  { trip, line, stop, coordinates, boardedTime, getOff }: OnBoard,
+  now: number
+): ActiveTimer {
+  // On board the bus has left, or is leaving: never later than now
+  const boardedAt = boardedTime === undefined ? undefined : clockAt(boardedTime, now);
+  const departureAt = Math.min(boardedAt ?? now, now);
+  return {
+    stop,
+    target: trip.target,
+    coordinates: coordinates && { lat: coordinates.Lat, lon: coordinates.Lon },
+    line: line.RouteCode,
+    route: trip.route,
+    dir: trip.dir,
+    routing: trip.routing,
+    img: line.Img,
+    destination: line.Dest,
+    time: formatTime(departureAt),
+    departureAt,
+    startedAt: now,
+    // No alert to leave, nor a walk to measure: already at the stop
+    thresholds: [],
+    fired: [],
+    plannedWithWalk: true,
+    plannedWithGps: true,
+    approach: { stage: "arrived" },
+    getOff: {
+      target: getOff.target,
+      name: getOff.name,
+      ...(getOff.position === undefined ? {} : { position: getOff.position }),
+      arrivalAt: clockAt(getOff.time, now),
+      // Already on the way: a routing with the bus back before the stop is
+      // the next run. Until it leaves, the GPS tells where to get off.
+      left: true,
+      alerted: [],
+    },
+  };
+}
+
 // The timer of a planned journey. A first leg on a TPL bus is followed with
 // the real-time data of its stop, the others with the timetable forecasts.
 export function createJourneyTimer(
@@ -180,6 +248,24 @@ export function createJourneyTimer(
         : { walkAfterMs: connection.walkAfterMs }),
       alerted: [],
     },
+  };
+}
+
+// The journey continued after the leg `index` with another plan: a way
+// around a lost connection, or the way to another destination `to`
+export function rerouteJourney(
+  journey: ActiveJourney,
+  index: number,
+  plan: Connection,
+  to: Station = journey.to
+): ActiveJourney {
+  return {
+    from: journey.from,
+    to,
+    legs: [...journey.legs.slice(0, index + 1), ...plan.legs],
+    ...(plan.walkAfterMs === undefined ? {} : { walkAfterMs: plan.walkAfterMs }),
+    // The transfers after `index` are new
+    alerted: journey.alerted.filter((key) => Number(key.split(":")[0]) < index),
   };
 }
 
@@ -365,10 +451,11 @@ export function followsTrip(
 }
 
 // When the timer is over: the departure, the arrival at the stop to get off,
-// or the arrival of a journey
+// or the arrival of a journey after the walk to its destination
 export function timerEndsAt(
   timer: ActiveTimer,
-  legs: ReadonlyArray<PlannedLeg> | undefined = timer.journey?.legs
+  legs: ReadonlyArray<PlannedLeg> | undefined = timer.journey?.legs,
+  walkAfterMs = timer.journey?.walkAfterMs
 ): number {
   const { getOff } = timer;
   if (getOff !== undefined && timer.journey === undefined) {
@@ -377,7 +464,7 @@ export function timerEndsAt(
   const last = legs?.at(-1);
   return last === undefined
     ? timer.departureAt
-    : expected(last.arrival) + (timer.journey?.walkAfterMs ?? 0);
+    : expected(last.arrival) + (walkAfterMs ?? 0);
 }
 
 export interface TransferAlert {

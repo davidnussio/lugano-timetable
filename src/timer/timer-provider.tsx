@@ -17,6 +17,7 @@ import {
 } from "~/hooks/use-geolocation";
 import useSWR from "swr";
 import { useMonitored } from "~/hooks/use-monitored";
+import { useI18n } from "~/i18n/i18n-provider";
 import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useClimb, useStopHeights } from "~/terrain/use-climb";
@@ -34,7 +35,6 @@ import {
   clockAt,
   dueGetOffAlert,
   followRide,
-  type GetOff,
   getOffMessage,
   type Ride,
   rideState,
@@ -46,6 +46,7 @@ import {
   formatTime,
   type JourneyState,
   journeyState,
+  plannedWalkMs,
   transferMessage,
 } from "./journey";
 import {
@@ -69,6 +70,7 @@ import {
   weatherDelay,
   weatherWalk,
 } from "./plan";
+import { reachStop } from "./progress";
 import { recordStart, ridesStore } from "./rides";
 import {
   followWalk,
@@ -82,6 +84,7 @@ import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
+  createOnBoardTimer,
   createTimer,
   dueTransferAlert,
   findTimerDeparture,
@@ -90,6 +93,9 @@ import {
   nextTimerDeparture,
   paceStore,
   planAlerts,
+  rerouteJourney,
+  type GetOffChoice,
+  type OnBoard,
   type ScheduledDeparture,
   settingsStore,
   type TimerSettings,
@@ -135,6 +141,9 @@ export interface TimerContextValue {
   // transfers are going
   readonly legs: ReadonlyArray<PlannedLeg> | undefined;
   readonly journey: JourneyState | undefined;
+  // The walk from the last stop to the destination of a journey, at the pace
+  // of the user and slower uphill
+  readonly walkAfterMs: number | undefined;
   // The way to fall back on when a connection is lost, from its stop
   readonly fallback: { readonly index: number; readonly plan: Connection } | undefined;
   // The next bus of the same line from the stop that can still be caught, to
@@ -148,19 +157,20 @@ export interface TimerContextValue {
     stop: ActiveTimer["stop"],
     coordinates: Coordinates | undefined
   ): void;
+  // A bus the user is already on, getting off at the stop chosen
+  board(ride: OnBoard): void;
   startJourney(
     connection: Connection,
     from: Station,
     to: Station,
     targets: ReadonlyArray<Target> | undefined
   ): void;
-  // Continues the journey after the leg `index` with another plan
-  reroute(index: number, plan: Connection): void;
+  // Continues the journey after the leg `index` with another plan, to
+  // another destination `to` when given
+  reroute(index: number, plan: Connection, to?: Station): void;
   // Sets the stop to get off a single bus, with its time in the routing, or
   // clears it
-  chooseGetOff(
-    stop: (Pick<GetOff, "target" | "name" | "position"> & { readonly time: string }) | undefined
-  ): void;
+  chooseGetOff(stop: GetOffChoice | undefined): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
   // Forgets the walks measured: back to the default paces
@@ -233,6 +243,8 @@ function useReliableFix(
 // Runs the active timer on every page: follows the bus with the real-time
 // data, measures the walk to the stop and fires the alerts.
 export function TimerProvider({ children }: { children: React.ReactNode }) {
+  // The alerts are written in the language of the page
+  const { m } = useI18n();
   const timer = timerStore.useValue();
   const stored = settingsStore.useValue() ?? defaultSettings;
   const granted = useGeolocationGranted();
@@ -341,18 +353,23 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       ? rawDistance
       : undefined;
 
+  // The walk to the stop is longer and slower uphill, and slower in the rain
+  // or the snow
+  const walkingFix =
+    rawDistance !== undefined && far === undefined && stage !== "arrived" ? fix : undefined;
+  const climb = useClimb(walkingFix, timer?.coordinates);
+  const weatherNow = weatherWalk(useWeather(walkingFix));
+
   const distance = useSteadyDistance(
     far === undefined ? rawDistance : undefined,
     now,
     timer?.startedAt,
     // On the way the distance really shrinks: follow it, faster than any
-    // pace, instead of holding it back as GPS noise
-    walkingRelease(speed) * (stage === "walking" ? 3 : 1)
+    // pace, instead of holding it back as GPS noise. The longer and steeper
+    // the way of the streets, the slower the distance as the crow flies
+    // shrinks.
+    walkingRelease(speed, rawDistance, climb) * (stage === "walking" ? 3 : 1)
   );
-  // The walk to the stop slows down uphill, and in the rain or the snow
-  const walkingFix = distance !== undefined && stage !== "arrived" ? fix : undefined;
-  const climb = useClimb(walkingFix, timer?.coordinates);
-  const weatherNow = weatherWalk(useWeather(walkingFix));
 
   // Move forward on the way to the stop, and measure the walk there to learn
   // the pace of the user. Runs again with the same fix when the climb, the
@@ -372,8 +389,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       climb,
       pace,
     });
-    if (next !== current.approach || walk !== current.walk) {
-      timerStore.set({ ...current, approach: next, walk });
+    // The walk ends at the stop: keep when it started, for the trip so far
+    const atStop = reachStop(current.atStop, current.approach?.stage ?? "away", next.stage, current.walk, {
+      meters: rawDistance,
+      at: fixAt,
+    });
+    if (next !== current.approach || walk !== current.walk || atStop !== current.atStop) {
+      timerStore.set({ ...current, approach: next, walk, atStop });
     }
     // A walk in the rain is slower than the pace of the user: learn it as dry
     if (walked !== undefined) {
@@ -415,12 +437,23 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     () => (timer && now > 0 ? liveLegs(timer, now) : undefined),
     [timer, now]
   );
-  // The stops of the transfers, for the climb of the walks between them
-  const heightOf = useStopHeights(
-    (timer?.journey?.legs ?? []).flatMap((leg, index, all) =>
+  // The stops of the transfers and of the walk to the destination, for the
+  // climb of the walks between them
+  const lastStop = timer?.journey?.legs.at(-1)?.to;
+  const destination = timer?.journey?.to;
+  const plannedWalkAfter = timer?.journey?.walkAfterMs;
+  const heightOf = useStopHeights([
+    ...(timer?.journey?.legs ?? []).flatMap((leg, index, all) =>
       index === 0 ? [] : [all[index - 1].to.position, leg.from.position].filter(isDefined)
-    )
-  );
+    ),
+    ...(plannedWalkAfter === undefined
+      ? []
+      : [lastStop?.position, destination?.position].filter(isDefined)),
+  ]);
+  const walkAfterMs =
+    plannedWalkAfter === undefined || lastStop === undefined || destination === undefined
+      ? plannedWalkAfter
+      : plannedWalkMs(plannedWalkAfter, lastStop, destination, speed, heightOf);
   const journey = useMemo(
     () =>
       legs && legs.length > 1
@@ -494,21 +527,21 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (!stored || !getOff) return;
     const due = dueGetOffAlert(ride, getOffDistance, getOff.alerted, departed);
     if (due === undefined) return;
-    const message = getOffMessage(due, getOff, stored.line, stored.destination);
+    const message = getOffMessage(m, due, getOff, stored.line, stored.destination);
     timerStore.set({
       ...stored,
       getOff: { ...getOff, alerted: [...getOff.alerted, due] },
       lastAlert: { ...message, at: Date.now() },
     });
     void notify(message);
-  }, [ride, getOffDistance, departed]);
+  }, [ride, getOffDistance, departed, m]);
 
   // Plan and fire the alerts, then drop the timer some time after the
   // departure. Reads the stored timer: it may have changed since the render.
   useEffect(() => {
     const stored = timerStore.get();
     if (!stored || !current) return;
-    if (timerEndsAt(stored, legs) < Date.now() - EXPIRES_AFTER_MS) {
+    if (timerEndsAt(stored, legs, walkAfterMs) < Date.now() - EXPIRES_AFTER_MS) {
       timerStore.set(null);
       return;
     }
@@ -524,7 +557,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     const message =
       due === undefined
         ? undefined
-        : alertMessage(next.line, next.destination, current, weather?.label);
+        : alertMessage(m, next.line, next.destination, current, weather?.kind);
     if (due !== undefined && message !== undefined) {
       next = {
         ...next,
@@ -535,7 +568,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
     if (next !== stored) timerStore.set(next);
     if (message !== undefined) void notify(message);
-  }, [current, walkSource, far, legs, stage, weather?.label]);
+  }, [current, walkSource, far, legs, walkAfterMs, stage, weather?.kind, m]);
 
   // Alert when a connection gets worse. A lost one waits for the way to fall
   // back on, unless it cannot be found.
@@ -558,14 +591,19 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
           (journey.arrivalAt + (stored.journey.walkAfterMs ?? 0)),
       };
     }
-    const message = transferMessage(legs[due.index + 1], journey.transfers[due.index], alternative);
+    const message = transferMessage(
+      m,
+      legs[due.index + 1],
+      journey.transfers[due.index],
+      alternative
+    );
     timerStore.set({
       ...stored,
       journey: { ...stored.journey, alerted: [...stored.journey.alerted, due.key] },
       ...(message ? { lastAlert: { ...message, at: Date.now() } } : {}),
     });
     if (message !== undefined) void notify(message);
-  }, [journey, legs, fallback, plans, plansError]);
+  }, [journey, legs, fallback, plans, plansError, m]);
 
   // Sound needs a gesture: unlock it on the first tap while a timer runs
   useEffect(() => {
@@ -591,6 +629,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const board = useCallback<TimerContextValue["board"]>((ride) => {
+    unlockAudio();
+    timerStore.set(createOnBoardTimer(ride, Date.now()));
+  }, []);
+
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
     (connection, from, to, targets) => {
       unlockAudio();
@@ -599,23 +642,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const reroute = useCallback<TimerContextValue["reroute"]>((index, plan) => {
-    timerStore.set((current) => {
-      if (!current?.journey) return current;
-      const legs = [...current.journey.legs.slice(0, index + 1), ...plan.legs];
-      return {
-        ...current,
-        journey: {
-          ...current.journey,
-          legs,
-          walkAfterMs: plan.walkAfterMs,
-          // The transfers after `index` are new
-          alerted: current.journey.alerted.filter(
-            (key) => Number(key.split(":")[0]) < index
-          ),
-        },
-      };
-    });
+  const reroute = useCallback<TimerContextValue["reroute"]>((index, plan, to) => {
+    timerStore.set(
+      (current) =>
+        current?.journey
+          ? { ...current, journey: rerouteJourney(current.journey, index, plan, to) }
+          : current
+    );
   }, []);
 
   const chooseGetOff = useCallback<TimerContextValue["chooseGetOff"]>((stop) => {
@@ -672,10 +705,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     notifications,
     legs,
     journey,
+    walkAfterMs,
     fallback,
     next,
     ride,
     start,
+    board,
     startJourney,
     reroute,
     chooseGetOff,

@@ -2,7 +2,7 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { TestClock } from "effect/testing";
 import type { Connection } from "~/journey/models";
-import { type ConnectionsOptions, Opendata, OpendataError } from "~/journey/opendata-client";
+import { Opendata, OpendataError } from "~/journey/opendata-client";
 import type { PushMessage, Routine } from "../models";
 import { zurichTime } from "../schedule";
 import type { Subscriber } from "../schema";
@@ -50,7 +50,7 @@ interface Query {
   readonly from: string;
   readonly to: string;
   readonly at?: number;
-  readonly options?: ConnectionsOptions;
+  readonly arrival?: boolean;
 }
 
 // Opendata answering with `answer()`, recording the queries
@@ -63,8 +63,8 @@ const fakeOpendata = (
     Opendata,
     Opendata.of({
       stations: () => Effect.succeed([]),
-      connections: (from, to, at, options) => {
-        queries.push({ from, to, at, options });
+      connections: (from, to, at, arrival) => {
+        queries.push({ from, to, at, arrival });
         return answer();
       },
       legs: () => Effect.succeed([]),
@@ -119,7 +119,7 @@ describe("tick", () => {
       const summary = yield* tick;
       assert.deepStrictEqual(summary, { watched: 1, queried: 1, sent: 1, removed: 0, failed: 0 });
       assert.deepStrictEqual(queries, [
-        { from: "8591577", to: "8591603", at: at("08:00"), options: { arrival: true } },
+        { from: "8591577", to: "8591603", at: at("08:00"), arrival: true },
       ]);
       assert.strictEqual(sent[0].message.title, "Esci alle 7:31 per il 6 delle 7:37");
       assert.deepStrictEqual(sent[0].options, { ttlSeconds: 25 * 60, topic: routine.id });

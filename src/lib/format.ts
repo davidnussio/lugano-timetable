@@ -1,8 +1,9 @@
+import type { Messages } from "~/i18n/messages";
 import { minutesLeft, type WeatherDelay } from "~/timer/plan";
 
 // "7 min", "ora" or the clock time when the departure is more than an hour away
-export function formatDeparture(ms: number, time: string): string {
-  if (ms < 60_000) return "ora";
+export function formatDeparture(m: Messages, ms: number, time: string): string {
+  if (ms < 60_000) return m.format.now;
   if (ms >= 60 * 60_000) return time;
   return `${minutesLeft(ms)} min`;
 }
@@ -27,15 +28,16 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(minutes / 60)} h ${(minutes % 60).toString().padStart(2, "0")}`;
 }
 
-export function formatDistance(meters: number): string {
+// "350 m", "1,2 km"
+export function formatDistance(m: Messages, meters: number): string {
   return meters < 1000
     ? `${Math.round(meters / 10) * 10} m`
-    : `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
+    : `${m.format.decimal(meters / 1000)} km`;
 }
 
 // "4,8 km/h", from meters per second
-export function formatSpeed(metersPerSecond: number): string {
-  return `${(metersPerSecond * 3.6).toFixed(1).replace(".", ",")} km/h`;
+export function formatSpeed(m: Messages, metersPerSecond: number): string {
+  return `${m.format.decimal(metersPerSecond * 3.6)} km/h`;
 }
 
 // Below this a climb is within the error of the heights: not worth showing
@@ -47,8 +49,11 @@ export function formatClimb(climb: number | undefined): string | undefined {
 }
 
 // "Pioggia +2 min" for what the weather adds to a walk
-export function formatWeather(weather: WeatherDelay | undefined): string | undefined {
-  return weather && `${weather.label} +${weather.minutes} min`;
+export function formatWeather(
+  m: Messages,
+  weather: WeatherDelay | undefined
+): string | undefined {
+  return weather && `${m.weather[weather.kind]} +${weather.minutes} min`;
 }
 
 // Minutes from `now` to an "HH:mm" time of the RTPI server (local time),
@@ -62,6 +67,12 @@ export function minutesUntilClock(time: string, now: Date): number | undefined {
   if (diff < -12 * 60) diff += 24 * 60;
   if (diff > 12 * 60) diff -= 24 * 60;
   return diff;
+}
+
+// The stop without its town, short enough for a chip: "Lugano, Via
+// Brentani" → "Via Brentani", "Bellinzona" as it is
+export function stopName(label: string): string {
+  return label.split(", ").at(-1) ?? label;
 }
 
 // Town of a stop label: "Lugano, Bellavista" → "Lugano"

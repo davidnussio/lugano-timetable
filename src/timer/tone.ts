@@ -1,3 +1,4 @@
+import type { Messages } from "~/i18n/messages";
 import type { Countdown, Stage } from "./plan";
 
 export type Tone = "ok" | "soon" | "late" | "gone";
@@ -43,21 +44,26 @@ export type Headline = {
 
 // Main line of the timer: what to do and in how long. Once on the way, the
 // time to leave would stand still while walking: show the walk left instead.
-export function timerHeadline(countdown: Countdown, stage: Stage = "away"): Headline {
-  if (countdown.departureMs < -60_000) return { label: "Bus partito", ms: 0, phase: "gone" };
+export function timerHeadline(
+  m: Messages,
+  countdown: Countdown,
+  stage: Stage = "away"
+): Headline {
+  const { headline } = m;
+  if (countdown.departureMs < -60_000) return { label: headline.busGone, ms: 0, phase: "gone" };
   if (countdown.walkingMs === undefined || stage === "arrived") {
     return countdown.departureMs > 0
       ? {
-          label: stage === "arrived" ? "Bus tra" : "Parte tra",
+          label: stage === "arrived" ? headline.busIn : headline.departsIn,
           ms: countdown.departureMs,
           phase: "bus",
         }
-      : { label: "In arrivo", ms: 0, phase: "bus" };
+      : { label: headline.arriving, ms: 0, phase: "bus" };
   }
   if (stage === "walking") {
-    return { label: "Alla fermata tra", ms: countdown.walkingMs, phase: "walk" };
+    return { label: headline.atStopIn, ms: countdown.walkingMs, phase: "walk" };
   }
   return countdown.leaveMs >= 0
-    ? { label: "Esci tra", ms: countdown.leaveMs, phase: "leave" }
-    : { label: "In ritardo di", ms: -countdown.leaveMs, phase: "leave" };
+    ? { label: headline.leaveIn, ms: countdown.leaveMs, phase: "leave" }
+    : { label: headline.lateBy, ms: -countdown.leaveMs, phase: "leave" };
 }

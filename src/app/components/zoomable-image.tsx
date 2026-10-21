@@ -3,6 +3,7 @@
 import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useI18n } from "~/i18n/i18n-provider";
 
 const MAX_SCALE = 4;
 const DOUBLE_TAP_SCALE = 2.5;
@@ -20,6 +21,7 @@ const clamp = (value: number, min: number, max: number) =>
 // Pinch, drag, double tap and wheel zoom confined to the image, so the page
 // itself never zooms.
 export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
+  const { m } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Point>());
   const pinch = useRef<{ distance: number; mid: Point } | null>(null);
@@ -159,7 +161,7 @@ export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
         <ImageOff className="size-8" />
-        <p className="text-sm">Orario non disponibile</p>
+        <p className="text-sm">{m.timetable.unavailable}</p>
       </div>
     );
   }

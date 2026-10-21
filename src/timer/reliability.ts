@@ -1,3 +1,4 @@
+import type { Messages } from "~/i18n/messages";
 import type { DelayStats } from "~/timetable/reliability";
 
 // Fewer days say more about chance than about the bus
@@ -13,22 +14,23 @@ export interface ReliabilityNote {
   readonly margin?: number;
 }
 
-function usually(median: number): string {
+function usually(m: Messages, median: number): string {
   const minutes = Math.round(median / 60);
-  if (minutes === 0) return "Di solito parte in orario";
-  return minutes > 0
-    ? `Di solito parte con +${minutes} min`
-    : `Di solito parte ${-minutes} min prima`;
+  if (minutes === 0) return m.reliability.onTime;
+  return minutes > 0 ? m.reliability.late(minutes) : m.reliability.early(-minutes);
 }
 
 // "Entro" is an upper bound: rounded up
-function within(p80: number): string {
+function within(m: Messages, p80: number): string {
   const minutes = Math.ceil(p80 / 60);
-  return minutes > 0 ? `80% entro +${minutes} min` : "80% in orario";
+  return minutes > 0 ? m.reliability.within(minutes) : m.reliability.allOnTime;
 }
 
 // What the past days say about the departure, undefined with too few
-export function reliabilityNote(stats: DelayStats | undefined): ReliabilityNote | undefined {
+export function reliabilityNote(
+  m: Messages,
+  stats: DelayStats | undefined
+): ReliabilityNote | undefined {
   if (
     stats === undefined ||
     stats.samples < MIN_SAMPLES ||
@@ -37,7 +39,7 @@ export function reliabilityNote(stats: DelayStats | undefined): ReliabilityNote 
   ) {
     return undefined;
   }
-  const summary = `${usually(stats.median)} · ${within(stats.p80)} (${stats.samples} giorni)`;
+  const summary = `${usually(m, stats.median)} · ${within(m, stats.p80)} ${m.reliability.days(stats.samples)}`;
   // A delay that changes from day to day can shrink while walking: keep the
   // difference to the usual one as a margin. One always the same is already
   // in the real-time estimate.

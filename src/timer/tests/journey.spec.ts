@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "~/i18n/messages";
 import {
   connectionStatus,
+  currentLeg,
   delayMs,
   expected,
   fallbackPlan,
@@ -11,11 +13,15 @@ import {
   journeyState,
   laterPlan,
   type Leg,
+  plannedWalkMs,
   transfer,
   transferMessage,
   transferWalkingMs,
 } from "../journey";
-import { climbFactor, distanceMeters, PACE_SPEED } from "../plan";
+import { climbFactor, detourFactor, distanceMeters, PACE_SPEED, walkingSeconds } from "../plan";
+
+// The Italian texts: the words asserted below
+const m = messages.it;
 
 const MIN = 60_000;
 
@@ -150,25 +156,27 @@ describe("transfer", () => {
     const stops = { from: cornaredo, to: bellavista };
     const arriving = leg("2", 0, 10, undefined, stops);
 
+    const meters = distanceMeters(bellavista.position, centro.position);
+    // The winding streets of the slope, up or down
+    const level = (meters * detourFactor(meters, 25)) / PACE_SPEED.normal;
+
     it("walks slower going up", () => {
-      const flat = transfer(arriving, toParadiso(20, 30));
+      const unknown = transfer(arriving, toParadiso(20, 30));
       const up = transfer(arriving, toParadiso(20, 30), { heightOf });
       expect(up.climb).toBe(25);
-      expect(up.walkingMs).toBeCloseTo(
-        flat.walkingMs * climbFactor(distanceMeters(bellavista.position, centro.position), 25)
-      );
-      expect(up.walkingMs - flat.walkingMs).toBeGreaterThan(MIN);
-      expect(up.slackMs).toBeCloseTo(flat.slackMs - (up.walkingMs - flat.walkingMs));
+      expect(up.walkingMs).toBeCloseTo(level * climbFactor(meters, 25) * 1000);
+      expect(up.walkingMs - unknown.walkingMs).toBeGreaterThan(MIN);
+      expect(up.slackMs).toBeCloseTo(unknown.slackMs - (up.walkingMs - unknown.walkingMs));
     });
 
-    it("walks as on the flat going down or without heights", () => {
+    it("walks at the pace of the flat going down, as the median walk without heights", () => {
       const back = leg("5", 20, 30, undefined, { from: bellavista, to: paradiso });
       const down = transfer(leg("2", 0, 10), back, { heightOf });
       expect(down.climb).toBe(-25);
-      expect(down.walkingMs).toBeCloseTo(transfer(leg("2", 0, 10), back).walkingMs);
-      expect(transfer(arriving, toParadiso(20, 30), { heightOf: () => undefined })).not.toHaveProperty(
-        "climb"
-      );
+      expect(down.walkingMs).toBeCloseTo(level * 1000);
+      const unknown = transfer(arriving, toParadiso(20, 30), { heightOf: () => undefined });
+      expect(unknown).not.toHaveProperty("climb");
+      expect(unknown.walkingMs).toBeCloseTo(walkingSeconds(meters) * 1000);
     });
 
     it("slows down the walk of the timetable, without losing the connection", () => {
@@ -325,21 +333,21 @@ describe("transferMessage", () => {
   const departing = toParadiso(15, 25);
 
   it("says nothing while the connection is fine", () => {
-    expect(transferMessage(departing, transfer(arriving(0), departing))).toBeUndefined();
+    expect(transferMessage(m, departing, transfer(arriving(0), departing))).toBeUndefined();
   });
 
   it("warns about a tight connection", () => {
-    expect(transferMessage(departing, transfer(arriving(3), departing))).toEqual({
+    expect(transferMessage(m, departing, transfer(arriving(3), departing))).toEqual({
       title: "Coincidenza stretta a Lugano, Centro",
       body: "Linea 5 per Paradiso · 1 min di margine",
     });
-    expect(transferMessage(departing, transfer(arriving(4), departing))?.body).toBe(
+    expect(transferMessage(m, departing, transfer(arriving(4), departing))?.body).toBe(
       "Linea 5 per Paradiso · nessun margine, affrettati"
     );
   });
 
   it("tells by how much a connection is missed", () => {
-    expect(transferMessage(departing, transfer(arriving(7), departing))).toEqual({
+    expect(transferMessage(m, departing, transfer(arriving(7), departing))).toEqual({
       title: "Coincidenza a rischio a Lugano, Centro",
       body: "Linea 5 per Paradiso · in ritardo di 3 min",
     });
@@ -348,7 +356,7 @@ describe("transferMessage", () => {
   it("suggests the next bus", () => {
     const alternative = { leg: toParadiso(25, 35), laterMs: 10 * MIN };
     expect(
-      transferMessage(departing, transfer(arriving(7), departing), alternative)
+      transferMessage(m, departing, transfer(arriving(7), departing), alternative)
     ).toEqual({
       title: "Coincidenza a rischio a Lugano, Centro",
       body: `Prossima linea 5 alle ${formatTime(25 * MIN)}, arrivo +10 min`,
@@ -361,29 +369,76 @@ describe("transferMessage", () => {
   });
 });
 
+describe("plannedWalkMs", () => {
+  it("takes the walk of the timetable at the pace of the user", () => {
+    expect(plannedWalkMs(6 * MIN, cornaredo, centro)).toBe(6 * MIN);
+    expect(plannedWalkMs(6 * MIN, cornaredo, centro, PACE_SPEED.normal / 2)).toBe(12 * MIN);
+  });
+
+  it("slows it down uphill, when the heights are known", () => {
+    const heightOf: HeightOf = (position) => (position.lat === centro.position.lat ? 300 : 280);
+    const flat = plannedWalkMs(6 * MIN, bellavista, centro);
+    expect(plannedWalkMs(6 * MIN, bellavista, centro, PACE_SPEED.normal, heightOf)).toBeGreaterThan(flat);
+  });
+});
+
 describe("journeyHeadline", () => {
   const legs = [leg("2", 0, 10), toParadiso(15, 25)];
 
   it("leaves the countdown to the timer before the first bus", () => {
-    expect(journeyHeadline(legs, -MIN)).toBeUndefined();
+    expect(journeyHeadline(m, legs, -MIN)).toBeUndefined();
   });
 
   it("tells when to get off, wait and arrive", () => {
-    expect(journeyHeadline(legs, 4 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 4 * MIN)).toEqual({
       label: "Scendi a Lugano, Centro tra",
       ms: 6 * MIN,
       phase: "transfer",
     });
-    expect(journeyHeadline(legs, 12 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 12 * MIN)).toEqual({
       label: "Linea 5 tra",
       ms: 3 * MIN,
       phase: "bus",
     });
-    expect(journeyHeadline(legs, 20 * MIN)).toEqual({
+    expect(journeyHeadline(m, legs, 20 * MIN)).toEqual({
       label: "Arrivo tra",
       ms: 5 * MIN,
       phase: "arrival",
     });
-    expect(journeyHeadline(legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
+    expect(journeyHeadline(m, legs, 30 * MIN)).toEqual({ label: "Arrivato", ms: 0, phase: "arrival" });
+  });
+
+  it("counts down the walk to the destination after the last stop", () => {
+    expect(journeyHeadline(m, legs, 28 * MIN, 8 * MIN)).toEqual({
+      label: "A destinazione tra",
+      ms: 5 * MIN,
+      phase: "walk",
+    });
+    expect(journeyHeadline(m, legs, 33 * MIN, 8 * MIN)).toEqual({
+      label: "Arrivato",
+      ms: 0,
+      phase: "arrival",
+    });
+  });
+});
+
+describe("currentLeg", () => {
+  const legs = [leg("2", 10, 20), toParadiso(25, 35)];
+
+  it("is the first leg until it arrives, also before boarding", () => {
+    expect(currentLeg(legs, 5 * MIN)).toBe(0);
+    expect(currentLeg(legs, 15 * MIN)).toBe(0);
+  });
+
+  it("is the next leg once off the bus, while waiting for it", () => {
+    expect(currentLeg(legs, 22 * MIN)).toBe(1);
+  });
+
+  it("follows the delays", () => {
+    expect(currentLeg([leg("2", 10, 20, { arrival: 4 }), toParadiso(25, 35)], 22 * MIN)).toBe(0);
+  });
+
+  it("is none once the journey has arrived", () => {
+    expect(currentLeg(legs, 36 * MIN)).toBeUndefined();
   });
 });

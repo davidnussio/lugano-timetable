@@ -150,3 +150,9 @@ const localDateTime = new Intl.DateTimeFormat("sv-SE", {
 export function opendataDateTime(ms: number): string {
   return localDateTime.format(ms);
 }
+
+// The same local time as the `date` and `time` parameters of the connections
+export function opendataDateAndTime(ms: number): { readonly date: string; readonly time: string } {
+  const [date, time] = opendataDateTime(ms).split(" ");
+  return { date, time };
+}

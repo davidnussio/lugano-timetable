@@ -1,0 +1,623 @@
+"use client";
+
+import { Bell, BellRing, Bus, ChevronUp, Flag, MapPin, Star, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { LineBadge } from "~/app/components/line-badge";
+import { LiveStatus } from "~/app/components/live-status";
+import { PageHeader } from "~/app/components/page-header";
+import { SkeletonList } from "~/app/components/skeleton-list";
+import { Timetable } from "~/app/components/timetable";
+import { useMonitored } from "~/hooks/use-monitored";
+import { useNow } from "~/hooks/use-now";
+import { useI18n } from "~/i18n/i18n-provider";
+import { useTargets } from "~/hooks/use-targets";
+import { minutesUntilClock, town } from "~/lib/format";
+import { lineColor } from "~/lib/lines";
+import {
+  type BusPosition,
+  busIndex,
+  busPosition,
+  reachedIndex,
+  stopState,
+  tripDeparture,
+} from "~/lib/trip";
+import { cn } from "~/lib/utils";
+import { minutesLeft } from "~/timer/plan";
+import { createRide, ridesStore, sameRide, toggleRide } from "~/timer/rides";
+import { followsTrip, isScheduled } from "~/timer/store";
+import { useTimer } from "~/timer/timer-provider";
+import {
+  type Departure,
+  InTimeStatus,
+  RoutingStatus,
+  type RoutingStop,
+} from "~/timetable/models";
+
+
+const RouteUIDToProgressive = [
+  19, 20, 21, 22, 23, 32, 33, 24, 25, 26, 27, 28, 29, 0, 0, 30, 31,
+];
+
+function routeToFile(routeUID: string) {
+  const index = RouteUIDToProgressive.indexOf(parseInt(routeUID));
+  return index !== -1 ? index + 1 : 0;
+}
+
+function timetableImageUrl(code: string, route: string, dir: string) {
+  const routeNumber = routeToFile(route) + 400;
+  return `http://bs.tplsa.ch/images/Theoretical/${routeNumber}_${
+    dir === "1" ? "A_" : "R_"
+  }${code}.png`;
+}
+
+// Passed stops kept visible above the bus when the rest are collapsed
+const PASSED_VISIBLE = 1;
+
+// Target, route, direction and routing of the trip, as in the URL
+export function RoutingView({ routing }: { routing: string[] }) {
+  const { data, isLoading, isError } = useMonitored<RoutingStop>(
+    "/api/timetable/routing",
+    "routing",
+    routing
+  );
+  const [target, route, dir, routingId] = routing;
+  const [showPassed, setShowPassed] = useState(false);
+  const now = useNow();
+  const color = lineColor(route);
+  const router = useRouter();
+  const timer = useTimer();
+  const { m } = useI18n();
+
+  const position = busPosition(data);
+  const bus = busIndex(position, data.length);
+  const mine = data.findIndex((stop) => stop.UID === target);
+
+  // The departure of this bus from the stop of the user, in the real-time
+  // list of the stop: same polling (and SWR cache) as the stop page. Also
+  // once the bus has passed, for the line of the favorite ride.
+  const targets = useTargets();
+  const stop = targets?.find((t) => t.Identifiers.includes(target));
+  const { data: departures } = useMonitored<Departure>(
+    "/api/timetable/itineraries",
+    "itineraries",
+    stop && mine !== -1 ? stop.Identifiers : null
+  );
+  const departure =
+    stop && mine !== -1 && bus <= mine
+      ? tripDeparture(
+          departures,
+          { target, route, dir, routing: routingId },
+          data[mine].Time
+        )
+      : undefined;
+  const timed =
+    timer.timer !== null &&
+    departure !== undefined &&
+    (departure.Uid !== undefined
+      ? timer.timer.uid === departure.Uid
+      : timer.timer.target === departure.Target &&
+        timer.timer.routing === departure.Routing &&
+        timer.timer.time === departure.Time);
+
+  const startTimer = () => {
+    if (!stop || !departure || !isScheduled(departure)) return;
+    if (!timed) {
+      timer.start(
+        departure,
+        { name: stop.Name, label: stop.Label, identifiers: stop.Identifiers },
+        stop.Coordinates.find((c) => c.Id === departure.Target) ??
+          stop.Coordinates[0]
+      );
+    }
+    router.push("/timer");
+  };
+
+  // The line in this direction from the stop of the user, as a favorite ride.
+  // Its name and badge are in the departures of the stop, not in the routing.
+  const rides = ridesStore.useValue();
+  const rideKey = stop && { identifiers: stop.Identifiers, route, dir };
+  const favorite = !!rideKey && !!rides?.some((ride) => sameRide(ride, rideKey));
+  const lineDeparture =
+    departure ?? departures.find((d) => d.Route === route && d.Dir === dir);
+  const toggleFavorite = () => {
+    if (!rideKey) return;
+    if (favorite) {
+      ridesStore.set((current) => current.filter((ride) => !sameRide(ride, rideKey)));
+    } else if (stop && lineDeparture) {
+      const stopOf = { name: stop.Name, label: stop.Label, identifiers: stop.Identifiers };
+      ridesStore.set((current) => toggleRide(current, createRide(lineDeparture, stopOf)));
+    }
+  };
+
+  // The timer follows this trip: a stop after the user's can be marked as the
+  // one to get off, tapped again to clear
+  const riding =
+    timer.timer !== null &&
+    mine !== -1 &&
+    followsTrip(timer.timer, { target, route, dir, routing: routingId });
+  const getOff = riding ? timer.timer?.getOff : undefined;
+  const platformOf = (uid: string) =>
+    targets?.find((t) => t.Identifiers.includes(uid))?.Coordinates.find((c) => c.Id === uid);
+  const getOffChoice = (chosen: RoutingStop) => {
+    const platform = platformOf(chosen.UID);
+    return {
+      target: chosen.UID,
+      name: chosen.Name,
+      position: platform && { lat: platform.Lat, lon: platform.Lon },
+      time: chosen.Time,
+    };
+  };
+  const toggleGetOff = (chosen: RoutingStop) => {
+    timer.chooseGetOff(getOff?.target === chosen.UID ? undefined : getOffChoice(chosen));
+  };
+
+  // Already on this bus without a timer: from the last stop it has reached,
+  // a stop after it is tapped to get off there
+  const [boarding, setBoarding] = useState(false);
+  const reached = reachedIndex(position, data.length);
+  const boardable =
+    !riding && lineDeparture !== undefined && reached < data.length - 1;
+  const board = (chosen: RoutingStop) => {
+    const from = data[reached];
+    if (!lineDeparture || !from) return;
+    const at = targets?.find((t) => t.Identifiers.includes(from.UID));
+    timer.board({
+      trip: { target: from.UID, route, dir, routing: routingId },
+      line: {
+        RouteCode: lineDeparture.RouteCode,
+        Img: lineDeparture.Img,
+        Dest: lineDeparture.Dest,
+      },
+      stop: {
+        name: at?.Name ?? from.Name,
+        label: at?.Label ?? from.Label,
+        identifiers: at?.Identifiers ?? [from.UID],
+      },
+      coordinates: platformOf(from.UID),
+      // The first stop has no time of its own
+      boardedTime: from.Status === RoutingStatus.Origin ? undefined : from.Time,
+      getOff: getOffChoice(chosen),
+    });
+    router.push("/timer");
+  };
+
+  // Stops hidden above the bus until the user asks for them
+  const hidden = showPassed ? 0 : Math.max(0, bus - PASSED_VISIBLE);
+
+  // Bring the bus into view once the data arrives
+  const busRow = useRef<HTMLLIElement>(null);
+  const scrolled = useRef(false);
+  useEffect(() => {
+    if (scrolled.current || data.length === 0) return;
+    scrolled.current = true;
+    busRow.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [data.length]);
+
+  const destination = data.at(-1);
+
+  return (
+    <main className="flex flex-1 flex-col">
+      <PageHeader
+        back="/"
+        title={
+          <span className="flex items-center gap-2">
+            <LineBadge img={route} route={route} size={26} className="rounded-md" />
+            <span className="truncate">{destination?.Name ?? m.routing.title}</span>
+          </span>
+        }
+        actions={
+          <>
+            {rides !== null && mine !== -1 && (favorite || lineDeparture) && (
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted"
+                aria-pressed={favorite}
+                aria-label={favorite ? m.routing.removeRide : m.routing.addRide}>
+                <Star
+                  className={cn(
+                    "size-5 transition-colors",
+                    favorite ? "fill-favorite text-favorite" : "text-muted-foreground"
+                  )}
+                />
+              </button>
+            )}
+            {departure && isScheduled(departure) && (
+              <button
+                type="button"
+                onClick={startTimer}
+                className={cn(
+                  "grid size-10 place-items-center rounded-full transition-colors hover:bg-muted",
+                  timed ? "text-primary" : "text-muted-foreground"
+                )}
+                aria-label={
+                  timed
+                    ? m.common.openTimer
+                    : m.common.startTimer(departure.RouteCode, departure.Time)
+                }>
+                {timed ? <BellRing className="size-5" /> : <Bell className="size-5" />}
+              </button>
+            )}
+          </>
+        }
+      />
+
+      {isError && data.length === 0 ? (
+        <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+          {m.common.serviceUnavailable}
+        </p>
+      ) : isLoading ? (
+        <SkeletonList rows={8} />
+      ) : (
+        <div className="space-y-3 px-4 pb-6 pt-3">
+          {mine !== -1 && (
+            <TripSummary
+              stops={data}
+              position={position}
+              bus={bus}
+              mine={mine}
+              now={now}
+              color={color}
+              error={isError}
+            />
+          )}
+
+          {boardable &&
+            (boarding ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 py-2 pl-3 pr-1 text-sm">
+                <Flag className="size-4 shrink-0 text-primary" />
+                <p className="min-w-0 flex-1 font-medium">{m.routing.whereGetOff}</p>
+                <button
+                  type="button"
+                  aria-label={m.common.close}
+                  onClick={() => setBoarding(false)}
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBoarding(true)}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
+                <Bus className="size-4" />
+                {m.routing.onThisBus}
+              </button>
+            ))}
+
+          {riding && mine < data.length - 1 && (
+            <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+              <Flag className="size-3.5 shrink-0 text-primary" />
+              {getOff ? m.routing.getOffChosen(getOff.name) : m.routing.getOffHint}
+            </p>
+          )}
+
+          <ol className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            {hidden > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowPassed(true)}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60">
+                  <span className="grid w-8 place-items-center">
+                    <ChevronUp className="size-4" />
+                  </span>
+                  {m.routing.showPassed(hidden)}
+                </button>
+              </li>
+            )}
+            {data.map((stop, index) =>
+              index < hidden ? null : (
+                <StopRow
+                  key={stop.UID}
+                  ref={index === Math.min(bus, data.length - 1) ? busRow : undefined}
+                  stop={stop}
+                  index={index}
+                  count={data.length}
+                  position={position}
+                  mine={index === mine}
+                  getOff={getOff?.target === stop.UID}
+                  onToggleGetOff={
+                    riding && index > mine
+                      ? () => toggleGetOff(stop)
+                      : boardable && boarding && index > reached
+                        ? () => board(stop)
+                        : undefined
+                  }
+                  color={color}
+                  timetable={timetableImageUrl(stop.Code, route, dir)}
+                />
+              )
+            )}
+          </ol>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function TripSummary({
+  stops,
+  position,
+  bus,
+  mine,
+  now,
+  color,
+  error,
+}: {
+  stops: ReadonlyArray<RoutingStop>;
+  position: BusPosition;
+  bus: number;
+  mine: number;
+  now: number;
+  color: string;
+  error: boolean;
+}) {
+  const { m } = useI18n();
+  const myStop = stops[mine];
+  const gone = bus > mine;
+  const away = mine - bus;
+  const minutes = now > 0 ? minutesUntilClock(myStop.Time, new Date(now)) : undefined;
+
+  const where =
+    position.kind === "origin"
+      ? m.routing.atOrigin(stops[0]?.Name ?? "")
+      : position.kind === "at"
+        ? m.routing.atStop(stops[position.index].Name)
+        : position.kind === "between"
+          ? m.routing.headingTo(stops[position.from + 1].Name)
+          : m.routing.atTerminus;
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <MapPin className="size-3.5" />
+            {myStop.Name}
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight">
+            {gone
+              ? m.routing.gone
+              : away === 0 && position.kind === "at"
+                ? m.routing.here
+                : minutes !== undefined && minutes > 0
+                  ? m.routing.arrivesIn(minutesLeft(minutes * 60_000))
+                  : m.routing.arriving}
+          </p>
+        </div>
+        <span className="pt-0.5">
+          <LiveStatus error={error} />
+        </span>
+      </div>
+      <div className="mt-3 flex items-start gap-2 text-sm">
+        <span
+          className="grid size-7 shrink-0 place-items-center rounded-full text-white"
+          style={{ backgroundColor: color }}>
+          <Bus className="size-4" />
+        </span>
+        <span className="min-w-0 pt-1 leading-snug text-muted-foreground">
+          {where}
+          {!gone && away === 0 && position.kind === "between" && (
+            <>
+              {" · "}
+              <span className="font-medium text-foreground">{m.routing.nextStop}</span>
+            </>
+          )}
+          {!gone && away > 0 && (
+            <>
+              {" · "}
+              <span className="font-medium text-foreground">
+                {m.routing.stopsAway(away)}
+              </span>
+            </>
+          )}
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function StopRow({
+  ref,
+  stop,
+  index,
+  count,
+  position,
+  mine,
+  getOff,
+  onToggleGetOff,
+  color,
+  timetable,
+}: {
+  ref?: React.Ref<HTMLLIElement>;
+  stop: RoutingStop;
+  index: number;
+  count: number;
+  position: BusPosition;
+  mine: boolean;
+  getOff: boolean;
+  onToggleGetOff: (() => void) | undefined;
+  color: string;
+  timetable: string;
+}) {
+  const { m } = useI18n();
+  const state = stopState(position, index);
+  const previous = index > 0 ? stopState(position, index - 1) : undefined;
+  const next = index < count - 1 ? stopState(position, index + 1) : undefined;
+  // A segment is travelled once the bus reached its end
+  const travelled = (s: typeof state) => s !== "upcoming";
+  const busArriving = position.kind === "between" && position.from === index - 1;
+  const delayed = stop.Pred === InTimeStatus.Delayed && state === "upcoming";
+  const showTime = !(stop.Status === RoutingStatus.Origin && stop.Time === "00:00");
+
+  return (
+    <li
+      ref={ref}
+      className={cn(
+        "relative flex min-h-14 items-stretch border-t border-border/60 first:border-t-0",
+        (mine || getOff) && "bg-primary/[0.06]"
+      )}>
+      {/* Rail: the half segments meet in the node */}
+      <div className="relative w-14 shrink-0">
+        {previous !== undefined && (
+          <Segment top travelled={travelled(state)} color={color} />
+        )}
+        {next !== undefined && (
+          <Segment travelled={travelled(next)} color={color} />
+        )}
+        <Node state={state} mine={mine || getOff} color={color} />
+        {busArriving && (
+          <span
+            className="absolute left-1/2 top-0 z-10 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-white shadow-md ring-2 ring-card"
+            style={{ backgroundColor: color }}
+            aria-label={m.routing.busMoving}>
+            <Bus className="size-3.5" />
+          </span>
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+        <Choice onToggle={onToggleGetOff} pressed={getOff} label={m.routing.getOffAt(stop.Name)}>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span
+              className={cn(
+                "truncate",
+                state === "passed" ? "text-muted-foreground" : "font-medium",
+                (state === "current" || mine || getOff) && "font-semibold"
+              )}>
+              {stop.Name}
+            </span>
+            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              {state === "current" && (
+                <span className="font-semibold text-success">{m.routing.busAtStop}</span>
+              )}
+              {mine && (
+                <span className="rounded-full bg-primary/10 px-1.5 py-px font-semibold text-primary">
+                  {m.routing.yourStop}
+                </span>
+              )}
+              {getOff && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-1.5 py-px font-semibold text-primary-foreground">
+                  <Flag className="size-3" />
+                  {m.routing.getOffHere}
+                </span>
+              )}
+              {state !== "current" && !mine && !getOff && town(stop.Label)}
+            </span>
+          </div>
+          {showTime && (
+            <span
+              className={cn(
+                "font-mono text-sm tabular-nums",
+                state === "passed" && "text-muted-foreground/70",
+                delayed && "font-semibold text-destructive",
+                (state === "current" || mine) && "font-semibold"
+              )}>
+              {stop.Time}
+            </span>
+          )}
+        </Choice>
+        <Timetable url={timetable} />
+      </div>
+    </li>
+  );
+}
+
+// The name and time of a stop: a toggle where the user can get off
+function Choice({
+  onToggle,
+  pressed,
+  label,
+  children,
+}: {
+  onToggle: (() => void) | undefined;
+  pressed: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const className = "flex min-w-0 flex-1 items-center gap-2 self-stretch py-2.5 text-left";
+  return onToggle ? (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={pressed}
+      aria-label={label}
+      className={cn(className, "transition-opacity active:opacity-60")}>
+      {children}
+    </button>
+  ) : (
+    <div className={className}>{children}</div>
+  );
+}
+
+function Segment({
+  top,
+  travelled,
+  color,
+}: {
+  top?: boolean;
+  travelled: boolean;
+  color: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "absolute left-1/2 w-1 -translate-x-1/2",
+        top ? "top-0 h-1/2" : "bottom-0 h-1/2",
+        travelled && "bg-muted-foreground/25"
+      )}
+      style={travelled ? undefined : { backgroundColor: color }}
+    />
+  );
+}
+
+function Node({
+  state,
+  mine,
+  color,
+}: {
+  state: "passed" | "current" | "upcoming";
+  mine: boolean;
+  color: string;
+}) {
+  const center = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2";
+
+  if (state === "current") {
+    return (
+      <span className={cn(center, "z-10 grid size-8 place-items-center")}>
+        <span
+          className="absolute inset-0 animate-ping rounded-full opacity-40"
+          style={{ backgroundColor: color }}
+        />
+        <span
+          className="relative grid size-8 place-items-center rounded-full text-white shadow-md ring-2 ring-card"
+          style={{ backgroundColor: color }}>
+          <Bus className="size-4" />
+        </span>
+      </span>
+    );
+  }
+  if (state === "passed") {
+    return (
+      <span
+        className={cn(
+          center,
+          "rounded-full bg-muted-foreground/40",
+          mine ? "size-3.5" : "size-2.5"
+        )}
+      />
+    );
+  }
+  return (
+    <span
+      className={cn(
+        center,
+        "rounded-full bg-card",
+        mine ? "size-5 border-[5px] shadow-sm" : "size-3.5 border-[3px]"
+      )}
+      style={{ borderColor: color }}
+    />
+  );
+}

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "~/i18n/messages";
 import {
   alertMessage,
   alertThresholds,
   approach,
   countdown,
+  detourFactor,
   distanceMeters,
   dueAlert,
   isFar,
@@ -16,6 +18,9 @@ import {
   weatherDelay,
   weatherWalk,
 } from "../plan";
+
+// The Italian texts: the words asserted below
+const m = messages.it;
 
 describe("alertThresholds", () => {
   it("spaces alerts as a fraction of the remaining time", () => {
@@ -78,18 +83,41 @@ describe("walking", () => {
     expect(walkingSeconds(1000, PACE_SPEED.slow)).toBeCloseTo(1350);
   });
 
-  it("walks slower uphill, as on the flat downhill", () => {
-    // 500 m to the stop, 1350 × 500 / 1300 seconds on the flat
-    const flat = walkingSeconds(500);
-    // 35 m up over 675 m of streets: about a fifth more
-    expect(walkingSeconds(500, PACE_SPEED.normal, 35) / flat).toBeCloseTo(Math.exp((3.5 * 35) / 675));
-    expect(walkingSeconds(500, PACE_SPEED.normal, 35) - flat).toBeGreaterThan(90);
-    expect(walkingSeconds(500, PACE_SPEED.normal, -35)).toBeCloseTo(flat);
+  it("walks the winding streets of a slope, slower uphill", () => {
+    // 500 m to the stop on level ground: 575 m of streets
+    expect(walkingSeconds(500, PACE_SPEED.normal, 0)).toBeCloseTo(575 / 1.3);
+    // 35 m up or down: 1.15 + 4.5 × 0.07 = 1.465 times as long, 732.5 m
+    const winding = 732.5 / 1.3;
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35)).toBeCloseTo(
+      winding * Math.exp((3.5 * 35) / 732.5)
+    );
+    expect(walkingSeconds(500, PACE_SPEED.normal, -35)).toBeCloseTo(winding);
+    expect(walkingSeconds(500, PACE_SPEED.normal, 35) - walkingSeconds(500)).toBeGreaterThan(120);
   });
 
   it("caps the slope of a short walk", () => {
-    expect(walkingSeconds(20, PACE_SPEED.normal, 30)).toBeCloseTo(walkingSeconds(20) * Math.exp(3.5 * 0.25));
+    // 30 m up over 20 m: the slope of the streets counted over 200 m
+    expect(walkingSeconds(20, PACE_SPEED.normal, 30)).toBeCloseTo(
+      ((20 * 1.825) / 1.3) * Math.exp(3.5 * 0.25)
+    );
     expect(walkingSeconds(0, PACE_SPEED.normal, 10)).toBe(0);
+  });
+});
+
+describe("detourFactor", () => {
+  it("is the median of the town until the climb is known", () => {
+    expect(detourFactor(800, undefined)).toBe(1.35);
+  });
+
+  it("grows with the slope, up or down", () => {
+    expect(detourFactor(800, 0)).toBeCloseTo(1.15);
+    expect(detourFactor(800, 80)).toBeCloseTo(1.6);
+    expect(detourFactor(800, -80)).toBeCloseTo(1.6);
+  });
+
+  it("is capped on the steepest slopes, and on a short walk", () => {
+    expect(detourFactor(800, 500)).toBe(3);
+    expect(detourFactor(50, 10)).toBeCloseTo(1.15 + (4.5 * 10) / 200);
   });
 });
 
@@ -106,13 +134,13 @@ describe("weatherWalk", () => {
   it("walks slower in the rain, more under a downpour", () => {
     expect(weatherWalk({ ...dry, precipitation: 0.3, code: 53 })).toEqual({
       factor: 1.1,
-      label: "Pioggia",
+      kind: "rain",
     });
     // The code of the model tells the rain also with little water
-    expect(weatherWalk({ ...dry, precipitation: 0.1, code: 80 }).label).toBe("Pioggia");
+    expect(weatherWalk({ ...dry, precipitation: 0.1, code: 80 }).kind).toBe("rain");
     expect(weatherWalk({ ...dry, precipitation: 4, code: 63 })).toEqual({
       factor: 1.15,
-      label: "Pioggia forte",
+      kind: "heavyRain",
     });
     expect(weatherWalk({ ...dry, precipitation: 2, code: 82 }).factor).toBe(1.15);
   });
@@ -120,13 +148,13 @@ describe("weatherWalk", () => {
   it("walks much slower on snow and ice", () => {
     expect(weatherWalk({ ...dry, precipitation: 0.1, snowfall: 0.1 })).toEqual({
       factor: 1.3,
-      label: "Neve",
+      kind: "snow",
     });
     // Snow wins over the rain of the same hour
-    expect(weatherWalk({ precipitation: 5, snowfall: 0, code: 85 }).label).toBe("Neve");
+    expect(weatherWalk({ precipitation: 5, snowfall: 0, code: 85 }).kind).toBe("snow");
     expect(weatherWalk({ ...dry, precipitation: 1, code: 66 })).toEqual({
       factor: 1.3,
-      label: "Ghiaccio",
+      kind: "ice",
     });
     expect(weatherWalk({ ...dry, code: 56 }).factor).toBe(1.3);
   });
@@ -135,16 +163,16 @@ describe("weatherWalk", () => {
 describe("weatherDelay", () => {
   it("tells the minutes added by the weather, from one up", () => {
     // 10 minutes dry, 11 in the rain
-    expect(weatherDelay(660, { factor: 1.1, label: "Pioggia" })).toEqual({
-      label: "Pioggia",
+    expect(weatherDelay(660, { factor: 1.1, kind: "rain" })).toEqual({
+      kind: "rain",
       minutes: 1,
     });
-    expect(weatherDelay(1300, { factor: 1.3, label: "Neve" })).toEqual({
-      label: "Neve",
+    expect(weatherDelay(1300, { factor: 1.3, kind: "snow" })).toEqual({
+      kind: "snow",
       minutes: 5,
     });
     // 4 minutes dry: 24 seconds more
-    expect(weatherDelay(264, { factor: 1.1, label: "Pioggia" })).toBeUndefined();
+    expect(weatherDelay(264, { factor: 1.1, kind: "rain" })).toBeUndefined();
     expect(weatherDelay(600, { factor: 1 })).toBeUndefined();
   });
 });
@@ -169,26 +197,26 @@ describe("countdown", () => {
 
 describe("alertMessage", () => {
   it("tells when to leave", () => {
-    expect(alertMessage("2", "Castagnola", countdown(600_000, 0, 300))).toEqual({
+    expect(alertMessage(m, "2", "Castagnola", countdown(600_000, 0, 300))).toEqual({
       title: "Esci tra 5 min",
       body: "Linea 2 per Castagnola · il bus parte tra 10 min, 5 min a piedi",
     });
-    expect(alertMessage("2", "Castagnola", countdown(300_000, 0, 300)).title).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(300_000, 0, 300)).title).toBe(
       "Esci ora"
     );
-    expect(alertMessage("2", "Castagnola", countdown(120_000, 0, 300)).title).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(120_000, 0, 300)).title).toBe(
       "In ritardo di 3 min: affrettati!"
     );
   });
 
   it("tells what slows down the walk", () => {
-    expect(alertMessage("2", "Castagnola", countdown(600_000, 0, 300), "Pioggia forte").body).toBe(
+    expect(alertMessage(m, "2", "Castagnola", countdown(600_000, 0, 300), "heavyRain").body).toBe(
       "Linea 2 per Castagnola · il bus parte tra 10 min, 5 min a piedi (pioggia forte)"
     );
   });
 
   it("counts down to the departure without a position", () => {
-    expect(alertMessage("2", "Castagnola", countdown(240_000, 0, undefined))).toEqual({
+    expect(alertMessage(m, "2", "Castagnola", countdown(240_000, 0, undefined))).toEqual({
       title: "Il bus parte tra 4 min",
       body: "Linea 2 per Castagnola",
     });
@@ -233,6 +261,20 @@ describe("peakHold", () => {
       envelope = peakHold(envelope, meters, second * 1000, release);
       const leave = 600 - second - walkingSeconds(envelope.value);
       expect(leave).toBeLessThanOrEqual(previousLeave + 1e-9);
+      previousLeave = leave;
+    });
+  });
+
+  it("keeps the time to leave from going back up on a hill too", () => {
+    // 60 m up: winding streets, walked slower
+    const readings = [300, 304, 296, 299, 307, 291, 288, 295];
+    const release = walkingRelease(PACE_SPEED.normal, 300, 60);
+    let envelope = peakHold(undefined, readings[0], 0, release);
+    let previousLeave = Infinity;
+    readings.forEach((meters, second) => {
+      envelope = peakHold(envelope, meters, second * 1000, release);
+      const leave = 900 - second - walkingSeconds(envelope.value, PACE_SPEED.normal, 60);
+      expect(leave).toBeLessThanOrEqual(previousLeave + 0.05);
       previousLeave = leave;
     });
   });

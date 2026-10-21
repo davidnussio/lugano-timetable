@@ -1,6 +1,11 @@
+"use client";
+
+import { useI18n } from "~/i18n/i18n-provider";
+
 export function SkeletonList({ rows = 6 }: { rows?: number }) {
+  const { m } = useI18n();
   return (
-    <ul className="space-y-2 px-4 pt-3" aria-busy="true" aria-label="Caricamento">
+    <ul className="space-y-2 px-4 pt-3" aria-busy="true" aria-label={m.common.loading}>
       {Array.from({ length: rows }, (_, row) => (
         <li
           key={row}

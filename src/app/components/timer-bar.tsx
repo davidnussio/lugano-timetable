@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNow } from "~/hooks/use-now";
+import { stripLocale } from "~/i18n/config";
+import { useI18n } from "~/i18n/i18n-provider";
 import { formatClock, formatDistance } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import { getOffHeadline, rideSummary } from "~/timer/get-off";
@@ -13,15 +15,15 @@ import { AlertBanner } from "./alert-banner";
 import { PhaseIcon } from "./phase-icon";
 import { TimerBadge } from "./timer-badge";
 
-const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
-
 // Floating summary of the running timer, on every page but the timer itself
 export function TimerBar() {
-  const { timer, countdown, distance, far, geolocation, legs, stage, ride } = useTimer();
+  const { timer, countdown, distance, far, geolocation, legs, stage, ride, walkAfterMs } =
+    useTimer();
   const pathname = usePathname();
+  const { m } = useI18n();
   const now = useNow(timer !== null);
 
-  if (!timer || !countdown || pathname === "/timer") return null;
+  if (!timer || !countdown || stripLocale(pathname) === "/timer") return null;
 
   const tone = timerTone(countdown, stage);
   // Once on board of a journey: the next transfer or the arrival. Of a
@@ -31,23 +33,23 @@ export function TimerBar() {
     now === 0
       ? undefined
       : legs
-        ? journeyHeadline(legs, now)
-        : getOff && getOffHeadline(getOff, ride, now >= timer.departureAt, now);
-  const headline = travel ?? timerHeadline(countdown, stage);
+        ? journeyHeadline(m, legs, now, walkAfterMs)
+        : getOff && getOffHeadline(m, getOff, ride, now >= timer.departureAt, now);
+  const headline = travel ?? timerHeadline(m, countdown, stage);
   const accuracy = geolocation.position?.accuracy;
   const where = travel
     ? getOff
-      ? lowerFirst(rideSummary(getOff, ride))
-      : `verso ${timer.journey?.to.name ?? timer.destination}`
+      ? rideSummary(m.rideInline, getOff, ride)
+      : m.timer.towards(timer.journey?.to.name ?? timer.destination)
     : stage === "arrived"
-      ? `alla fermata ${timer.stop.name}`
+      ? m.timer.atStop(timer.stop.name)
       : far !== undefined
-        ? `a ${formatDistance(far)} da ${timer.stop.name}`
+        ? m.timer.farFrom(formatDistance(m, far), timer.stop.name)
         : distance === undefined
-          ? `da ${timer.stop.name}`
+          ? m.journey.fromStop(timer.stop.name)
           : accuracy === undefined
-            ? `${formatDistance(distance)} da ${timer.stop.name}`
-            : `${formatDistance(distance)} (±${Math.round(accuracy)} m) da ${timer.stop.name}`;
+            ? m.timer.distanceFrom(formatDistance(m, distance), timer.stop.name)
+            : m.timer.accuracyFrom(formatDistance(m, distance), Math.round(accuracy), timer.stop.name);
 
   return (
     <>

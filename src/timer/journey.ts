@@ -2,6 +2,7 @@
 // still be made with the real-time data, which bus to catch first and what
 // to tell the user. Like `plan.ts`, kept free of browser APIs.
 
+import type { Messages } from "~/i18n/messages";
 import {
   type AlertMessage,
   climbFactor,
@@ -93,13 +94,30 @@ export function stopClimb(
   return start === undefined || end === undefined ? undefined : end - start;
 }
 
+// A walk planned by the timetable from `from` to `to` (a fixed time at the
+// default normal pace) at the pace of the user, slower uphill
+export function plannedWalkMs(
+  plannedMs: number,
+  from: JourneyStop,
+  to: JourneyStop,
+  speed = PACE_SPEED.normal,
+  heightOf?: HeightOf
+): number {
+  const climb = stopClimb(from, to, heightOf);
+  const uphill =
+    climb === undefined || from.position === undefined || to.position === undefined
+      ? 1
+      : climbFactor(distanceMeters(from.position, to.position), climb);
+  return ((plannedMs * PACE_SPEED.normal) / speed) * uphill;
+}
+
 // Walk between the stop where a leg ends and where the next one starts.
 // Platforms of the same stop without a position are assumed to be close.
 export function transferWalkingMs(
   from: JourneyStop,
   to: JourneyStop,
   speed = PACE_SPEED.normal,
-  climb = 0
+  climb?: number
 ): number {
   if (from.position === undefined || to.position === undefined) return 0;
   return (
@@ -134,18 +152,13 @@ export function transfer(
 ): Transfer {
   const planned = departing.walkBeforeMs;
   const climb = stopClimb(arriving.to, departing.from, heightOf);
-  // The walk of the timetable is a fixed time: slow it down uphill as ours
-  const uphill =
-    climb === undefined || arriving.to.position === undefined || departing.from.position === undefined
-      ? 1
-      : climbFactor(distanceMeters(arriving.to.position, departing.from.position), climb);
   // The walk of the timetable is already its minimum transfer time: no
   // margin on top, and a slower pace or a climb leaves no slack but does not
   // make the connection impossible
   const walkingMs =
     planned === undefined
       ? transferWalkingMs(arriving.to, departing.from, speed, climb)
-      : ((planned * PACE_SPEED.normal) / speed) * uphill;
+      : plannedWalkMs(planned, arriving.to, departing.from, speed, heightOf);
   const neededMs = walkingMs + (planned === undefined ? minimumMs : 0);
   const toleranceMs = planned === undefined ? 0 : Math.max(walkingMs - planned, 0);
   const slackMs =
@@ -198,6 +211,14 @@ export function journeyState(
     status,
     arrivalAt: expected(legs[legs.length - 1].arrival),
   };
+}
+
+// The leg the user is on, or the next one to board while waiting for it:
+// another destination can be reached by getting off where it ends.
+// Undefined once the last leg has arrived.
+export function currentLeg(legs: ReadonlyArray<Leg>, now: number): number | undefined {
+  const index = legs.findIndex((leg) => expected(leg.arrival) > now);
+  return index === -1 ? undefined : index;
 }
 
 // A way to the destination: the journey followed, or one of the plans of
@@ -289,57 +310,63 @@ export interface Alternative {
 // What to tell the user about the connection with `departing`. Nothing while
 // it is fine; `alternative` is the way to fall back on when it is lost.
 export function transferMessage(
+  m: Messages,
   departing: Leg,
   { at, slackMs, status }: Transfer,
   alternative?: Alternative
 ): AlertMessage | undefined {
-  const bus = `Linea ${departing.line} per ${departing.destination}`;
+  const bus = m.alerts.bus(departing.line, departing.destination);
   switch (status) {
     case "ok":
       return undefined;
     case "tight": {
       const spare = Math.floor(slackMs / 60_000);
       return {
-        title: `Coincidenza stretta a ${at.name}`,
-        body:
-          spare > 0
-            ? `${bus} · ${spare} min di margine`
-            : `${bus} · nessun margine, affrettati`,
+        title: m.alerts.tightTransfer(at.name),
+        body: `${bus} · ${spare > 0 ? m.timer.spareMinutes(spare) : m.alerts.noSpare}`,
       };
     }
     case "missed": {
-      const title = `Coincidenza a rischio a ${at.name}`;
+      const title = m.alerts.transferAtRisk(at.name);
       if (alternative === undefined) {
-        return {
-          title,
-          body: `${bus} · in ritardo di ${minutesLeft(-slackMs)} min`,
-        };
+        return { title, body: `${bus} · ${m.alerts.lateBy(minutesLeft(-slackMs))}` };
       }
       const { leg, laterMs } = alternative;
-      const later = minutesLeft(laterMs);
       return {
         title,
-        body: `Prossima linea ${leg.line} alle ${formatTime(expected(leg.departure))}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
+        body: m.alerts.nextLine(
+          leg.line,
+          formatTime(expected(leg.departure)),
+          minutesLeft(laterMs)
+        ),
       };
     }
   }
 }
 
-// What comes next once on board: getting off for a transfer, or the arrival.
+// What comes next once on board: getting off for a transfer, the arrival,
+// then the walk from the last stop to the destination (`walkAfterMs`).
 // Undefined before the first departure, when the timer counts down to it.
 export function journeyHeadline(
+  m: Messages,
   legs: ReadonlyArray<Leg>,
-  now: number
+  now: number,
+  walkAfterMs = 0
 ): Headline | undefined {
   if (legs.length === 0 || expected(legs[0].departure) > now) return undefined;
   const index = legs.findIndex((leg) => expected(leg.arrival) > now);
-  if (index === -1) return { label: "Arrivato", ms: 0, phase: "arrival" };
+  if (index === -1) {
+    const left = expected(legs[legs.length - 1].arrival) + walkAfterMs - now;
+    return left > 0
+      ? { label: m.headline.destinationIn, ms: left, phase: "walk" }
+      : { label: m.headline.arrived, ms: 0, phase: "arrival" };
+  }
   const leg = legs[index];
   // Between two legs: waiting for the next bus
   if (expected(leg.departure) > now) {
-    return { label: `Linea ${leg.line} tra`, ms: expected(leg.departure) - now, phase: "bus" };
+    return { label: m.headline.lineIn(leg.line), ms: expected(leg.departure) - now, phase: "bus" };
   }
   const ms = expected(leg.arrival) - now;
-  if (index === legs.length - 1) return { label: "Arrivo tra", ms, phase: "arrival" };
-  return { label: `Scendi a ${leg.to.name} tra`, ms, phase: "transfer" };
+  if (index === legs.length - 1) return { label: m.headline.arrivalIn, ms, phase: "arrival" };
+  return { label: m.headline.getOffIn(leg.to.name), ms, phase: "transfer" };
 }

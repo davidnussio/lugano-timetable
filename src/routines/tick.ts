@@ -69,7 +69,7 @@ export const tick = Effect.gen(function* () {
         routine.from.id,
         routine.to.id,
         found.arriveAt,
-        { arrival: true }
+        true
       );
       const decision = decide(routine, found, state, connections, now);
       if (decision.message !== undefined) {
