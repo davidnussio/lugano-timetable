@@ -75,14 +75,11 @@ function JourneyCard({
         onClick={onChoose}
         title={`${from.name} → ${to.name}`}
         className={cn(
-          "flex w-full items-stretch overflow-hidden rounded-2xl border bg-card text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
+          "flex w-full items-center gap-3 overflow-hidden rounded-2xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
           current ? "border-primary ring-2 ring-primary/20" : "border-border"
         )}>
-        {/* The star on its own column: a favourite, apart from the connections below */}
-        <span className="grid w-14 shrink-0 place-items-center border-r border-border bg-favorite/10">
-          <Star className="size-5 fill-favorite text-favorite" />
-        </span>
-        <div className="min-w-0 flex-1 space-y-1.5 py-3 pl-3">
+        <Star className="size-4 shrink-0 fill-favorite text-favorite" />
+        <div className="min-w-0 flex-1 space-y-1.5">
           <p className="truncate font-semibold">
             {stopName(from.name)} → {stopName(to.name)}
           </p>
@@ -117,7 +114,7 @@ function JourneyCard({
             </p>
           )}
         </div>
-        <ChevronRight className="mx-3 size-4 shrink-0 self-center text-muted-foreground/60" />
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
       </button>
     </li>
   );
