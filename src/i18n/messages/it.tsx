@@ -10,6 +10,7 @@ const decimal = new Intl.NumberFormat("it", {
 // Texts with values are functions: each language builds its own sentence.
 export const it = {
   meta: {
+    title: "LuGo · Bus e treni a Lugano",
     description: "Partenze in tempo reale dei bus TPL di Lugano",
   },
   manifest: {

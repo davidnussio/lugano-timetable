@@ -13,6 +13,7 @@ const decimal = new Intl.NumberFormat("de-CH", {
 // Verbindung, coincidenza → Anschluss, esci tra → Losgehen in
 export const de: Messages = {
   meta: {
+    title: "LuGo · Busse und Züge in Lugano",
     description: "Echtzeit-Abfahrten der TPL-Busse in Lugano",
   },
   manifest: {

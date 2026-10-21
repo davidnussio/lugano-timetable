@@ -11,6 +11,7 @@ const decimal = new Intl.NumberFormat("en-GB", {
 // tragitto → journey, coincidenza → connection, esci tra → leave in
 export const en: Messages = {
   meta: {
+    title: "LuGo · Buses and trains in Lugano",
     description: "Real-time departures of the TPL buses in Lugano",
   },
   manifest: {

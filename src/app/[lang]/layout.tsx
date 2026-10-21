@@ -30,7 +30,8 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
   return {
-    title: "LuGo",
+    // The name with what the app is about, for the tab and the search results
+    title: m.meta.title,
     description: m.meta.description,
     manifest: "/manifest.webmanifest",
     appleWebApp: { capable: true, title: "LuGo", statusBarStyle: "default" },
