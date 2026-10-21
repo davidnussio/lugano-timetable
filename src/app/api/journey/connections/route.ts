@@ -2,6 +2,7 @@ import { Effect, Schema } from "effect";
 import type { NextRequest } from "next/server";
 import { Opendata } from "~/journey/opendata-client";
 import { StationId } from "~/journey/schema";
+import { arrivingBy } from "~/journey/when";
 import { Identifier } from "~/timetable/schema";
 import { respond } from "../../respond";
 
@@ -26,7 +27,9 @@ export function GET(request: NextRequest) {
         Object.fromEntries(request.nextUrl.searchParams)
       );
       const opendata = yield* Opendata;
-      return yield* opendata.connections(from, to, at, arrive === "1");
+      const connections = yield* opendata.connections(from, to, at, arrive === "1");
+      // Arriving by a time, not hours before it
+      return arrive === "1" && at !== undefined ? arrivingBy(connections, at) : connections;
     }),
     CACHE_CONTROL
   );

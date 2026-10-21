@@ -1,5 +1,7 @@
 // When a journey is searched for: leaving now, or leaving at or arriving by
 // a time of the coming week, in Lugano whatever the time zone of the device
+import { expected } from "~/timer/journey";
+import type { Connection } from "./models";
 
 export interface SearchTime {
   // Days after today, up to a week
@@ -71,4 +73,21 @@ export function searchAt({ day, time }: SearchTime, now: number): number | undef
 export function arrivalTime(now: number): string {
   const quarter = 15 * 60_000;
   return zurichTime(Math.ceil((now + 60 * 60_000) / quarter) * quarter);
+}
+
+// Arriving by a time, how early is still worth it
+const EARLIEST_ARRIVAL_MS = 60 * 60_000;
+
+// The connections arriving by `at` at most an hour before it, or else the
+// one arriving last: the latest way to get there when none is that close
+export function arrivingBy(
+  connections: ReadonlyArray<Connection>,
+  at: number
+): ReadonlyArray<Connection> {
+  const arrival = ({ legs, walkAfterMs }: Connection) =>
+    expected(legs[legs.length - 1].arrival) + (walkAfterMs ?? 0);
+  const close = connections.filter((c) => arrival(c) >= at - EARLIEST_ARRIVAL_MS);
+  if (close.length > 0 || connections.length === 0) return close;
+  const last = connections.reduce((a, b) => (arrival(b) > arrival(a) ? b : a));
+  return [last];
 }
