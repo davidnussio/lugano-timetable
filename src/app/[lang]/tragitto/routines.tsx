@@ -4,6 +4,8 @@ import { BellPlus, CalendarClock, Pause, Play, Trash2 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import useSWR from "swr";
 import { currentDevice, installed } from "~/app/[lang]/timer/notifications-card";
+import { useI18n } from "~/i18n/i18n-provider";
+import type { Messages } from "~/i18n/messages";
 import type { Connection, Station } from "~/journey/models";
 import { cn } from "~/lib/utils";
 import { MAX_ROUTINES, type Routine } from "~/routines/models";
@@ -11,6 +13,7 @@ import {
   defaultArriveBy,
   defaultWalkMinutes,
   durationMinutes,
+  inLanguage,
   newRoutineId,
   pushSubscription,
   routinesStore,
@@ -33,21 +36,18 @@ function pushSupport(): Support {
 
 const noop = () => () => {};
 
-const SUPPORT_NOTES: Record<Exclude<Support, "ready">, string> = {
-  "ios-install":
-    "Su iPhone aggiungi l'app alla schermata Home (Condividi, Aggiungi alla schermata Home) per salvare i tragitti abituali e ricevere gli avvisi.",
-  unsupported: "Questo browser non riceve notifiche push: i tragitti abituali non sono disponibili.",
-  "no-key": "Gli avvisi dei tragitti abituali non sono configurati su questo sito.",
-};
-
-const DAY_LETTERS = ["L", "M", "M", "G", "V", "S", "D"];
-const DAY_NAMES = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"];
+const SUPPORT_NOTES = {
+  "ios-install": "iosInstall",
+  unsupported: "unsupported",
+  "no-key": "noKey",
+} as const satisfies Record<Exclude<Support, "ready">, keyof Messages["routines"]>;
 
 // The server knows the routines (503 when Redis or the push keys are missing)
 const probe = (url: string) => fetch(url).then((response) => response.ok);
 
 // Once per page load: the server copy is put right with the list of the
-// browser (a renewed subscription, a lost entry)
+// browser (a renewed subscription, a lost entry, another language: the
+// switch reloads the page)
 let synced = false;
 
 async function sync(routines: ReadonlyArray<Routine>): Promise<void> {
@@ -73,6 +73,7 @@ function RoutineForm({
   routines: ReadonlyArray<Routine>;
   onClose: () => void;
 }) {
+  const { locale, m } = useI18n();
   const [days, setDays] = useState<ReadonlyArray<number>>(WORKDAYS);
   const [arriveBy, setArriveBy] = useState(() => defaultArriveBy(connection));
   const [walk, setWalk] = useState(() => String(defaultWalkMinutes(connection)));
@@ -99,11 +100,7 @@ function RoutineForm({
       // Asked first, while handling the tap: browsers refuse it later
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setError(
-          permission === "denied"
-            ? "Notifiche bloccate: consentile dalle impostazioni del browser (vedi la pagina Timer)."
-            : "Senza il permesso per le notifiche non possiamo avvisarti."
-        );
+        setError(permission === "denied" ? m.routines.denied : m.routines.noPermission);
         return;
       }
       const subscription = await pushSubscription(true);
@@ -117,13 +114,14 @@ function RoutineForm({
         walkMinutes,
         durationMinutes: durationMinutes(connection),
         paused: false,
+        lang: locale,
       };
-      const next = [...routines, routine];
+      const next = inLanguage([...routines, routine], locale);
       await saveRoutines(subscription, next);
       routinesStore.set(next);
       onClose();
     } catch {
-      setError("Salvataggio non riuscito, riprova tra poco.");
+      setError(m.routines.saveFailed);
     } finally {
       setBusy(false);
     }
@@ -140,9 +138,11 @@ function RoutineForm({
         {from.name} → {to.name}
       </p>
       <fieldset>
-        <legend className="pb-1.5 text-xs font-medium text-muted-foreground">Giorni</legend>
+        <legend className="pb-1.5 text-xs font-medium text-muted-foreground">
+          {m.routines.days}
+        </legend>
         <div className="flex gap-1.5">
-          {DAY_LETTERS.map((letter, index) => {
+          {m.routines.dayLetters.map((letter, index) => {
             const day = index + 1;
             const on = days.includes(day);
             return (
@@ -150,7 +150,7 @@ function RoutineForm({
                 key={day}
                 type="button"
                 aria-pressed={on}
-                aria-label={DAY_NAMES[index]}
+                aria-label={m.routines.dayNames[index]}
                 onClick={() => toggle(day)}
                 className={cn(
                   "grid size-9 place-items-center rounded-full border text-sm font-semibold transition-colors",
@@ -166,7 +166,9 @@ function RoutineForm({
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1.5">
-          <span className="block text-xs font-medium text-muted-foreground">Arrivo entro</span>
+          <span className="block text-xs font-medium text-muted-foreground">
+            {m.routines.arriveBy}
+          </span>
           <input
             type="time"
             required
@@ -177,7 +179,7 @@ function RoutineForm({
         </label>
         <label className="space-y-1.5">
           <span className="block truncate text-xs font-medium text-muted-foreground">
-            Minuti a piedi da casa
+            {m.routines.walkFromHome}
           </span>
           <input
             type="number"
@@ -191,24 +193,21 @@ function RoutineForm({
           />
         </label>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Partenza da {from.name}. Ti avvisiamo circa 20 min prima di uscire, se il bus cambia orario
-        e quando è ora di uscire, anche con l&apos;app chiusa.
-      </p>
+      <p className="text-xs text-muted-foreground">{m.routines.formNote(from.name)}</p>
       {error && <p className="text-xs font-medium text-destructive">{error}</p>}
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={onClose}
           className="h-10 rounded-xl px-3 text-sm font-semibold text-muted-foreground hover:bg-muted">
-          Annulla
+          {m.routines.cancel}
         </button>
         <button
           type="submit"
           disabled={!valid || busy}
           className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">
           <BellPlus className="size-4" />
-          {busy ? "Salvataggio…" : "Avvisami"}
+          {busy ? m.routines.saving : m.routines.notify}
         </button>
       </div>
     </form>
@@ -229,6 +228,7 @@ export function Routines({
   connection?: Connection;
   onPick: (routine: Routine) => void;
 }) {
+  const { locale, m } = useI18n();
   const routines = routinesStore.useValue() ?? [];
   const support = useSyncExternalStore(noop, pushSupport, () => null);
   const { data: available } = useSWR("/api/routines", probe, {
@@ -243,18 +243,19 @@ export function Routines({
     const stored = routinesStore.get();
     if (stored.length === 0) return;
     synced = true;
-    sync(stored).catch(() => {
+    const current = inLanguage(stored, locale);
+    if (current !== stored) routinesStore.set(current);
+    sync(current).catch(() => {
       synced = false;
     });
-  }, [available, support]);
+  }, [available, support, locale]);
 
-  const change = (next: ReadonlyArray<Routine>) => {
+  const change = (changed: ReadonlyArray<Routine>) => {
+    const next = inLanguage(changed, locale);
     routinesStore.set(next);
     setError(undefined);
     if (support !== "ready") return;
-    sync(next).catch(() =>
-      setError("Modifica non inviata al server: riproviamo alla prossima apertura.")
-    );
+    sync(next).catch(() => setError(m.routines.syncFailed));
   };
 
   const chosen = from !== undefined && to !== undefined && from.id !== to.id;
@@ -264,7 +265,7 @@ export function Routines({
     <section className="space-y-2">
       <h2 className="flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <CalendarClock className="size-3.5" />
-        Tragitti abituali
+        {m.routines.title}
       </h2>
       {routines.length > 0 && (
         <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -281,14 +282,17 @@ export function Routines({
                   {routine.from.name} → {routine.to.name}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {routine.paused ? "In pausa · " : ""}
-                  {formatDays(routine.days)} · arrivo entro {routine.arriveBy} ·{" "}
-                  {routine.walkMinutes} min a piedi
+                  {routine.paused ? `${m.routines.paused} · ` : ""}
+                  {m.routines.summary(
+                    formatDays(m, routine.days),
+                    routine.arriveBy,
+                    routine.walkMinutes
+                  )}
                 </span>
               </button>
               <button
                 type="button"
-                aria-label={routine.paused ? "Riprendi gli avvisi" : "Metti in pausa gli avvisi"}
+                aria-label={routine.paused ? m.routines.resume : m.routines.pause}
                 onClick={() =>
                   change(
                     routines.map((r) => (r.id === routine.id ? { ...r, paused: !r.paused } : r))
@@ -299,7 +303,7 @@ export function Routines({
               </button>
               <button
                 type="button"
-                aria-label="Elimina il tragitto abituale"
+                aria-label={m.routines.remove}
                 onClick={() => change(routines.filter((r) => r.id !== routine.id))}
                 className="grid size-11 shrink-0 place-items-center text-muted-foreground transition-colors hover:bg-muted hover:text-destructive">
                 <Trash2 className="size-4" />
@@ -311,7 +315,9 @@ export function Routines({
       {error && <p className="px-1 text-xs text-destructive">{error}</p>}
       {chosen && available === true && support !== null && routines.length < MAX_ROUTINES && (
         support !== "ready" ? (
-          <p className="px-1 text-xs text-muted-foreground">{SUPPORT_NOTES[support]}</p>
+          <p className="px-1 text-xs text-muted-foreground">
+            {m.routines[SUPPORT_NOTES[support]]}
+          </p>
         ) : open ? (
           <RoutineForm
             from={from}
@@ -326,7 +332,7 @@ export function Routines({
             onClick={() => setOpen(true)}
             className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted">
             <BellPlus className="size-4" />
-            Salva come tragitto abituale
+            {m.routines.save}
           </button>
         )
       )}

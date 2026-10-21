@@ -2,8 +2,10 @@
 // watch at a given time (in Lugano, whatever the time zone of the server),
 // which connection to take, when to leave and what to send. The tick runs
 // every minute and may overlap with itself: every decision depends only on
-// what was already sent, stored per routine and day.
+// what was already sent, stored per routine and day. The texts are in the
+// language of each routine, from the messages of the app.
 
+import { type Messages, messages } from "~/i18n/messages";
 import type { Connection } from "~/journey/models";
 import { delayMs, expected, feasible, transfer } from "~/timer/journey";
 import type { PushMessage, Routine } from "./models";
@@ -28,8 +30,6 @@ const LEAVE_GRACE_MS = MIN;
 export const UPDATE_MS = 2 * MIN;
 // Against a forecast going back and forth
 const MAX_UPDATES = 5;
-
-export const WEEKDAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"] as const;
 
 const localDate = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
@@ -211,68 +211,50 @@ const shortClock = new Intl.DateTimeFormat("it-CH", {
   timeZone: "Europe/Zurich",
 });
 
-// "7:31" in Lugano
+// "7:31" in Lugano, the same in every language
 export function shortTime(ms: number): string {
   return shortClock.format(ms);
 }
 
-// Letters read with a vowel first ("esse", "erre", "i"…) take "l'"
-const VOWEL_LETTERS = new Set("AEFHILMNORSUX");
-
-// "il 6", "l'8", "l'S10", "il TILO": the line with its article
-export function theLine(line: string): string {
-  const digits = /^\d+/.exec(line)?.[0];
-  const vowel =
-    digits !== undefined
-      ? digits === "1" || digits === "11" || /^8\d?$/.test(digits)
-      : VOWEL_LETTERS.has(line.charAt(0).toUpperCase());
-  return vowel ? `l'${line}` : `il ${line}`;
-}
-
-const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-
 const delayMinutesOf = (plan: RoutinePlan) =>
   Math.round(delayMs(plan.connection.legs[0].departure) / MIN);
 
-// "il 6 delle 7:37": the bus as written in the timetable
-function busOf(plan: RoutinePlan): string {
-  const first = plan.connection.legs[0];
-  return `${theLine(first.line)} delle ${shortTime(first.departure.scheduled)}`;
+function arrival(m: Messages, plan: RoutinePlan, routine: Routine): string {
+  const at = shortTime(plan.arrivalAt);
+  return plan.late
+    ? m.routineAlerts.arrivalLate(at, routine.arriveBy.replace(/^0/, ""))
+    : m.routineAlerts.arrival(at);
 }
 
-function arrival(plan: RoutinePlan, routine: Routine): string {
-  const at = `arrivo alle ${shortTime(plan.arrivalAt)}`;
-  return plan.late ? `${at}, dopo le ${routine.arriveBy.replace(/^0/, "")}` : at;
-}
-
-function details(plan: RoutinePlan, routine: Routine, withBus: boolean): string {
+function details(m: Messages, plan: RoutinePlan, routine: Routine, withBus: boolean): string {
   const first = plan.connection.legs[0];
   const delay = delayMinutesOf(plan);
   const transfers = plan.connection.legs.length - 1;
   return [
-    withBus ? `${capitalize(busOf(plan))} da ${first.from.name}` : `Da ${first.from.name}`,
-    ...(delay > 0 ? [`${delay} min di ritardo`] : []),
-    ...(transfers > 0 ? [transfers === 1 ? "1 cambio" : `${transfers} cambi`] : []),
-    arrival(plan, routine),
+    withBus
+      ? m.routineAlerts.busFrom(first.line, shortTime(first.departure.scheduled), first.from.name)
+      : m.routineAlerts.from(first.from.name),
+    ...(delay > 0 ? [m.routineAlerts.delay(delay)] : []),
+    ...(transfers > 0 ? [m.journey.transfers(transfers)] : []),
+    arrival(m, plan, routine),
   ].join(" · ");
 }
 
 // Why the connection of the last message is no longer the one to take
 function changeReason(
+  m: Messages,
   previous: string | undefined,
   connections: ReadonlyArray<Connection>,
   arriveAt: number
 ): string {
   const old = connections.find((connection) => connectionKey(connection) === previous);
-  if (old === undefined) return "Cambio di bus";
+  if (old === undefined) return m.routineAlerts.newConnection;
   const lost = old.legs.findIndex(
     (leg, index) => index > 0 && transfer(old.legs[index - 1], leg).status === "missed"
   );
-  if (lost > 0) return `Coincidenza persa a ${old.legs[lost - 1].to.name}`;
-  if (connectionArrival(old) > arriveAt) {
-    return `${capitalize(theLine(old.legs[0].line))} non arriva in tempo`;
-  }
-  return "Puoi uscire più tardi";
+  if (lost > 0) return m.routineAlerts.missedAt(old.legs[lost - 1].to.name);
+  if (connectionArrival(old) > arriveAt) return m.routineAlerts.notInTime(old.legs[0].line);
+  return m.routineAlerts.leaveLater;
 }
 
 export interface Decision {
@@ -296,6 +278,7 @@ export function decide(
   now: number
 ): Decision {
   if (state?.stage === "now") return { state };
+  const m = messages[routine.lang];
   const plan = choosePlan(connections, routine, arriveAt, now);
   if (plan === undefined) return { state: { ...state, checkedAt: now } };
 
@@ -311,44 +294,59 @@ export function decide(
     expiresAt: plan.leaveAt + 5 * MIN,
   });
   const leave = shortTime(plan.leaveAt);
+  const first = plan.connection.legs[0];
 
   if (now >= plan.leaveAt - NOW_LEAD_MS) {
-    return send("now", "Esci ora", details(plan, routine, true));
+    return send("now", m.routineAlerts.leaveNow, details(m, plan, routine, true));
   }
   if (state?.stage === undefined) {
     if (now < plan.leaveAt - FIRST_LEAD_MS) return { state: seen };
-    return send("first", `Esci alle ${leave} per ${busOf(plan)}`, details(plan, routine, false));
+    return send(
+      "first",
+      m.routineAlerts.leaveAt(leave, first.line, shortTime(first.departure.scheduled)),
+      details(m, plan, routine, false)
+    );
   }
 
   // The first notice was sent: only changes are worth another one
   const updates = (state.updates ?? 0) + 1;
   if (updates > MAX_UPDATES) return { state: { ...state, checkedAt: now } };
   if (plan.key !== state.key) {
-    const reason = changeReason(state.key, connections, arriveAt);
-    return send("first", `${reason}: esci alle ${leave}`, details(plan, routine, true), updates);
+    const reason = changeReason(m, state.key, connections, arriveAt);
+    return send(
+      "first",
+      m.routineAlerts.because(reason, leave),
+      details(m, plan, routine, true),
+      updates
+    );
   }
   if (state.leaveAt !== undefined && Math.abs(plan.leaveAt - state.leaveAt) >= UPDATE_MS) {
-    const line = capitalize(theLine(plan.connection.legs[0].line));
     const delay = delayMinutesOf(plan);
     const reason =
       delay > 0
-        ? `${line} ha ${delay} min di ritardo`
+        ? m.routineAlerts.late(first.line, delay)
         : delay < 0
-          ? `${line} è in anticipo`
-          : `${line} è di nuovo in orario`;
-    return send("first", `${reason}: esci alle ${leave}`, details(plan, routine, false), updates);
+          ? m.routineAlerts.early(first.line)
+          : m.routineAlerts.onTimeAgain(first.line);
+    return send(
+      "first",
+      m.routineAlerts.because(reason, leave),
+      details(m, plan, routine, false),
+      updates
+    );
   }
   // Small changes: keep the times of the last message to compare with
   return { state: { ...state, checkedAt: now } };
 }
 
-// "lun-ven", "sab, dom", "tutti i giorni"
-export function formatDays(days: ReadonlyArray<number>): string {
+// "lun-ven", "sab, dom", "tutti i giorni"; "Mo-Fr", "Mon-Fri"…
+export function formatDays(m: Messages, days: ReadonlyArray<number>): string {
+  const { weekdays, everyDay } = m.routines;
   const sorted = [...new Set(days)].filter((day) => day >= 1 && day <= 7).sort((a, b) => a - b);
-  if (sorted.length === 7) return "tutti i giorni";
+  if (sorted.length === 7) return everyDay;
   const consecutive = sorted.every((day, index) => index === 0 || day === sorted[index - 1] + 1);
   if (sorted.length >= 3 && consecutive) {
-    return `${WEEKDAYS[sorted[0] - 1]}-${WEEKDAYS[sorted[sorted.length - 1] - 1]}`;
+    return `${weekdays[sorted[0] - 1]}-${weekdays[sorted[sorted.length - 1] - 1]}`;
   }
-  return sorted.map((day) => WEEKDAYS[day - 1]).join(", ");
+  return sorted.map((day) => weekdays[day - 1]).join(", ");
 }

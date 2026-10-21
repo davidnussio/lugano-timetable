@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { Locale } from "~/i18n/config";
+import { messages as dictionaries } from "~/i18n/messages";
 import type { Connection, PlannedLeg, Station } from "~/journey/models";
 import type { Routine } from "../models";
 import {
@@ -12,7 +14,6 @@ import {
   type RoutineState,
   shortTime,
   shouldQuery,
-  theLine,
   weekday,
   windowStart,
   zurichDate,
@@ -67,6 +68,7 @@ const routine: Routine = {
   walkMinutes: 6,
   durationMinutes: 15,
   paused: false,
+  lang: "it",
 };
 
 const eight = { date: DAY, arriveAt: at("08:00") };
@@ -246,12 +248,12 @@ describe("shouldQuery", () => {
 // Runs `decide` minute after minute with the connections of each time
 function run(
   steps: ReadonlyArray<readonly [string, ReadonlyArray<Connection>]>,
-  state?: RoutineState
+  lang: Locale = "it"
 ): ReadonlyArray<Decision & { readonly time: string }> {
   const decisions: Array<Decision & { readonly time: string }> = [];
-  let current = state;
+  let current: RoutineState | undefined;
   for (const [time, connections] of steps) {
-    const decision = decide(routine, eight, current, connections, at(time));
+    const decision = decide({ ...routine, lang }, eight, current, connections, at(time));
     decisions.push({ ...decision, time });
     current = decision.state;
   }
@@ -414,8 +416,143 @@ describe("decide", () => {
   });
 });
 
-describe("theLine", () => {
-  it("puts the right article", () => {
+// The same journeys as above, in each language
+describe("decide in every language", () => {
+  const texts = (decisions: ReturnType<typeof run>) =>
+    messages(decisions).map(({ title, body }) => ({ title, body }));
+  const s10 = { ...leg("S10", lugano, bellinzona, "07:49", "07:58"), walkBeforeMs: MIN };
+  const viaLugano = (delay: number): Connection => ({
+    legs: [leg("3", albonago, lugano, "07:40", "07:47", delay), s10],
+  });
+  const stages = (lang: Locale) => ({
+    first: texts(run([["07:11", [direct("07:37", "07:52")]]], lang)),
+    delay: texts(
+      run(
+        [
+          ["07:11", [direct("07:37", "07:52")]],
+          ["07:16", [direct("07:37", "07:52", 4)]],
+        ],
+        lang
+      )
+    )[1],
+    lost: texts(
+      run(
+        [
+          ["07:14", [direct("07:22", "07:37"), viaLugano(0)]],
+          ["07:15", [direct("07:22", "07:37"), viaLugano(3)]],
+        ],
+        lang
+      )
+    ),
+    late: texts(run([["07:30", [direct("07:52", "08:07")]]], lang))[0],
+    now: texts(run([["07:31", [direct("07:37", "07:52")]]], lang))[0],
+  });
+
+  it("keeps the Italian texts", () => {
+    expect(stages("it")).toEqual({
+      first: [{ title: "Esci alle 7:31 per il 6 delle 7:37", body: "Da Albonago · arrivo alle 7:52" }],
+      delay: {
+        title: "Il 6 ha 4 min di ritardo: esci alle 7:35",
+        body: "Da Albonago · 4 min di ritardo · arrivo alle 7:56",
+      },
+      lost: [
+        { title: "Esci alle 7:34 per il 3 delle 7:40", body: "Da Albonago · 1 cambio · arrivo alle 7:58" },
+        {
+          title: "Coincidenza persa a Lugano: esci alle 7:16",
+          body: "Il 6 delle 7:22 da Albonago · arrivo alle 7:37",
+        },
+      ],
+      late: {
+        title: "Esci alle 7:46 per il 6 delle 7:52",
+        body: "Da Albonago · arrivo alle 8:07, dopo le 8:00",
+      },
+      now: { title: "Esci ora", body: "Il 6 delle 7:37 da Albonago · arrivo alle 7:52" },
+    });
+  });
+
+  it("writes German", () => {
+    expect(stages("de")).toEqual({
+      first: [{ title: "Um 7:31 losgehen: Linie 6 um 7:37", body: "Ab Albonago · Ankunft um 7:52" }],
+      delay: {
+        title: "Linie 6 hat 4 min Verspätung: um 7:35 losgehen",
+        body: "Ab Albonago · 4 min Verspätung · Ankunft um 7:56",
+      },
+      lost: [
+        { title: "Um 7:34 losgehen: Linie 3 um 7:40", body: "Ab Albonago · 1 Umstieg · Ankunft um 7:58" },
+        {
+          title: "Anschluss in Lugano verpasst: um 7:16 losgehen",
+          body: "Linie 6 um 7:22 ab Albonago · Ankunft um 7:37",
+        },
+      ],
+      late: {
+        title: "Um 7:46 losgehen: Linie 6 um 7:52",
+        body: "Ab Albonago · Ankunft um 8:07, nach 8:00",
+      },
+      now: { title: "Jetzt losgehen", body: "Linie 6 um 7:37 ab Albonago · Ankunft um 7:52" },
+    });
+  });
+
+  it("writes English", () => {
+    expect(stages("en")).toEqual({
+      first: [{ title: "Leave at 7:31 for the 6 at 7:37", body: "From Albonago · arrives at 7:52" }],
+      delay: {
+        title: "The 6 is 4 min late: leave at 7:35",
+        body: "From Albonago · 4 min late · arrives at 7:56",
+      },
+      lost: [
+        { title: "Leave at 7:34 for the 3 at 7:40", body: "From Albonago · 1 change · arrives at 7:58" },
+        {
+          title: "Missed connection at Lugano: leave at 7:16",
+          body: "The 6 at 7:22 from Albonago · arrives at 7:37",
+        },
+      ],
+      late: {
+        title: "Leave at 7:46 for the 6 at 7:52",
+        body: "From Albonago · arrives at 8:07, after 8:00",
+      },
+      now: { title: "Leave now", body: "The 6 at 7:37 from Albonago · arrives at 7:52" },
+    });
+  });
+
+  it("explains the other changes in each language", () => {
+    const changes = (lang: Locale) =>
+      messages(
+        run(
+          [
+            ["07:12", [direct("07:22", "07:37"), direct("07:37", "07:52")]],
+            ["07:13", [direct("07:22", "07:37"), direct("07:37", "07:52", 9)]],
+            ["07:14", [direct("07:22", "07:37", 3)]],
+            ["07:15", [direct("07:22", "07:37")]],
+          ],
+          lang
+        )
+      ).map(({ title }) => title);
+    expect(changes("it")).toEqual([
+      "Esci alle 7:31 per il 6 delle 7:37",
+      "Il 6 non arriva in tempo: esci alle 7:16",
+      "Il 6 ha 3 min di ritardo: esci alle 7:19",
+      "Il 6 è di nuovo in orario: esci alle 7:16",
+    ]);
+    expect(changes("de")).toEqual([
+      "Um 7:31 losgehen: Linie 6 um 7:37",
+      "Linie 6 kommt zu spät an: um 7:16 losgehen",
+      "Linie 6 hat 3 min Verspätung: um 7:19 losgehen",
+      "Linie 6 ist wieder pünktlich: um 7:16 losgehen",
+    ]);
+    expect(changes("en")).toEqual([
+      "Leave at 7:31 for the 6 at 7:37",
+      "The 6 won't arrive in time: leave at 7:16",
+      "The 6 is 3 min late: leave at 7:19",
+      "The 6 is back on time: leave at 7:16",
+    ]);
+  });
+});
+
+describe("line names", () => {
+  const { it: italian, de, en } = dictionaries;
+
+  it("puts the right Italian article", () => {
+    const theLine = italian.routineAlerts.line;
     expect(theLine("6")).toBe("il 6");
     expect(theLine("461")).toBe("il 461");
     expect(theLine("1")).toBe("l'1");
@@ -427,13 +564,35 @@ describe("theLine", () => {
     expect(theLine("IC")).toBe("l'IC");
     expect(theLine("TILO")).toBe("il TILO");
   });
+
+  it("names the buses by their line and the trains by their name in German", () => {
+    expect(de.routineAlerts.line("6")).toBe("Linie 6");
+    expect(de.routineAlerts.line("S10")).toBe("S10");
+    expect(de.routineAlerts.late("S10", 2)).toBe("S10 hat 2 min Verspätung");
+  });
+
+  it("says the 6 and the S10 in English", () => {
+    expect(en.routineAlerts.line("6")).toBe("the 6");
+    expect(en.routineAlerts.notInTime("S10")).toBe("The S10 won't arrive in time");
+  });
 });
 
 describe("formatDays", () => {
+  const { it: italian, de, en } = dictionaries;
+
   it("shortens the days", () => {
-    expect(formatDays([1, 2, 3, 4, 5])).toBe("lun-ven");
-    expect(formatDays([1, 2, 3, 4, 5, 6, 7])).toBe("tutti i giorni");
-    expect(formatDays([7, 6])).toBe("sab, dom");
-    expect(formatDays([1, 3, 5])).toBe("lun, mer, ven");
+    expect(formatDays(italian, [1, 2, 3, 4, 5])).toBe("lun-ven");
+    expect(formatDays(italian, [1, 2, 3, 4, 5, 6, 7])).toBe("tutti i giorni");
+    expect(formatDays(italian, [7, 6])).toBe("sab, dom");
+    expect(formatDays(italian, [1, 3, 5])).toBe("lun, mer, ven");
+  });
+
+  it("shortens the days in German and English", () => {
+    expect(formatDays(de, [1, 2, 3, 4, 5])).toBe("Mo-Fr");
+    expect(formatDays(de, [7, 6])).toBe("Sa, So");
+    expect(formatDays(de, [1, 2, 3, 4, 5, 6, 7])).toBe("täglich");
+    expect(formatDays(en, [1, 2, 3, 4, 5])).toBe("Mon-Fri");
+    expect(formatDays(en, [1, 3, 5])).toBe("Mon, Wed, Fri");
+    expect(formatDays(en, [1, 2, 3, 4, 5, 6, 7])).toBe("every day");
   });
 });

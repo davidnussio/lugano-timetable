@@ -1,4 +1,5 @@
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
+import { defaultLocale, locales } from "~/i18n/config";
 import { StationId } from "~/journey/schema";
 import { MAX_ROUTINES } from "./models";
 
@@ -26,6 +27,8 @@ export const Routine = Schema.Struct({
   walkMinutes: Minutes(60),
   durationMinutes: Minutes(240),
   paused: Schema.Boolean,
+  // Saved before the app spoke other languages: Italian, as they were sent
+  lang: Schema.Literals(locales).pipe(Schema.withDecodingDefaultKey(Effect.succeed(defaultLocale))),
 });
 
 // `PushSubscription.toJSON()` of the browser

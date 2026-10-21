@@ -6,11 +6,12 @@ import {
   defaultArriveBy,
   defaultWalkMinutes,
   durationMinutes,
+  inLanguage,
   isRoutineList,
   newRoutineId,
 } from "../routine-store";
 import { zurichTime } from "../schedule";
-import { Routine } from "../schema";
+import { Routine, Subscriber } from "../schema";
 
 const MIN = 60_000;
 const at = (time: string) => zurichTime("2026-10-16", time);
@@ -71,6 +72,7 @@ describe("routines", () => {
     walkMinutes: 6,
     durationMinutes: 20,
     paused: false,
+    lang: "de" as const,
   };
 
   it("makes ids the server accepts", () => {
@@ -82,6 +84,33 @@ describe("routines", () => {
     expect(isRoutineList([routine])).toBe(true);
     expect(isRoutineList([{ ...routine, days: undefined }])).toBe(false);
     expect(isRoutineList({ routines: [] })).toBe(false);
+    expect(isRoutineList([{ ...routine, lang: "fr" }])).toBe(false);
+  });
+
+  it("keeps the routines saved before the languages, until the next sync", () => {
+    const { lang: _, ...before } = routine;
+    expect(isRoutineList([before])).toBe(true);
+    expect(inLanguage([before as typeof routine], "en")).toEqual([{ ...routine, lang: "en" }]);
+  });
+
+  it("puts the language of the app on every routine", () => {
+    const list = [routine, { ...routine, lang: "it" as const }];
+    expect(inLanguage(list, "de").map((r) => r.lang)).toEqual(["de", "de"]);
+    // Unchanged: the same list, not stored again
+    const german = inLanguage(list, "de");
+    expect(inLanguage(german, "de")).toBe(german);
+  });
+
+  it("reads the routines stored without a language as Italian", () => {
+    const { lang: _, ...before } = routine;
+    expect(Schema.decodeUnknownSync(Routine)(before).lang).toBe("it");
+    expect(Schema.decodeUnknownSync(Routine)(routine).lang).toBe("de");
+    const stored = {
+      key: "abc",
+      subscription: { endpoint: "https://push.example.com/1", keys: { p256dh: "p", auth: "a" } },
+      routines: [before],
+    };
+    expect(Schema.decodeUnknownSync(Subscriber)(stored).routines[0].lang).toBe("it");
   });
 
   it("refuses wrong times and days", () => {

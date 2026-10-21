@@ -67,6 +67,21 @@ describe("plurals", () => {
   });
 });
 
+describe("usual journeys", () => {
+  it("names the seven days, Monday first, in each language", () => {
+    for (const m of [italian, de, en]) {
+      const { dayLetters, dayNames, weekdays } = m.routines;
+      expect([dayLetters.length, dayNames.length, weekdays.length]).toEqual([7, 7, 7]);
+    }
+    expect([italian, de, en].map((m) => m.routines.weekdays[0])).toEqual(["lun", "Mo", "Mon"]);
+  });
+
+  it("tells the journey saved in each language", () => {
+    expect(de.routines.summary("Mo-Fr", "07:55", 6)).toBe("Mo-Fr · Ankunft bis 07:55 · 6 min zu Fuss");
+    expect(en.routines.summary("Mon-Fri", "07:55", 6)).toBe("Mon-Fri · arrive by 07:55 · 6 min walk");
+  });
+});
+
 describe("reliability", () => {
   it("sums up the past days in each language", () => {
     const stats = { samples: 14, median: 95, p80: 170, lateShare: 0.2 };

@@ -37,6 +37,7 @@ const routine: Routine = {
   walkMinutes: 6,
   durationMinutes: 15,
   paused: false,
+  lang: "it",
 };
 
 const endpoint = "https://push.example.com/send/123";
@@ -139,6 +140,33 @@ describe("tick", () => {
       yield* TestClock.setTime(at("07:40"));
       yield* tick;
       assert.strictEqual(queries.length, 2);
+    }).pipe(Effect.provide(services(queries, sent)));
+  });
+
+  it.effect("writes each routine in its own language", () => {
+    const queries: Array<Query> = [];
+    const sent: Array<Sent> = [];
+    return Effect.gen(function* () {
+      const store = yield* saved;
+      yield* store.save({
+        ...subscriber,
+        routines: [
+          routine,
+          { ...routine, id: "deutsch0123456789", lang: "de" },
+          { ...routine, id: "english0123456789", lang: "en" },
+        ],
+      });
+      yield* TestClock.setTime(at("07:11"));
+      yield* tick;
+      // Checked side by side: in any order
+      assert.sameMembers(
+        sent.map(({ message }) => message.title),
+        [
+          "Esci alle 7:31 per il 6 delle 7:37",
+          "Um 7:31 losgehen: Linie 6 um 7:37",
+          "Leave at 7:31 for the 6 at 7:37",
+        ]
+      );
     }).pipe(Effect.provide(services(queries, sent)));
   });
 

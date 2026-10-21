@@ -1,5 +1,6 @@
 "use client";
 
+import { isLocale, type Locale } from "~/i18n/config";
 import type { Connection } from "~/journey/models";
 import { createLocalStore } from "~/lib/local-store";
 import { expected } from "~/timer/journey";
@@ -20,7 +21,9 @@ const isRoutine = (value: unknown): value is Routine => {
     typeof routine.arriveBy === "string" &&
     typeof routine.walkMinutes === "number" &&
     typeof routine.durationMinutes === "number" &&
-    typeof routine.paused === "boolean"
+    typeof routine.paused === "boolean" &&
+    // Saved before the app spoke other languages: set at the next sync
+    (routine.lang === undefined || isLocale(routine.lang))
   );
 };
 
@@ -100,6 +103,17 @@ export async function pushSubscription(create: boolean): Promise<PushSubscriptio
   if (!create) return null;
   await existing?.unsubscribe();
   return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+}
+
+// The notifications follow the language of the app: the one of the page,
+// put on every routine whenever the list is sent
+export function inLanguage(
+  routines: ReadonlyArray<Routine>,
+  locale: Locale
+): ReadonlyArray<Routine> {
+  return routines.every((routine) => routine.lang === locale)
+    ? routines
+    : routines.map((routine) => ({ ...routine, lang: locale }));
 }
 
 // Sends the whole list to the server, which replaces its copy

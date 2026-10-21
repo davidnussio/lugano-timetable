@@ -2,6 +2,8 @@
 // by a given time, with push notifications telling when to leave home.
 // Without Effect, shared by the browser and the server.
 
+import type { Locale } from "~/i18n/config";
+
 export interface RoutineStation {
   // National stop code, as for the journey planner
   readonly id: string;
@@ -25,6 +27,9 @@ export interface Routine {
   // How long the journey took when saved: when to start looking for it
   readonly durationMinutes: number;
   readonly paused: boolean;
+  // The language of the notifications, composed by the server: the one of
+  // the app, sent again with the list on every change and when it opens
+  readonly lang: Locale;
 }
 
 // What the service worker shows: `tag` replaces the previous notification

@@ -24,11 +24,15 @@ This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-opti
 
 ## Usual journeys (push notifications)
 
-In the journey planner a journey can be saved as a "tragitto abituale": on
-the chosen days the app sends a push notification about 20 minutes before
-it is time to leave home, an update when a delay moves the leave time by 2
-minutes or more (or a transfer is lost), and "Esci ora" at the leave time,
-also with the app closed. The feature stays hidden until it is configured.
+In the journey planner a journey can be saved as a usual journey
+("tragitto abituale"): on the chosen days the app sends a push notification
+about 20 minutes before it is time to leave home, an update when a delay
+moves the leave time by 2 minutes or more (or a transfer is lost), and
+"Esci ora" at the leave time, also with the app closed. The server writes
+them in the language of the app (`routineAlerts` in `src/i18n/messages`),
+sent with the journeys whenever the journey page syncs them; journeys saved
+before without a language get Italian. The feature stays hidden until it is
+configured.
 
 1. Redis: the same Upstash database as the RTPI sessions
    (`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or the
