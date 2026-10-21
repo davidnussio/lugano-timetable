@@ -1,7 +1,8 @@
 // Service worker used to show the timer notifications (mobile browsers only
-// allow notifications from a service worker). It also keeps the static files
-// of the app: their names change with their content, so a cached copy is
-// never stale and a launch from the home screen does not wait for them.
+// allow notifications from a service worker) and the push messages of the
+// usual journeys, which arrive with the app closed. It also keeps the static
+// files of the app: their names change with their content, so a cached copy
+// is never stale and a launch from the home screen does not wait for them.
 
 const STATIC_CACHE = "static-v1";
 // Files of past deploys pile up: keep the most recent ones
@@ -38,6 +39,28 @@ async function cacheFirst(request) {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (isStatic(new URL(event.request.url))) event.respondWith(cacheFirst(event.request));
+});
+
+// A message of the server: { title, body, tag, url }. The tag of the routine
+// replaces its previous notification instead of piling them up.
+self.addEventListener("push", (event) => {
+  let message = {};
+  try {
+    message = event.data?.json() ?? {};
+  } catch {
+    message = { body: event.data?.text() };
+  }
+  event.waitUntil(
+    self.registration.showNotification(message.title ?? "Lugano Bus", {
+      body: message.body ?? "",
+      tag: message.tag ?? "routine",
+      renotify: true,
+      vibrate: [250, 120, 250],
+      icon: "/icon",
+      badge: "/icon",
+      data: { url: message.url ?? "/tragitto" },
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

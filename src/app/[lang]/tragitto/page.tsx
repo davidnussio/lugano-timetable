@@ -26,6 +26,7 @@ import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
 import { ConnectionCard, sameStart } from "./connection-card";
 import { FavoriteJourneys } from "./favorite-journeys";
+import { Routines } from "./routines";
 import {
   type ChosenTime,
   chooseTime,
@@ -427,13 +428,27 @@ export default function JourneyPage() {
             <p className="px-2 text-center text-xs text-muted-foreground">
               {m.journey.source}
             </p>
+            {/* Saved as a usual journey from the first connection shown,
+                not from the bus of the timer */}
+            <div className="pt-3 empty:hidden">
+              <Routines
+                from={onBoard ? undefined : from}
+                to={to}
+                connection={pages.length === 0 ? data?.[0] : undefined}
+                onPick={choose}
+              />
+            </div>
           </section>
         </>
-      ) : favoriteJourneys.length > 0 || search.recent.length > 0 ? (
+      ) : (
         <div className="space-y-4">
           {favoriteJourneys.length > 0 && (
             <FavoriteJourneys journeys={favoriteJourneys} onChoose={choose} />
           )}
+          {/* Nothing without usual journeys */}
+          <div className="px-4 pt-1 empty:hidden">
+            <Routines onPick={choose} />
+          </div>
           {search.recent.length > 0 && (
             <section className="px-4 pt-1">
               <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -456,11 +471,12 @@ export default function JourneyPage() {
               </ul>
             </section>
           )}
+          {favoriteJourneys.length === 0 && search.recent.length === 0 && (
+            <p className="px-8 py-10 text-center text-sm text-muted-foreground">
+              {m.journey.intro}
+            </p>
+          )}
         </div>
-      ) : (
-        <p className="px-8 py-10 text-center text-sm text-muted-foreground">
-          {m.journey.intro}
-        </p>
       )}
     </main>
   );

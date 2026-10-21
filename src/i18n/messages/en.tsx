@@ -7,6 +7,10 @@ const decimal = new Intl.NumberFormat("en-GB", {
   useGrouping: false,
 });
 
+// "the 6", "the S10": the line with its article
+const theLine = (line: string) => `the ${line}`;
+const TheLine = (line: string) => `The ${line}`;
+
 // British English. Glossary: fermata → stop, partenze → departures,
 // tragitto → journey, coincidenza → connection, esci tra → leave in
 export const en: Messages = {
@@ -360,6 +364,56 @@ export const en: Messages = {
     lateBy: (minutes: number) => `${minutes} min late`,
     nextLine: (line: string, time: string, later: number) =>
       `Next line ${line} at ${time}, arrival ${later > 0 ? `+${later} min` : "unchanged"}`,
+  },
+  routines: {
+    title: "Regular journeys",
+    save: "Save as a regular journey",
+    days: "Days",
+    dayLetters: ["M", "T", "W", "T", "F", "S", "S"],
+    dayNames: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    everyDay: "every day",
+    arriveBy: "Arrive by",
+    walkFromHome: "Minutes on foot from home",
+    formNote: (stop: string) =>
+      `Leaving from ${stop}. We'll let you know about 20 min before you need to leave, if the bus times change and when it's time to go, even with the app closed.`,
+    cancel: "Cancel",
+    saving: "Saving…",
+    notify: "Notify me",
+    denied: "Notifications blocked: allow them in the browser settings (see the Timer page).",
+    noPermission: "Without permission for notifications we can't let you know.",
+    saveFailed: "Couldn't save, please try again shortly.",
+    syncFailed: "Change not sent to the server: we'll try again next time you open the app.",
+    paused: "Paused",
+    summary: (days: string, arriveBy: string, walkMinutes: number) =>
+      `${days} · arrive by ${arriveBy} · ${walkMinutes} min walk`,
+    resume: "Resume alerts",
+    pause: "Pause alerts",
+    remove: "Delete the regular journey",
+    iosInstall:
+      "On iPhone, add the app to the Home Screen (Share, Add to Home Screen) to save regular journeys and get alerts.",
+    unsupported: "This browser can't receive push notifications: regular journeys aren't available.",
+    noKey: "Alerts for regular journeys aren't set up on this site.",
+  },
+  routineAlerts: {
+    line: theLine,
+    leaveAt: (leave: string, line: string, time: string) =>
+      `Leave at ${leave} for ${theLine(line)} at ${time}`,
+    leaveNow: "Leave now",
+    because: (reason: string, leave: string) => `${reason}: leave at ${leave}`,
+    newConnection: "New connection",
+    missedAt: (stop: string) => `Missed connection at ${stop}`,
+    notInTime: (line: string) => `${TheLine(line)} won't arrive in time`,
+    leaveLater: "No rush",
+    late: (line: string, minutes: number) => `${TheLine(line)} is ${minutes} min late`,
+    early: (line: string) => `${TheLine(line)} is early`,
+    onTimeAgain: (line: string) => `${TheLine(line)} is back on time`,
+    busFrom: (line: string, time: string, stop: string) =>
+      `${TheLine(line)} at ${time} from ${stop}`,
+    from: (stop: string) => `From ${stop}`,
+    delay: (minutes: number) => `${minutes} min late`,
+    arrival: (time: string) => `arrives at ${time}`,
+    arrivalLate: (time: string, arriveBy: string) => `arrives at ${time}, after ${arriveBy}`,
   },
   headline: {
     busGone: "Bus gone",

@@ -6,6 +6,21 @@ const decimal = new Intl.NumberFormat("it", {
   useGrouping: false,
 });
 
+// Letters read with a vowel first ("esse", "erre", "i"…) take "l'"
+const VOWEL_LETTERS = new Set("AEFHILMNORSUX");
+
+// "il 6", "l'8", "l'S10", "il TILO": the line with its article
+function theLine(line: string): string {
+  const digits = /^\d+/.exec(line)?.[0];
+  const vowel =
+    digits !== undefined
+      ? digits === "1" || digits === "11" || /^8\d?$/.test(digits)
+      : VOWEL_LETTERS.has(line.charAt(0).toUpperCase());
+  return vowel ? `l'${line}` : `il ${line}`;
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 // The Italian texts, and through `Messages` the shape every language follows.
 // Texts with values are functions: each language builds its own sentence.
 export const it = {
@@ -365,6 +380,63 @@ export const it = {
     lateBy: (minutes: number) => `in ritardo di ${minutes} min`,
     nextLine: (line: string, time: string, later: number) =>
       `Prossima linea ${line} alle ${time}, arrivo ${later > 0 ? `+${later} min` : "invariato"}`,
+  },
+  // The usual journeys saved on the device, with push notifications
+  routines: {
+    title: "Tragitti abituali",
+    save: "Salva come tragitto abituale",
+    days: "Giorni",
+    // Monday first, as the ISO weekdays
+    dayLetters: ["L", "M", "M", "G", "V", "S", "D"],
+    dayNames: ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"],
+    weekdays: ["lun", "mar", "mer", "gio", "ven", "sab", "dom"],
+    everyDay: "tutti i giorni",
+    arriveBy: "Arrivo entro",
+    walkFromHome: "Minuti a piedi da casa",
+    formNote: (stop: string) =>
+      `Partenza da ${stop}. Ti avvisiamo circa 20 min prima di uscire, se il bus cambia orario e quando è ora di uscire, anche con l'app chiusa.`,
+    cancel: "Annulla",
+    saving: "Salvataggio…",
+    notify: "Avvisami",
+    denied: "Notifiche bloccate: consentile dalle impostazioni del browser (vedi la pagina Timer).",
+    noPermission: "Senza il permesso per le notifiche non possiamo avvisarti.",
+    saveFailed: "Salvataggio non riuscito, riprova tra poco.",
+    syncFailed: "Modifica non inviata al server: riproviamo alla prossima apertura.",
+    paused: "In pausa",
+    summary: (days: string, arriveBy: string, walkMinutes: number) =>
+      `${days} · arrivo entro ${arriveBy} · ${walkMinutes} min a piedi`,
+    resume: "Riprendi gli avvisi",
+    pause: "Metti in pausa gli avvisi",
+    remove: "Elimina il tragitto abituale",
+    iosInstall:
+      "Su iPhone aggiungi l'app alla schermata Home (Condividi, Aggiungi alla schermata Home) per salvare i tragitti abituali e ricevere gli avvisi.",
+    unsupported: "Questo browser non riceve notifiche push: i tragitti abituali non sono disponibili.",
+    noKey: "Gli avvisi dei tragitti abituali non sono configurati su questo sito.",
+  },
+  // Their notifications, composed by the server in the language of each
+  // journey. The bus as written in the timetable: line and scheduled time.
+  routineAlerts: {
+    line: (line: string) => theLine(line),
+    leaveAt: (leave: string, line: string, time: string) =>
+      `Esci alle ${leave} per ${theLine(line)} delle ${time}`,
+    leaveNow: "Esci ora",
+    // A change of plan and the new time to leave
+    because: (reason: string, leave: string) => `${reason}: esci alle ${leave}`,
+    newConnection: "Cambio di bus",
+    missedAt: (stop: string) => `Coincidenza persa a ${stop}`,
+    notInTime: (line: string) => `${capitalize(theLine(line))} non arriva in tempo`,
+    leaveLater: "Puoi uscire più tardi",
+    late: (line: string, minutes: number) =>
+      `${capitalize(theLine(line))} ha ${minutes} min di ritardo`,
+    early: (line: string) => `${capitalize(theLine(line))} è in anticipo`,
+    onTimeAgain: (line: string) => `${capitalize(theLine(line))} è di nuovo in orario`,
+    // The parts of the body, joined by " · "
+    busFrom: (line: string, time: string, stop: string) =>
+      `${capitalize(theLine(line))} delle ${time} da ${stop}`,
+    from: (stop: string) => `Da ${stop}`,
+    delay: (minutes: number) => `${minutes} min di ritardo`,
+    arrival: (time: string) => `arrivo alle ${time}`,
+    arrivalLate: (time: string, arriveBy: string) => `arrivo alle ${time}, dopo le ${arriveBy}`,
   },
   // The main line of the timer, followed by the countdown
   headline: {

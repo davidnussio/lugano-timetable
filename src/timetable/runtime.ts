@@ -2,13 +2,15 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { type Config, Layer, ManagedRuntime } from "effect";
 import { Opendata } from "~/journey/opendata-client";
+import { RoutineStore } from "~/routines/store";
+import { WebPush } from "~/routines/web-push-client";
 import { Swisstopo } from "~/terrain/swisstopo-client";
 import { OpenMeteo } from "~/weather/open-meteo-client";
 import { Reliability } from "./reliability-store";
 import { Timetable } from "./timetable";
 
 type ServerRuntime = ManagedRuntime.ManagedRuntime<
-  Timetable | Opendata | Swisstopo | OpenMeteo | Reliability,
+  Timetable | Opendata | Swisstopo | OpenMeteo | Reliability | RoutineStore | WebPush,
   Config.ConfigError
 >;
 
@@ -41,7 +43,9 @@ if (globalThis.serverRuntime?.version !== version) {
         Opendata.layer,
         Swisstopo.layer,
         OpenMeteo.layer,
-        Reliability.layer
+        Reliability.layer,
+        RoutineStore.layer,
+        WebPush.layer
       )
     ),
     version,

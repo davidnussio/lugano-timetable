@@ -8,6 +8,10 @@ const decimal = new Intl.NumberFormat("de-CH", {
   useGrouping: false,
 });
 
+// "Linie 6" as in the rest of the app, the trains by their name ("S10",
+// "IC"): without an article, as in the notices of the timetables
+const lineName = (line: string) => (/^\d/.test(line) ? `Linie ${line}` : line);
+
 // Swiss Standard German: "ss", never "ß".
 // Glossary: fermata → Haltestelle, partenze → Abfahrten, tragitto →
 // Verbindung, coincidenza → Anschluss, esci tra → Losgehen in
@@ -369,6 +373,59 @@ export const de: Messages = {
     lateBy: (minutes: number) => `${minutes} min Verspätung`,
     nextLine: (line: string, time: string, later: number) =>
       `Nächste Linie ${line} um ${time}, Ankunft ${later > 0 ? `+${later} min` : "unverändert"}`,
+  },
+  routines: {
+    title: "Regelmässige Verbindungen",
+    save: "Als regelmässige Verbindung speichern",
+    days: "Tage",
+    dayLetters: ["M", "D", "M", "D", "F", "S", "S"],
+    dayNames: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+    weekdays: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    everyDay: "täglich",
+    arriveBy: "Ankunft bis",
+    walkFromHome: "Gehminuten ab Haus",
+    formNote: (stop: string) =>
+      `Abfahrt ab ${stop}. Wir melden uns etwa 20 min, bevor du losgehen musst, wenn sich die Zeit des Busses ändert und wenn es Zeit ist loszugehen, auch bei geschlossener App.`,
+    cancel: "Abbrechen",
+    saving: "Wird gespeichert…",
+    notify: "Benachrichtige mich",
+    denied:
+      "Benachrichtigungen blockiert: Erlaube sie in den Browser-Einstellungen (siehe Seite Timer).",
+    noPermission: "Ohne Erlaubnis für Benachrichtigungen können wir dir nicht Bescheid geben.",
+    saveFailed: "Speichern fehlgeschlagen, versuche es gleich nochmals.",
+    syncFailed:
+      "Änderung nicht an den Server gesendet: Wir versuchen es beim nächsten Öffnen nochmals.",
+    paused: "Pausiert",
+    summary: (days: string, arriveBy: string, walkMinutes: number) =>
+      `${days} · Ankunft bis ${arriveBy} · ${walkMinutes} min zu Fuss`,
+    resume: "Hinweise fortsetzen",
+    pause: "Hinweise pausieren",
+    remove: "Regelmässige Verbindung löschen",
+    iosInstall:
+      "Füge die App auf dem iPhone zum Home-Bildschirm hinzu (Teilen, Zum Home-Bildschirm), um regelmässige Verbindungen zu speichern und Hinweise zu erhalten.",
+    unsupported:
+      "Dieser Browser empfängt keine Push-Mitteilungen: Regelmässige Verbindungen sind nicht verfügbar.",
+    noKey: "Die Hinweise für regelmässige Verbindungen sind auf dieser Website nicht eingerichtet.",
+  },
+  routineAlerts: {
+    line: lineName,
+    leaveAt: (leave: string, line: string, time: string) =>
+      `Um ${leave} losgehen: ${lineName(line)} um ${time}`,
+    leaveNow: "Jetzt losgehen",
+    because: (reason: string, leave: string) => `${reason}: um ${leave} losgehen`,
+    newConnection: "Neue Verbindung",
+    missedAt: (stop: string) => `Anschluss in ${stop} verpasst`,
+    notInTime: (line: string) => `${lineName(line)} kommt zu spät an`,
+    leaveLater: "Mehr Zeit",
+    late: (line: string, minutes: number) => `${lineName(line)} hat ${minutes} min Verspätung`,
+    early: (line: string) => `${lineName(line)} fährt früher ab`,
+    onTimeAgain: (line: string) => `${lineName(line)} ist wieder pünktlich`,
+    busFrom: (line: string, time: string, stop: string) =>
+      `${lineName(line)} um ${time} ab ${stop}`,
+    from: (stop: string) => `Ab ${stop}`,
+    delay: (minutes: number) => `${minutes} min Verspätung`,
+    arrival: (time: string) => `Ankunft um ${time}`,
+    arrivalLate: (time: string, arriveBy: string) => `Ankunft um ${time}, nach ${arriveBy}`,
   },
   headline: {
     busGone: "Bus abgefahren",
