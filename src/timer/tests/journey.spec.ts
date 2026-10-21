@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { messages } from "~/i18n/messages";
 import {
   connectionStatus,
+  currentLeg,
   delayMs,
   expected,
   fallbackPlan,
@@ -418,5 +419,26 @@ describe("journeyHeadline", () => {
       ms: 0,
       phase: "arrival",
     });
+  });
+});
+
+describe("currentLeg", () => {
+  const legs = [leg("2", 10, 20), toParadiso(25, 35)];
+
+  it("is the first leg until it arrives, also before boarding", () => {
+    expect(currentLeg(legs, 5 * MIN)).toBe(0);
+    expect(currentLeg(legs, 15 * MIN)).toBe(0);
+  });
+
+  it("is the next leg once off the bus, while waiting for it", () => {
+    expect(currentLeg(legs, 22 * MIN)).toBe(1);
+  });
+
+  it("follows the delays", () => {
+    expect(currentLeg([leg("2", 10, 20, { arrival: 4 }), toParadiso(25, 35)], 22 * MIN)).toBe(0);
+  });
+
+  it("is none once the journey has arrived", () => {
+    expect(currentLeg(legs, 36 * MIN)).toBeUndefined();
   });
 });

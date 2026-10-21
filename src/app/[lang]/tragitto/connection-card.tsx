@@ -7,7 +7,7 @@ import { useI18n } from "~/i18n/i18n-provider";
 import { formatDuration } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import type { Connection, PlannedLeg } from "~/journey/models";
-import { expected, feasible, formatTime } from "~/timer/journey";
+import { expected, feasible, formatTime, type Leg } from "~/timer/journey";
 import { Time } from "~/app/components/leg-time";
 
 export function connectionStart({ legs }: Connection): number {
@@ -37,11 +37,15 @@ function Walk({ ms }: { ms: number }) {
 export function ConnectionCard({
   connection,
   timed,
+  after,
   onStart,
 }: {
   connection: Connection;
   // The running timer follows this connection
   timed: boolean;
+  // The bus the user stays on before this connection: the change from it
+  // counts too
+  after?: Leg;
   onStart: () => void;
 }) {
   const { m } = useI18n();
@@ -49,7 +53,7 @@ export function ConnectionCard({
   const { legs, walkAfterMs } = connection;
   const first = legs[0];
   const transfers = legs.length - 1;
-  const atRisk = !feasible(connection);
+  const atRisk = !feasible(after ? { legs: [after, ...legs] } : connection);
 
   return (
     <li

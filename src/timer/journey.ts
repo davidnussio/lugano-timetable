@@ -213,6 +213,14 @@ export function journeyState(
   };
 }
 
+// The leg the user is on, or the next one to board while waiting for it:
+// another destination can be reached by getting off where it ends.
+// Undefined once the last leg has arrived.
+export function currentLeg(legs: ReadonlyArray<Leg>, now: number): number | undefined {
+  const index = legs.findIndex((leg) => expected(leg.arrival) > now);
+  return index === -1 ? undefined : index;
+}
+
 // A way to the destination: the journey followed, or one of the plans of
 // the timetable
 export interface Plan {

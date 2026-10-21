@@ -1,23 +1,27 @@
 "use client";
 
-import { ArrowDownUp, ArrowLeft, ArrowRight, History, LocateFixed, Star, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, History, LocateFixed, Star, Timer, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { SkeletonList } from "~/app/components/skeleton-list";
 import { StopsHeader } from "~/app/components/stops-header";
+import { TransportBadge } from "~/app/components/transport-badge";
 import { useFavorites } from "~/hooks/use-favorites";
+import { useNow } from "~/hooks/use-now";
 import { useTargets } from "~/hooks/use-targets";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { Connection, Station } from "~/journey/models";
 import {
   isFavoriteJourney,
+  type JourneySearch,
   journeySearchStore,
   rememberJourney,
   type SavedJourney,
   toggleFavoriteJourney,
 } from "~/journey/search-store";
 import { cn } from "~/lib/utils";
+import { currentLeg, expected, formatTime } from "~/timer/journey";
 import { useTimer } from "~/timer/timer-provider";
 import { fetcher } from "~/utils/fetcher";
 import { ConnectionCard, sameStart } from "./connection-card";
@@ -54,13 +58,25 @@ export default function JourneyPage() {
   // Leaving now, or at (or arriving by) the time chosen
   const [when, setWhen] = useState<ChosenTime>(NOW_CHOSEN);
   const [choosingTime, setChoosingTime] = useState(false);
+
+  // On the bus (or train) of the running journey, or waiting for it: the
+  // search can start where it gets off, as it arrives there
+  const now = useNow(timer.timer?.journey !== undefined);
+  const timerLegs = timer.timer?.journey && now > 0 ? timer.legs : undefined;
+  const boardedIndex = timerLegs && currentLeg(timerLegs, now);
+  const boarded = boardedIndex === undefined ? undefined : timerLegs?.[boardedIndex];
+  const onBoard = search.onBoard === true && boarded !== undefined;
+  const boardedArrival = boarded && Math.floor(expected(boarded.arrival) / 60_000) * 60_000;
+
   // The pages after the first one leave after its last connection
   const timeQuery =
     page !== undefined
       ? `&at=${page}`
-      : when.at === undefined
-        ? ""
-        : `&at=${when.at}${when.arrive ? "&arrive=1" : ""}`;
+      : onBoard
+        ? `&at=${boardedArrival}`
+        : when.at === undefined
+          ? ""
+          : `&at=${when.at}${when.arrive ? "&arrive=1" : ""}`;
   const input = useRef<HTMLInputElement>(null);
 
   // The favorite TPL stops, as stops of the timetable
@@ -84,7 +100,12 @@ export default function JourneyPage() {
     [favorites, targets]
   );
 
-  const { from, to } = search;
+  const from = onBoard ? boarded.to : search.from;
+  const { to } = search;
+  const filled = (next: JourneySearch, field: Field) =>
+    field === "to"
+      ? next.to !== undefined
+      : next.from !== undefined || (next.onBoard === true && boarded !== undefined);
   const ready = from && to && from.id !== to.id;
   const { data, error, isLoading } = useSWR<ReadonlyArray<Connection>>(
     ready && editing === null
@@ -102,15 +123,26 @@ export default function JourneyPage() {
     requestAnimationFrame(() => input.current?.focus());
   };
 
-  const pick = (station: Station) => {
+  const update = (next: JourneySearch) => {
     if (editing === null) return;
-    const next = { ...journeySearchStore.get(), [editing]: station };
     journeySearchStore.set(next);
     setPages([]);
     const other: Field = editing === "from" ? "to" : "from";
-    if (next[other] === undefined) edit(other);
+    if (!filled(next, other)) edit(other);
     else setEditing(null);
   };
+
+  // A stop typed or nearby: no longer from the bus of the timer
+  const pick = (station: Station) => {
+    const current = journeySearchStore.get();
+    update(
+      editing === "from"
+        ? { ...current, from: station, onBoard: undefined }
+        : { ...current, to: station }
+    );
+  };
+
+  const pickOnBoard = () => update({ ...journeySearchStore.get(), onBoard: true });
 
   const swap = () => {
     journeySearchStore.set((s) => ({ ...s, from: s.to, to: s.from }));
@@ -119,7 +151,7 @@ export default function JourneyPage() {
 
   // A new search: the recent and favourite journeys stay
   const clear = () => {
-    journeySearchStore.set((s) => ({ ...s, from: undefined, to: undefined }));
+    journeySearchStore.set((s) => ({ ...s, from: undefined, to: undefined, onBoard: undefined }));
     setPages([]);
     setWhen(NOW_CHOSEN);
     setChoosingTime(false);
@@ -127,19 +159,29 @@ export default function JourneyPage() {
 
   const start = (connection: Connection) => {
     if (!from || !to) return;
+    // The timer goes on with the bus it follows, then this connection
+    if (onBoard && boardedIndex !== undefined) {
+      timer.reroute(boardedIndex, connection, to);
+      journeySearchStore.set((s) => ({ ...s, onBoard: undefined }));
+      router.push("/timer");
+      return;
+    }
     timer.startJourney(connection, from, to, targets);
     journeySearchStore.set((s) => rememberJourney(s, from, to));
     router.push("/timer");
   };
 
-  const favorite = ready ? isFavoriteJourney(search, from, to) : false;
+  const favorite = ready && !onBoard ? isFavoriteJourney(search, from, to) : false;
   const favoriteJourneys = search.favorites ?? [];
   const choose = (journey: SavedJourney) => {
-    journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to }));
+    journeySearchStore.set((s) => ({ ...s, from: journey.from, to: journey.to, onBoard: undefined }));
     setPages([]);
   };
 
-  const timed = timer.timer?.journey?.legs[0];
+  // The leg after the bus of the timer, when the search starts from it
+  const timed =
+    onBoard && boardedIndex !== undefined
+      ? timerLegs?.[boardedIndex + 1] : timer.timer?.journey?.legs[0];
   const last = data?.at(-1);
 
   return (
@@ -177,10 +219,12 @@ export default function JourneyPage() {
                     onClick={() => edit(field)}
                     className={cn(
                       "col-start-2 h-11 min-w-0 truncate text-left text-base",
-                      !search[field] && "text-muted-foreground"
+                      !search[field] && !(field === "from" && onBoard) && "text-muted-foreground"
                     )}>
-                    {search[field]?.name ??
-                      (field === "from" ? m.journey.fromPlaceholder : m.journey.toPlaceholder)}
+                    {field === "from" && onBoard
+                      ? m.journey.onBoard(boarded.line, boarded.to.name)
+                      : (search[field]?.name ??
+                        (field === "from" ? m.journey.fromPlaceholder : m.journey.toPlaceholder))}
                   </button>
                 )}
                 {editing === field && (
@@ -201,7 +245,7 @@ export default function JourneyPage() {
               type="button"
               aria-label={m.journey.swap}
               onClick={swap}
-              disabled={!from && !to}
+              disabled={(!from && !to) || onBoard}
               className="grid flex-1 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40">
               <ArrowDownUp className="size-5" />
             </button>
@@ -215,7 +259,8 @@ export default function JourneyPage() {
             </button>
           </div>
         </div>
-        {editing === null && (
+        {/* Leaving when the bus of the timer arrives: no time to choose */}
+        {editing === null && !onBoard && (
           <div className="mt-2 flex gap-2">
             <SearchTimeButton
               value={when}
@@ -239,7 +284,7 @@ export default function JourneyPage() {
             )}
           </div>
         )}
-        {editing === null && choosingTime && (
+        {editing === null && !onBoard && choosingTime && (
           <div className="mt-2">
             <SearchTimePanel
               value={when}
@@ -271,12 +316,43 @@ export default function JourneyPage() {
       </div>
 
       {editing !== null ? (
-        <StationPicker
-          query={deferredQuery}
-          nearby={nearby}
-          favorites={favoriteStations}
-          onPick={pick}
-        />
+        <>
+          {editing === "from" && boarded && query.trim() === "" && !nearby && (
+            <section className="px-4 pb-3 pt-1">
+              <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Timer className="size-3.5" />
+                {m.journey.fromTimer}
+              </h2>
+              <button
+                type="button"
+                aria-pressed={onBoard}
+                onClick={pickOnBoard}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/60 active:bg-muted",
+                  onBoard ? "border-primary" : "border-border"
+                )}>
+                <TransportBadge
+                  line={boarded.line}
+                  category={boarded.category}
+                  operator={boarded.operator}
+                  size={24}
+                />
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {m.journey.onBoard(boarded.line, boarded.to.name)}
+                </span>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                  {formatTime(expected(boarded.arrival))}
+                </span>
+              </button>
+            </section>
+          )}
+          <StationPicker
+            query={deferredQuery}
+            nearby={nearby}
+            favorites={favoriteStations}
+            onPick={pick}
+          />
+        </>
       ) : ready ? (
         <>
           {/* Switch to another saved journey, the one searched marked */}
@@ -312,6 +388,7 @@ export default function JourneyPage() {
                     key={connection.legs.map((leg) => `${leg.trip}@${leg.departure.scheduled}`).join("|")}
                     connection={connection}
                     timed={timed !== undefined && sameStart(timed, connection.legs[0])}
+                    after={onBoard ? boarded : undefined}
                     onStart={() => start(connection)}
                   />
                 ))}

@@ -124,6 +124,9 @@ export const en: Messages = {
     yourStop: "Your stop",
     getOffAt: (stop: string) => `Get off at ${stop}`,
     getOffHere: "Getting off here",
+    // Already on the bus, without a timer
+    onThisBus: "I'm on this bus",
+    whereGetOff: "Tap the stop where you get off: the timer will alert you",
   },
   journey: {
     title: "Journey",
@@ -170,6 +173,9 @@ export const en: Messages = {
     time: "Time",
     saveFavorite: "Save as a favourite",
     removeFavorite: "Remove from favourites",
+    // Staying on the bus of the running journey to go somewhere else
+    fromTimer: "From the timer",
+    onBoard: (line: string, stop: string) => `Line ${line} to ${stop}`,
   },
   timer: {
     title: "Timer",
@@ -250,6 +256,7 @@ export const en: Messages = {
       </>
     ),
     useThisRoute: "Take this route",
+    changeDestination: "Change destination",
     leaveLater: "You can leave later",
     laterPlan: (line: string, departure: ReactNode, arrival: ReactNode) => (
       <>

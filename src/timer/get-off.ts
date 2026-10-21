@@ -3,7 +3,7 @@
 // kept free of browser APIs.
 
 import type { Messages } from "~/i18n/messages";
-import { busPosition } from "~/lib/trip";
+import { busPosition, reachedIndex } from "~/lib/trip";
 import type { RoutingStatus } from "~/timetable/models";
 import type { AlertMessage, Position } from "./plan";
 import type { Headline } from "./tone";
@@ -57,15 +57,7 @@ export function rideState(
   const to = stops.findIndex((stop) => stop.UID === getOff.target);
   if (from === -1 || to <= from) return undefined;
   const position = busPosition(stops);
-  // The last stop the bus has reached: it is there or has left it
-  const reached =
-    position.kind === "at"
-      ? position.index
-      : position.kind === "between"
-        ? position.from
-        : position.kind === "arrived"
-          ? stops.length - 1
-          : 0;
+  const reached = reachedIndex(position, stops.length);
   const at = position.kind === "at";
   const left = reached > from || (reached === from && !at);
   if (getOff.left === true && !left) return undefined;

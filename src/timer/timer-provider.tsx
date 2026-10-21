@@ -35,7 +35,6 @@ import {
   clockAt,
   dueGetOffAlert,
   followRide,
-  type GetOff,
   getOffMessage,
   type Ride,
   rideState,
@@ -85,6 +84,7 @@ import {
   type ActiveTimer,
   applyLegUpdates,
   createJourneyTimer,
+  createOnBoardTimer,
   createTimer,
   dueTransferAlert,
   findTimerDeparture,
@@ -93,6 +93,9 @@ import {
   nextTimerDeparture,
   paceStore,
   planAlerts,
+  rerouteJourney,
+  type GetOffChoice,
+  type OnBoard,
   type ScheduledDeparture,
   settingsStore,
   type TimerSettings,
@@ -154,19 +157,20 @@ export interface TimerContextValue {
     stop: ActiveTimer["stop"],
     coordinates: Coordinates | undefined
   ): void;
+  // A bus the user is already on, getting off at the stop chosen
+  board(ride: OnBoard): void;
   startJourney(
     connection: Connection,
     from: Station,
     to: Station,
     targets: ReadonlyArray<Target> | undefined
   ): void;
-  // Continues the journey after the leg `index` with another plan
-  reroute(index: number, plan: Connection): void;
+  // Continues the journey after the leg `index` with another plan, to
+  // another destination `to` when given
+  reroute(index: number, plan: Connection, to?: Station): void;
   // Sets the stop to get off a single bus, with its time in the routing, or
   // clears it
-  chooseGetOff(
-    stop: (Pick<GetOff, "target" | "name" | "position"> & { readonly time: string }) | undefined
-  ): void;
+  chooseGetOff(stop: GetOffChoice | undefined): void;
   cancel(): void;
   updateSettings(patch: Partial<TimerSettings>): void;
   // Forgets the walks measured: back to the default paces
@@ -625,6 +629,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const board = useCallback<TimerContextValue["board"]>((ride) => {
+    unlockAudio();
+    timerStore.set(createOnBoardTimer(ride, Date.now()));
+  }, []);
+
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
     (connection, from, to, targets) => {
       unlockAudio();
@@ -633,23 +642,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const reroute = useCallback<TimerContextValue["reroute"]>((index, plan) => {
-    timerStore.set((current) => {
-      if (!current?.journey) return current;
-      const legs = [...current.journey.legs.slice(0, index + 1), ...plan.legs];
-      return {
-        ...current,
-        journey: {
-          ...current.journey,
-          legs,
-          walkAfterMs: plan.walkAfterMs,
-          // The transfers after `index` are new
-          alerted: current.journey.alerted.filter(
-            (key) => Number(key.split(":")[0]) < index
-          ),
-        },
-      };
-    });
+  const reroute = useCallback<TimerContextValue["reroute"]>((index, plan, to) => {
+    timerStore.set(
+      (current) =>
+        current?.journey
+          ? { ...current, journey: rerouteJourney(current.journey, index, plan, to) }
+          : current
+    );
   }, []);
 
   const chooseGetOff = useCallback<TimerContextValue["chooseGetOff"]>((stop) => {
@@ -711,6 +710,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     next,
     ride,
     start,
+    board,
     startJourney,
     reroute,
     chooseGetOff,
