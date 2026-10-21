@@ -79,3 +79,13 @@ export function stopName(label: string): string {
 export function town(label: string): string {
   return label.split(",")[0].trim();
 }
+
+// The towns of a journey under its stops, saying nothing twice: none for a
+// stop named as its town ("Bellinzona"), one for a journey within a town.
+// "Bellinzona" → "Lugano, Via Brentani": "Lugano".
+export function journeyTowns(from: string, to: string): string {
+  const towns = [from, to]
+    .filter((label) => town(label) !== stopName(label))
+    .map(town);
+  return [...new Set(towns)].join(" → ");
+}

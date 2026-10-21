@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { messages } from "~/i18n/messages";
-import { formatDuration, formatSpeed, formatWeather } from "../format";
+import { formatDuration, formatSpeed, formatWeather, journeyTowns } from "../format";
 
 // The Italian texts: the words asserted below
 const m = messages.it;
@@ -24,5 +24,14 @@ describe("formatSpeed", () => {
   it("shows km/h with a decimal comma", () => {
     expect(formatSpeed(m, 1.3)).toBe("4,7 km/h");
     expect(formatSpeed(m, 1.5)).toBe("5,4 km/h");
+  });
+});
+
+describe("journeyTowns", () => {
+  it("names each town once, and none already in the name of the stop", () => {
+    expect(journeyTowns("Lugano, Centro", "Muzzano, Uovo di Manno")).toBe("Lugano → Muzzano");
+    expect(journeyTowns("Lugano, Stazione", "Lugano, Cimitero")).toBe("Lugano");
+    expect(journeyTowns("Bellinzona", "Lugano, Via Brentani")).toBe("Lugano");
+    expect(journeyTowns("Zürich HB", "Airolo")).toBe("");
   });
 });

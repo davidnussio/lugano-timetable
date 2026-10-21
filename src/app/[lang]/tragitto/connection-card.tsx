@@ -10,11 +10,11 @@ import type { Connection, PlannedLeg } from "~/journey/models";
 import { expected, feasible, formatTime, type Leg } from "~/timer/journey";
 import { Time } from "~/app/components/leg-time";
 
-export function connectionStart({ legs }: Connection): number {
+function connectionStart({ legs }: Connection): number {
   return expected(legs[0].departure) - (legs[0].walkBeforeMs ?? 0);
 }
 
-export function connectionEnd({ legs, walkAfterMs }: Connection): number {
+function connectionEnd({ legs, walkAfterMs }: Connection): number {
   return expected(legs[legs.length - 1].arrival) + (walkAfterMs ?? 0);
 }
 
