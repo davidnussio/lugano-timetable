@@ -30,10 +30,10 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
   return {
-    title: "Lugano Bus",
+    title: "LuGo",
     description: m.meta.description,
     manifest: "/manifest.webmanifest",
-    appleWebApp: { capable: true, title: "Lugano Bus", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: "LuGo", statusBarStyle: "default" },
   };
 }
 

@@ -311,7 +311,7 @@ export const it = {
       `Se non compare: menu ⋮ → Impostazioni → Impostazioni sito → Notifiche → ${host} → Consenti.`,
     androidChrome:
       "Controlla che Chrome possa inviare notifiche: Impostazioni Android → App → Chrome → Notifiche.",
-    ios: "Apri Impostazioni → Notifiche → Lugano Bus e attiva Consenti notifiche.",
+    ios: "Apri Impostazioni → Notifiche → LuGo e attiva Consenti notifiche.",
     desktopSiteIcon: "Clicca sull'icona a sinistra dell'indirizzo, poi Notifiche → Consenti.",
     desktopReload: "Ricarica la pagina.",
   },

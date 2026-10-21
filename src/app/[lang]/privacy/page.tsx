@@ -6,7 +6,7 @@ import { policies } from "./policy";
 export async function generateMetadata(): Promise<Metadata> {
   const { locale } = await getI18n();
   const policy = policies[locale];
-  return { title: `${policy.title} · Lugano Bus`, description: policy.description };
+  return { title: `${policy.title} · LuGo`, description: policy.description };
 }
 
 // What the app does with the data of the visitor, and where the timetables

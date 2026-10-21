@@ -318,7 +318,7 @@ export const de: Messages = {
       `Falls es nicht erscheint: Menü ⋮ → Einstellungen → Website-Einstellungen → Benachrichtigungen → ${host} → Zulassen.`,
     androidChrome:
       "Prüfe, ob Chrome Benachrichtigungen senden darf: Android-Einstellungen → Apps → Chrome → Benachrichtigungen.",
-    ios: "Öffne Einstellungen → Mitteilungen → Lugano Bus und aktiviere «Mitteilungen erlauben».",
+    ios: "Öffne Einstellungen → Mitteilungen → LuGo und aktiviere «Mitteilungen erlauben».",
     desktopSiteIcon:
       "Klicke auf das Symbol links neben der Adresse, dann Benachrichtigungen → Zulassen.",
     desktopReload: "Lade die Seite neu.",

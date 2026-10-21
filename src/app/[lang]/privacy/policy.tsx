@@ -33,7 +33,7 @@ function Ext({ href, children }: { href: string; children: React.ReactNode }) {
 
 const it: Policy = {
   title: "Privacy",
-  description: "Quali dati usa Lugano Bus, dove restano e a chi passano.",
+  description: "Quali dati usa LuGo, dove restano e a chi passano.",
   updated: "Aggiornata il 17 ottobre 2026",
   sections: [
     {
@@ -54,7 +54,7 @@ const it: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus è un progetto personale di David Nussio, titolare del
+            LuGo è un progetto personale di David Nussio, titolare del
             trattamento dei dati. David Nussio sviluppa software con{" "}
             <Ext href={DAMBOX}>dambox</Ext>, software house di Lugano. Per
             qualsiasi domanda scrivici dalla{" "}
@@ -72,7 +72,7 @@ const it: Policy = {
       title: "App non ufficiale",
       body: (
         <p>
-          Lugano Bus non è affiliata a Trasporti Pubblici Luganesi (TPL). Orari
+          LuGo non è affiliata a Trasporti Pubblici Luganesi (TPL). Orari
           e posizioni dei bus vengono dai dati in tempo reale di TPL e, per i
           tragitti, da transport.opendata.ch; la mappa è di swisstopo. I dati
           possono essere imprecisi o in ritardo: verifica sempre alla fermata.
@@ -207,7 +207,7 @@ const it: Policy = {
 
 const de: Policy = {
   title: "Datenschutz",
-  description: "Welche Daten Lugano Bus verwendet, wo sie bleiben und an wen sie gehen.",
+  description: "Welche Daten LuGo verwendet, wo sie bleiben und an wen sie gehen.",
   updated: "Aktualisiert am 17. Oktober 2026",
   sections: [
     {
@@ -228,7 +228,7 @@ const de: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus ist ein persönliches Projekt von David Nussio,
+            LuGo ist ein persönliches Projekt von David Nussio,
             verantwortlich für die Datenbearbeitung. David Nussio entwickelt
             Software mit <Ext href={DAMBOX}>dambox</Ext>, einem Softwarehaus in
             Lugano. Bei Fragen schreib uns über die{" "}
@@ -246,7 +246,7 @@ const de: Policy = {
       title: "Inoffizielle App",
       body: (
         <p>
-          Lugano Bus ist nicht mit den Trasporti Pubblici Luganesi (TPL)
+          LuGo ist nicht mit den Trasporti Pubblici Luganesi (TPL)
           verbunden. Fahrzeiten und Buspositionen stammen aus den Echtzeitdaten
           der TPL und, für Verbindungen, von transport.opendata.ch; die Karte
           ist von swisstopo. Die Daten können ungenau oder verspätet sein:
@@ -385,7 +385,7 @@ const de: Policy = {
 
 const en: Policy = {
   title: "Privacy",
-  description: "What data Lugano Bus uses, where it stays and who it goes to.",
+  description: "What data LuGo uses, where it stays and who it goes to.",
   updated: "Updated on 17 October 2026",
   sections: [
     {
@@ -405,7 +405,7 @@ const en: Policy = {
       body: (
         <>
           <p>
-            Lugano Bus is a personal project by David Nussio, the data
+            LuGo is a personal project by David Nussio, the data
             controller. David Nussio builds software with{" "}
             <Ext href={DAMBOX}>dambox</Ext>, a software house in Lugano. For any
             question, write to us from the{" "}
@@ -423,7 +423,7 @@ const en: Policy = {
       title: "Unofficial app",
       body: (
         <p>
-          Lugano Bus is not affiliated with Trasporti Pubblici Luganesi (TPL).
+          LuGo is not affiliated with Trasporti Pubblici Luganesi (TPL).
           Times and bus positions come from TPL&apos;s real-time data and, for
           journeys, from transport.opendata.ch; the map is by swisstopo. The
           data may be inaccurate or late: always check at the stop.

@@ -311,7 +311,7 @@ export const en: Messages = {
       `If it's not there: menu ⋮ → Settings → Site settings → Notifications → ${host} → Allow.`,
     androidChrome:
       "Check that Chrome may send notifications: Android Settings → Apps → Chrome → Notifications.",
-    ios: "Open Settings → Notifications → Lugano Bus and turn on Allow Notifications.",
+    ios: "Open Settings → Notifications → LuGo and turn on Allow Notifications.",
     desktopSiteIcon: "Click the icon to the left of the address, then Notifications → Allow.",
     desktopReload: "Reload the page.",
   },

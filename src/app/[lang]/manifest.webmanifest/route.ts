@@ -21,8 +21,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ lan
   if (!isLocale(lang)) return new Response("Not found", { status: 404 });
   const m = messages[lang].manifest;
   const manifest: MetadataRoute.Manifest = {
-    name: "Lugano Bus",
-    short_name: "Lugano Bus",
+    name: "LuGo",
+    short_name: "LuGo",
     description: messages[lang].meta.description,
     lang,
     start_url: "/",

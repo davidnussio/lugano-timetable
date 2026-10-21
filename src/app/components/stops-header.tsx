@@ -2,6 +2,7 @@
 
 import { List, MapIcon, Route } from "lucide-react";
 import Link from "next/link";
+import { logoGlyph } from "~/app/app-icon";
 import { useI18n } from "~/i18n/i18n-provider";
 import { cn } from "~/lib/utils";
 
@@ -22,7 +23,12 @@ export function StopsHeader({ title, current }: { title: string; current: View }
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <div>
-        <p className="text-xl font-bold tracking-tight">Lugano Bus</p>
+        <p className="flex items-center gap-2 text-xl font-bold tracking-tight">
+          <LogoMark className="size-7 shrink-0" />
+          <span>
+            Lu<span className="text-primary">Go</span>
+          </span>
+        </p>
         <h1 className="sr-only">{title}</h1>
       </div>
       <nav aria-label={m.nav.label} className="flex shrink-0 rounded-full bg-muted p-1">
@@ -45,5 +51,21 @@ export function StopsHeader({ title, current }: { title: string; current: View }
         ))}
       </nav>
     </header>
+  );
+}
+
+// The app icon, small
+function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" fill="none" aria-hidden="true" className={className}>
+      <defs>
+        <linearGradient id="logo-mark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4f6bff" />
+          <stop offset="1" stopColor="#2f3fd6" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="24" fill="url(#logo-mark)" />
+      {logoGlyph}
+    </svg>
   );
 }
