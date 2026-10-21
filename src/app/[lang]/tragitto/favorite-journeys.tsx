@@ -26,8 +26,7 @@ export function FavoriteJourneys({
   const { m } = useI18n();
   return (
     <section className="px-4 pt-1">
-      <h2 className="flex items-center gap-1.5 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <Star className="size-3.5 fill-favorite text-favorite" />
+      <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {m.journey.favorites}
       </h2>
       <ul role="list" className="space-y-2">
