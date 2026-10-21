@@ -189,8 +189,9 @@ export const it = {
     cancel: "Annulla timer",
     none: "Nessun timer attivo",
     noneHint:
-      "Apri una fermata e tocca la campanella accanto a una partenza: ti avviseremo quando è ora di uscire.",
+      "Apri una fermata o cerca un tragitto e tocca la campanella: ti avviseremo quando è ora di uscire.",
     chooseStop: "Scegli una fermata",
+    chooseJourney: "Cerca un tragitto",
     backToTimer: "Torna al timer",
     busIn: "Bus tra",
     margin: "Margine",

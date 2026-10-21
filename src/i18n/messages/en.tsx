@@ -189,8 +189,9 @@ export const en: Messages = {
     cancel: "Cancel timer",
     none: "No timer running",
     noneHint:
-      "Open a stop and tap the bell next to a departure: we'll let you know when it's time to leave.",
+      "Open a stop or search a journey and tap the bell: we'll let you know when it's time to leave.",
     chooseStop: "Choose a stop",
+    chooseJourney: "Search a journey",
     backToTimer: "Back to the timer",
     busIn: "Bus in",
     margin: "Margin",

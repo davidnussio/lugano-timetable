@@ -8,6 +8,8 @@ import {
   Footprints,
   History,
   LocateFixed,
+  MapPin,
+  Route,
   TimerOff,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -193,11 +195,20 @@ export default function TimerPage() {
           </span>
           <h2 className="text-lg font-semibold">{m.timer.none}</h2>
           <p className="text-sm text-muted-foreground">{m.timer.noneHint}</p>
-          <Link
-            href="/"
-            className="mt-2 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground">
-            {m.timer.chooseStop}
-          </Link>
+          <div className="mt-2 flex w-full max-w-xs flex-col gap-2">
+            <Link
+              href="/"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground">
+              <MapPin className="size-4" />
+              {m.timer.chooseStop}
+            </Link>
+            <Link
+              href="/tragitto"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 text-sm font-semibold transition-colors hover:bg-muted/60 active:bg-muted">
+              <Route className="size-4 text-primary" />
+              {m.timer.chooseJourney}
+            </Link>
+          </div>
         </div>
       )}
     </main>

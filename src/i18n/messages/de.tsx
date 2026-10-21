@@ -195,8 +195,9 @@ export const de: Messages = {
     cancel: "Timer abbrechen",
     none: "Kein Timer aktiv",
     noneHint:
-      "Öffne eine Haltestelle und tippe auf die Glocke neben einer Abfahrt: Wir melden uns, wenn es Zeit ist loszugehen.",
+      "Öffne eine Haltestelle oder suche eine Verbindung und tippe auf die Glocke: Wir melden uns, wenn es Zeit ist loszugehen.",
     chooseStop: "Haltestelle wählen",
+    chooseJourney: "Verbindung suchen",
     backToTimer: "Zurück zum Timer",
     busIn: "Bus in",
     margin: "Reserve",
