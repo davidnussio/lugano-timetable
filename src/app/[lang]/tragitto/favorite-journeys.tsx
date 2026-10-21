@@ -3,7 +3,7 @@
 import { ChevronRight, Star } from "lucide-react";
 import { useI18n } from "~/i18n/i18n-provider";
 import type { SavedJourney } from "~/journey/search-store";
-import { journeyTowns, stopName } from "~/lib/format";
+import { stopName, town } from "~/lib/format";
 import { cn } from "~/lib/utils";
 
 // The journeys saved, as the favorite stops: a tap searches it.
@@ -53,7 +53,6 @@ function JourneyRow({
   onChoose: () => void;
 }) {
   const { from, to } = journey;
-  const towns = journeyTowns(from.name, to.name);
   const townCell = "truncate text-xs text-muted-foreground";
   return (
     <li>
@@ -74,13 +73,9 @@ function JourneyRow({
           <span className="truncate font-medium">{stopName(from.name)}</span>
           <span className="font-medium">→</span>
           <span className="truncate font-medium">{stopName(to.name)}</span>
-          {(towns.from || towns.to) && (
-            <>
-              <span className={townCell}>{towns.from}</span>
-              <span />
-              <span className={townCell}>{towns.to}</span>
-            </>
-          )}
+          <span className={townCell}>{town(from.name)}</span>
+          <span />
+          <span className={townCell}>{town(to.name)}</span>
         </div>
         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
       </button>
