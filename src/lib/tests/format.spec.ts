@@ -28,10 +28,14 @@ describe("formatSpeed", () => {
 });
 
 describe("journeyTowns", () => {
-  it("names each town once, and none already in the name of the stop", () => {
-    expect(journeyTowns("Lugano, Centro", "Muzzano, Uovo di Manno")).toBe("Lugano → Muzzano");
-    expect(journeyTowns("Lugano, Stazione", "Lugano, Cimitero")).toBe("Lugano");
-    expect(journeyTowns("Bellinzona", "Lugano, Via Brentani")).toBe("Lugano");
-    expect(journeyTowns("Zürich HB", "Airolo")).toBe("");
+  it("puts each town under its stop, once, and none already in the name of the stop", () => {
+    expect(journeyTowns("Lugano, Centro", "Muzzano, Uovo di Manno")).toEqual({
+      from: "Lugano",
+      to: "Muzzano",
+    });
+    expect(journeyTowns("Lugano, Stazione", "Lugano, Cimitero")).toEqual({ from: "Lugano" });
+    expect(journeyTowns("Bellinzona", "Lugano, Via Brentani")).toEqual({ to: "Lugano" });
+    expect(journeyTowns("Lugano, Via Brentani", "Bellinzona")).toEqual({ from: "Lugano" });
+    expect(journeyTowns("Zürich HB", "Airolo")).toEqual({});
   });
 });

@@ -54,6 +54,7 @@ function JourneyRow({
 }) {
   const { from, to } = journey;
   const towns = journeyTowns(from.name, to.name);
+  const townCell = "truncate text-xs text-muted-foreground";
   return (
     <li>
       <button
@@ -63,14 +64,23 @@ function JourneyRow({
         title={`${from.name} → ${to.name}`}
         className={cn(
           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted",
-          current && "bg-muted/60"
+          // The corners of the card on the first and last rows
+          "[li:first-child_&]:rounded-t-2xl [li:last-child_&]:rounded-b-2xl",
+          current && "ring-2 ring-inset ring-primary"
         )}>
         <Star className="size-4 shrink-0 fill-favorite text-favorite" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-medium">
-            {stopName(from.name)} → {stopName(to.name)}
-          </span>
-          {towns && <span className="truncate text-xs text-muted-foreground">{towns}</span>}
+        {/* Each town under its stop */}
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,max-content)_auto_minmax(0,1fr)] gap-x-1.5">
+          <span className="truncate font-medium">{stopName(from.name)}</span>
+          <span className="font-medium">→</span>
+          <span className="truncate font-medium">{stopName(to.name)}</span>
+          {(towns.from || towns.to) && (
+            <>
+              <span className={townCell}>{towns.from}</span>
+              <span />
+              <span className={townCell}>{towns.to}</span>
+            </>
+          )}
         </div>
         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
       </button>

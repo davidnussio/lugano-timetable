@@ -357,7 +357,7 @@ export default function JourneyPage() {
         <>
           {/* Switch to another saved journey, the one searched marked */}
           {favoriteJourneys.length > 0 && (
-            <div className="mb-3 border-b border-border pb-4">
+            <div className="mb-4">
               <FavoriteJourneys
                 journeys={favoriteJourneys}
                 current={{ from, to }}
