@@ -417,8 +417,9 @@ function ActiveTimerView({
 
       {/* Countdown */}
       <section className="flex flex-col items-center rounded-3xl border border-border bg-card px-4 py-6 shadow-sm">
-        {/* Before boarding: where the bus is on its way to the stop */}
-        {!travel && <BusApproach active={active} now={now} />}
+        {/* Before boarding: where the bus is on its way to the stop. Once
+            gone the routing shows the next run. */}
+        {!travel && tone !== "gone" && <BusApproach active={active} now={now} />}
         <div ref={observeRing} className="relative size-64">
           <svg viewBox="0 0 100 100" className="size-full -rotate-90">
             <circle cx="50" cy="50" r="45" fill="none" strokeWidth="6" className="stroke-muted" />
