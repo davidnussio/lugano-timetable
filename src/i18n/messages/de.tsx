@@ -38,6 +38,7 @@ export const de: Messages = {
     list: "Haltestellen",
     map: "Karte",
     journey: "Verbindung",
+    history: "Verlauf",
   },
   footer: {
     unofficial: "Inoffizielle App, nicht mit den TPL verbunden",

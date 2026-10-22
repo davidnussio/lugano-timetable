@@ -35,6 +35,7 @@ export const it = {
     list: "Fermate",
     map: "Mappa",
     journey: "Tragitto",
+    history: "Storico",
   },
   footer: {
     unofficial: "App non ufficiale, non affiliata a TPL",
