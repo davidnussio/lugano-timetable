@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumn, Download, Timer, Trash2, Upload } from "lucide-react";
+import { ChartColumn, Download, Timer, Upload } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { StopsHeader } from "~/app/components/stops-header";
@@ -26,6 +26,7 @@ import type { Messages } from "~/i18n/messages";
 import { formatDelay, formatDistance, formatDuration } from "~/lib/format";
 import { cn } from "~/lib/utils";
 import type { DayType } from "~/timetable/reliability";
+import { ClearHistory } from "./clear-dialog";
 import { Breakdown, TripList } from "./trip-list";
 
 const WEATHERS: ReadonlyArray<WeatherFilter> = ["dry", "wet", "rain", "heavyRain", "snow", "ice"];
@@ -80,10 +81,8 @@ export default function HistoryPage() {
   };
 
   const clear = () => {
-    if (window.confirm(m.history.clearConfirm)) {
-      historyStore.clear();
-      setFilter({});
-    }
+    historyStore.clear();
+    setFilter({});
   };
 
   return (
@@ -122,14 +121,11 @@ export default function HistoryPage() {
               onClick={() => download(trips)}>
               <Download className="size-5" />
             </button>
-            <button
-              type="button"
-              aria-label={m.history.clear}
-              title={m.history.clear}
+            <ClearHistory
+              trips={trips.length}
               className={cn(iconButton, "text-destructive hover:bg-destructive/10")}
-              onClick={clear}>
-              <Trash2 className="size-5" />
-            </button>
+              onClear={clear}
+            />
           </>
         )}
       </div>

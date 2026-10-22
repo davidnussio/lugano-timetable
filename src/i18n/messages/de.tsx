@@ -463,7 +463,11 @@ export const de: Messages = {
     imported: (trips: number) => (trips === 1 ? "1 Reise importiert" : `${trips} Reisen importiert`),
     importFailed: "Die Datei enthält keine gültigen Reisen",
     clear: "Verlauf löschen",
-    clearConfirm: "Alle gespeicherten Reisen löschen? Das lässt sich nicht rückgängig machen.",
+    clearTitle: "Verlauf löschen?",
+    clearBody: (trips: number) =>
+      `${trips === 1 ? "Die gespeicherte Reise verschwindet" : `Die ${trips} gespeicherten Reisen verschwinden`} von diesem Gerät, und mit ihnen die Statistiken. Das lässt sich nicht rückgängig machen: Für eine Kopie exportiere den Verlauf zuerst.`,
+    clearCancel: "Abbrechen",
+    clearConfirm: "Löschen",
   },
   reliability: {
     onTime: "Fährt meist pünktlich ab",
