@@ -1,6 +1,7 @@
 // Checks of the timer and of the favorite rides read back from localStorage:
 // a value saved by an older version of the app, or corrupted, must not reach
 // the components.
+import { isTripWeather } from "~/history/valid";
 import type { GetOffAlert } from "./get-off";
 import type { LearnedPace } from "./pace";
 import type { FavoriteRide } from "./rides";
@@ -108,7 +109,8 @@ export function isActiveTimer(value: unknown): value is ActiveTimer {
     isOptional(value.approach, isObject) &&
     isOptional(value.walk, isWalk) &&
     isOptional(value.atStop, isAtStop) &&
-    isOptional(value.getOff, isGetOff)
+    isOptional(value.getOff, isGetOff) &&
+    isOptional(value.weather, isTripWeather)
   );
 }
 

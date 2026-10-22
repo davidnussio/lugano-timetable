@@ -3,6 +3,7 @@
 import {
   Bell,
   Bus,
+  ChartColumn,
   ChevronRight,
   Flag,
   Footprints,
@@ -165,16 +166,24 @@ export default function TimerPage() {
           back="/"
           title={m.timer.title}
           actions={
-            active &&
-            countdown && (
-              <button
-                type="button"
-                onClick={timer.cancel}
-                aria-label={cancelLabel(timerTone(countdown, timer.stage), m)}
-                className="grid size-10 place-items-center rounded-full text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/10">
-                <TimerOff className="size-5" />
-              </button>
-            )
+            <>
+              <Link
+                href="/storico"
+                aria-label={m.history.open}
+                title={m.history.open}
+                className="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted active:bg-muted">
+                <ChartColumn className="size-5" />
+              </Link>
+              {active && countdown && (
+                <button
+                  type="button"
+                  onClick={timer.cancel}
+                  aria-label={cancelLabel(timerTone(countdown, timer.stage), m)}
+                  className="grid size-10 place-items-center rounded-full text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/10">
+                  <TimerOff className="size-5" />
+                </button>
+              )}
+            </>
           }
         />
         {active && countdown && (

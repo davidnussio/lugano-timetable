@@ -21,6 +21,8 @@ import { useI18n } from "~/i18n/i18n-provider";
 import { useNow } from "~/hooks/use-now";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useClimb, useStopHeights } from "~/terrain/use-climb";
+import { historyStore } from "~/history/store";
+import { tripRecord } from "~/history/trip";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import type { Coordinates, Departure, RoutingStop, Target } from "~/timetable/models";
 import { fetcher } from "~/utils/fetcher";
@@ -240,6 +242,15 @@ function useReliableFix(
   return kept?.timer === timer ? kept.fix : undefined;
 }
 
+// Keeps the trip of the timer in the history, once its bus has left: called
+// as the timer ends, is stopped or makes way for another one
+function archive(timer: ActiveTimer | null) {
+  if (!timer) return;
+  const pace = settingsStore.get().pace;
+  const trip = tripRecord(timer, { now: Date.now(), pace });
+  if (trip !== undefined) historyStore.add(trip);
+}
+
 // Runs the active timer on every page: follows the bus with the real-time
 // data, measures the walk to the stop and fires the alerts.
 export function TimerProvider({ children }: { children: React.ReactNode }) {
@@ -359,6 +370,32 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     rawDistance !== undefined && far === undefined && stage !== "arrived" ? fix : undefined;
   const climb = useClimb(walkingFix, timer?.coordinates);
   const weatherNow = weatherWalk(useWeather(walkingFix));
+
+  // The weather at the stop for the history, until the bus leaves (or, on
+  // board, once). Mostly the same cell of the grid as the walk: one request.
+  const stopWeather = useWeather(
+    timer && (!departed || timer.weather === undefined) ? timer.coordinates : undefined
+  );
+  useEffect(() => {
+    if (stopWeather === undefined) return;
+    timerStore.set((current) => {
+      if (!current || (current.weather !== undefined && Date.now() >= current.departureAt)) {
+        return current;
+      }
+      const { precipitation, snowfall, code } = stopWeather;
+      const kind = weatherWalk(stopWeather).kind;
+      const same =
+        current.weather?.precipitation === precipitation &&
+        current.weather.snowfall === snowfall &&
+        current.weather.code === code;
+      return same
+        ? current
+        : {
+            ...current,
+            weather: { precipitation, snowfall, code, ...(kind === undefined ? {} : { kind }) },
+          };
+    });
+  }, [stopWeather]);
 
   const distance = useSteadyDistance(
     far === undefined ? rawDistance : undefined,
@@ -542,6 +579,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     const stored = timerStore.get();
     if (!stored || !current) return;
     if (timerEndsAt(stored, legs, walkAfterMs) < Date.now() - EXPIRES_AFTER_MS) {
+      archive(stored);
       timerStore.set(null);
       return;
     }
@@ -618,6 +656,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const start = useCallback<TimerContextValue["start"]>((departure, stop, coordinates) => {
     unlockAudio();
     const now = Date.now();
+    archive(timerStore.get());
     timerStore.set(createTimer(departure, stop, coordinates, now));
     // The hour of the start puts the favorite ride first around that time
     ridesStore.set((rides) =>
@@ -631,12 +670,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const board = useCallback<TimerContextValue["board"]>((ride) => {
     unlockAudio();
+    archive(timerStore.get());
     timerStore.set(createOnBoardTimer(ride, Date.now()));
   }, []);
 
   const startJourney = useCallback<TimerContextValue["startJourney"]>(
     (connection, from, to, targets) => {
       unlockAudio();
+      archive(timerStore.get());
       timerStore.set(createJourneyTimer(connection, from, to, targets, Date.now()));
     },
     []
@@ -669,7 +710,10 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const cancel = useCallback(() => timerStore.set(null), []);
+  const cancel = useCallback(() => {
+    archive(timerStore.get());
+    timerStore.set(null);
+  }, []);
 
   const updateSettings = useCallback((patch: Partial<TimerSettings>) => {
     settingsStore.set((s) => ({ ...s, ...patch }));
