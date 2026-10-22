@@ -34,7 +34,7 @@ export const it = {
     label: "Vista",
     list: "Fermate",
     map: "Mappa",
-    journey: "Tragitto",
+    journey: "Tragitti",
     history: "Storico",
   },
   footer: {

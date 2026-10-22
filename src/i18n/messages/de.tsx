@@ -37,7 +37,7 @@ export const de: Messages = {
     label: "Ansicht",
     list: "Haltestellen",
     map: "Karte",
-    journey: "Verbindung",
+    journey: "Verbindungen",
     history: "Verlauf",
   },
   footer: {

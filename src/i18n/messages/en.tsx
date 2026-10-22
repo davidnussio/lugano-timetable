@@ -35,7 +35,7 @@ export const en: Messages = {
     label: "View",
     list: "Stops",
     map: "Map",
-    journey: "Journey",
+    journey: "Journeys",
     history: "History",
   },
   footer: {
