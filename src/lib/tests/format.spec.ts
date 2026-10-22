@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { messages } from "~/i18n/messages";
-import { formatDuration, formatSpeed, formatWeather } from "../format";
+import { formatDelay, formatDuration, formatSpeed, formatWeather } from "../format";
 
 // The Italian texts: the words asserted below
 const m = messages.it;
@@ -24,5 +24,15 @@ describe("formatSpeed", () => {
   it("shows km/h with a decimal comma", () => {
     expect(formatSpeed(m, 1.3)).toBe("4,7 km/h");
     expect(formatSpeed(m, 1.5)).toBe("5,4 km/h");
+  });
+});
+
+describe("formatDelay", () => {
+  it("signs the minutes of a delay, with a decimal for an average", () => {
+    expect(formatDelay(m, 3 * 60_000 + 10_000)).toBe("+3 min");
+    expect(formatDelay(m, -70_000)).toBe("-1 min");
+    expect(formatDelay(m, 20_000)).toBe("0 min");
+    expect(formatDelay(m, 192_000, true)).toBe("+3,2 min");
+    expect(formatDelay(messages.en, 0, true)).toBe("0.0 min");
   });
 });

@@ -48,7 +48,7 @@ const ZURICH = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
 });
 
-interface LocalTime {
+export interface LocalTime {
   readonly date: string;
   readonly weekday: string;
   // Milliseconds since the local midnight
@@ -58,7 +58,7 @@ interface LocalTime {
 }
 
 // The clock of Lugano at `at`, whatever the time zone of the server
-function zurichTime(at: number): LocalTime {
+export function zurichTime(at: number): LocalTime {
   const parts = Object.fromEntries(
     ZURICH.formatToParts(at).map((part) => [part.type, part.value])
   );

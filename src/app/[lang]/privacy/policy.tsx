@@ -34,7 +34,7 @@ function Ext({ href, children }: { href: string; children: React.ReactNode }) {
 const it: Policy = {
   title: "Privacy",
   description: "Quali dati usa LuGo, dove restano e a chi passano.",
-  updated: "Aggiornata il 17 ottobre 2026",
+  updated: "Aggiornata il 22 ottobre 2026",
   sections: [
     {
       title: "In breve",
@@ -87,9 +87,12 @@ const it: Policy = {
             L&apos;app salva nella memoria del browser (localStorage) le
             fermate preferite, le linee filtrate, gli ultimi tragitti cercati,
             il timer attivo con le sue impostazioni, il tuo passo medio
-            imparato dalle camminate e le corse che usi più spesso, con le ore
-            in cui avvii il timer. Servono a ritrovare tutto alla prossima
-            apertura e non vengono mai inviati a noi.
+            imparato dalle camminate, le corse che usi più spesso, con le ore
+            in cui avvii il timer, e lo storico dei tragitti fatti con il timer
+            (fermate, linee, orari, ritardi, camminata e meteo). Servono a
+            ritrovare tutto alla prossima apertura e a calcolare le
+            statistiche, e non vengono mai inviati a noi. Lo storico si può
+            esportare o cancellare dalla sua pagina.
           </p>
           <p>
             Il service worker tiene in cache i file dell&apos;app, per aprirla
@@ -208,7 +211,7 @@ const it: Policy = {
 const de: Policy = {
   title: "Datenschutz",
   description: "Welche Daten LuGo verwendet, wo sie bleiben und an wen sie gehen.",
-  updated: "Aktualisiert am 17. Oktober 2026",
+  updated: "Aktualisiert am 22. Oktober 2026",
   sections: [
     {
       title: "Kurz gesagt",
@@ -262,10 +265,13 @@ const de: Policy = {
             Die App speichert im Browser (localStorage) deine
             Lieblingshaltestellen, die gefilterten Linien, die letzten
             gesuchten Verbindungen, den laufenden Timer mit seinen
-            Einstellungen, dein beim Gehen gelerntes Tempo und die Fahrten, die
-            du am häufigsten nutzt, mit den Uhrzeiten, zu denen du den Timer
-            startest. So findest du beim nächsten Öffnen alles wieder. Diese
-            Daten werden nie an uns gesendet.
+            Einstellungen, dein beim Gehen gelerntes Tempo, die Fahrten, die du
+            am häufigsten nutzt, mit den Uhrzeiten, zu denen du den Timer
+            startest, und den Verlauf der Reisen mit dem Timer (Haltestellen,
+            Linien, Zeiten, Verspätungen, Fussweg und Wetter). So findest du
+            beim nächsten Öffnen alles wieder und bekommst deine Statistiken.
+            Diese Daten werden nie an uns gesendet. Den Verlauf kannst du auf
+            seiner Seite exportieren oder löschen.
           </p>
           <p>
             Der Service Worker speichert die Dateien der App zwischen, damit sie
@@ -386,7 +392,7 @@ const de: Policy = {
 const en: Policy = {
   title: "Privacy",
   description: "What data LuGo uses, where it stays and who it goes to.",
-  updated: "Updated on 17 October 2026",
+  updated: "Updated on 22 October 2026",
   sections: [
     {
       title: "In short",
@@ -438,9 +444,11 @@ const en: Policy = {
             The app saves in your browser (localStorage) your favourite stops,
             the lines you filtered, your recent journey searches, the running
             timer and its settings, the walking pace it learned from your
-            walks and the rides you use most, with the hours you start the
-            timer. They let you find everything again next time and are never
-            sent to us.
+            walks, the rides you use most, with the hours you start the timer,
+            and the history of the journeys made with the timer (stops, lines,
+            times, delays, walk and weather). They let you find everything
+            again next time and work out your statistics, and are never sent
+            to us. The history can be exported or cleared from its page.
           </p>
           <p>
             The service worker caches the app&apos;s files so it opens faster.

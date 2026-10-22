@@ -79,3 +79,12 @@ export function stopName(label: string): string {
 export function town(label: string): string {
   return label.split(",")[0].trim();
 }
+
+// "+3 min", "-1 min", "0 min" for a delay; with a decimal for an average:
+// "+3,2 min"
+export function formatDelay(m: Messages, ms: number, decimals = false): string {
+  const minutes = decimals ? Math.round(ms / 6_000) / 10 : Math.round(ms / 60_000);
+  const sign = minutes > 0 ? "+" : minutes < 0 ? "-" : "";
+  const value = decimals ? m.format.decimal(Math.abs(minutes)) : Math.abs(minutes).toString();
+  return `${sign}${value} min`;
+}

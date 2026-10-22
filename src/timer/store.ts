@@ -1,5 +1,6 @@
 "use client";
 
+import type { TripWeather } from "~/history/trip";
 import type { Connection, LegUpdate, PlannedLeg, Station } from "~/journey/models";
 import { closestPlatform, findLegDeparture, isTplLeg } from "~/journey/tpl";
 import { createLocalStore } from "~/lib/local-store";
@@ -76,6 +77,8 @@ export interface ActiveTimer {
   readonly atStop?: AtStop;
   // Where the user gets off a single bus: the timer then follows the ride
   readonly getOff?: GetOff;
+  // The weather at the stop until the bus leaves, for the history
+  readonly weather?: TripWeather;
 }
 
 export interface TimerSettings {
