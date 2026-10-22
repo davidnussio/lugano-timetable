@@ -3,7 +3,7 @@
 import { ChartColumn, Download, Timer, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { PageHeader } from "~/app/components/page-header";
+import { StopsHeader } from "~/app/components/stops-header";
 import { historyStore, useHistory } from "~/history/store";
 import {
   choices,
@@ -88,53 +88,51 @@ export default function HistoryPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <PageHeader
-        back="/timer"
-        title={m.history.title}
-        subtitle={history && history.length > 0 ? m.history.count(history.length) : undefined}
-        actions={
+      <StopsHeader title={m.history.title} current="/storico" />
+      {/* How many trips, and what to do with them */}
+      <div className="flex items-center gap-1 px-4">
+        <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+          {history && history.length > 0 ? m.history.count(history.length) : null}
+        </p>
+        <input
+          ref={file}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(event) => {
+            void importFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          aria-label={m.history.import}
+          title={m.history.import}
+          className={iconButton}
+          onClick={() => file.current?.click()}>
+          <Upload className="size-5" />
+        </button>
+        {trips.length > 0 && (
           <>
-            <input
-              ref={file}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) => {
-                void importFile(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
             <button
               type="button"
-              aria-label={m.history.import}
-              title={m.history.import}
+              aria-label={m.history.export}
+              title={m.history.export}
               className={iconButton}
-              onClick={() => file.current?.click()}>
-              <Upload className="size-5" />
+              onClick={() => download(trips)}>
+              <Download className="size-5" />
             </button>
-            {trips.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  aria-label={m.history.export}
-                  title={m.history.export}
-                  className={iconButton}
-                  onClick={() => download(trips)}>
-                  <Download className="size-5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={m.history.clear}
-                  title={m.history.clear}
-                  className={cn(iconButton, "text-destructive hover:bg-destructive/10")}
-                  onClick={clear}>
-                  <Trash2 className="size-5" />
-                </button>
-              </>
-            )}
+            <button
+              type="button"
+              aria-label={m.history.clear}
+              title={m.history.clear}
+              className={cn(iconButton, "text-destructive hover:bg-destructive/10")}
+              onClick={clear}>
+              <Trash2 className="size-5" />
+            </button>
           </>
-        }
-      />
+        )}
+      </div>
       {notice && (
         <p role="status" className="mx-4 mt-3 rounded-xl bg-muted px-3 py-2 text-sm">
           {notice}

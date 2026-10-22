@@ -36,6 +36,7 @@ export const en: Messages = {
     list: "Stops",
     map: "Map",
     journey: "Journey",
+    history: "History",
   },
   footer: {
     unofficial: "Unofficial app, not affiliated with TPL",

@@ -1,6 +1,6 @@
 "use client";
 
-import { List, MapIcon, Route } from "lucide-react";
+import { ChartColumn, List, MapIcon, Route } from "lucide-react";
 import Link from "next/link";
 import { logoGlyph } from "~/app/app-icon";
 import { useI18n } from "~/i18n/i18n-provider";
@@ -8,16 +8,18 @@ import { cn } from "~/lib/utils";
 
 const views = [
   { href: "/", label: "list", Icon: List },
-  { href: "/mappa", label: "map", Icon: MapIcon },
   { href: "/tragitto", label: "journey", Icon: Route },
+  { href: "/mappa", label: "map", Icon: MapIcon },
+  { href: "/storico", label: "history", Icon: ChartColumn },
 ] as const;
 
 type View = (typeof views)[number]["href"];
 
-// The switch between the stop list, the map and the journey planner, which
-// names the view: its title is only for screen readers. Only the current
-// view shows its label on narrow screens; labels too long to share the line
-// push the switch below the name of the app rather than being cut.
+// The switch between the stop list, the journey planner, the map and the
+// history of the trips, which names the view: its title is only for screen
+// readers. Only the current view shows its label on narrow screens; labels
+// too long to share the line push the switch below the name of the app
+// rather than being cut.
 export function StopsHeader({ title, current }: { title: string; current: View }) {
   const { m } = useI18n();
   return (
