@@ -454,7 +454,11 @@ export const en: Messages = {
     imported: (trips: number) => (trips === 1 ? "1 journey imported" : `${trips} journeys imported`),
     importFailed: "The file holds no valid journeys",
     clear: "Clear the history",
-    clearConfirm: "Delete every saved journey? This cannot be undone.",
+    clearTitle: "Clear the history?",
+    clearBody: (trips: number) =>
+      `${trips === 1 ? "The saved journey" : `The ${trips} saved journeys`} will be deleted from this device, along with the statistics. This cannot be undone: to keep a copy, export the history first.`,
+    clearCancel: "Cancel",
+    clearConfirm: "Delete",
   },
   reliability: {
     onTime: "Usually leaves on time",

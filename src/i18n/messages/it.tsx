@@ -462,7 +462,11 @@ export const it = {
     imported: (trips: number) => (trips === 1 ? "1 tragitto importato" : `${trips} tragitti importati`),
     importFailed: "Il file non contiene tragitti validi",
     clear: "Cancella lo storico",
-    clearConfirm: "Cancellare tutti i tragitti salvati? Non si può annullare.",
+    clearTitle: "Cancellare lo storico?",
+    clearBody: (trips: number) =>
+      `${trips === 1 ? "Il tragitto salvato sparirà" : `I ${trips} tragitti salvati spariranno`} da questo dispositivo, e con ${trips === 1 ? "lui" : "loro"} le statistiche. Non si può annullare: per tenerne una copia, esporta prima lo storico.`,
+    clearCancel: "Annulla",
+    clearConfirm: "Cancella",
   },
   reliability: {
     onTime: "Di solito parte in orario",
