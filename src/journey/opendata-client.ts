@@ -116,7 +116,7 @@ export class Opendata extends Context.Service<
           ),
           Effect.catch((error) =>
             Effect.as(
-              Effect.logWarning("Failed to refresh a journey leg", error),
+              Effect.logWarning(`Failed to refresh a journey leg: ${String(error.cause)}`, error),
               null
             )
           )
