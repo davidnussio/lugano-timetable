@@ -127,6 +127,35 @@ describe("Opendata", () => {
     )
   );
 
+  const unreachable = {
+    errors: [{ message: "The router is not reachable: All connection attempts failed" }],
+  };
+
+  // Real clock: the 503 is retried once after a short pause
+  it.live("keeps the message of a failure of the service", () =>
+    Effect.gen(function* () {
+      const client = yield* Opendata;
+      const error = yield* Effect.flip(client.connections("8591577", "8505213"));
+      assert.strictEqual(error.message, unreachable.errors[0].message);
+    }).pipe(
+      Effect.provide(opendata(() => Response.json(unreachable, { status: 503 })))
+    )
+  );
+
+  it.effect("leaves out the message of a rejected request", () =>
+    Effect.gen(function* () {
+      const client = yield* Opendata;
+      const error = yield* Effect.flip(client.stations({ lat: 46.0049, lon: 8.9515 }));
+      assert.strictEqual(error.message, "");
+    }).pipe(
+      Effect.provide(
+        opendata(() =>
+          Response.json({ errors: [{ message: "Bad position 46.0049, 8.9515" }] }, { status: 400 })
+        )
+      )
+    )
+  );
+
   it.effect("fails with OpendataError on errors", () =>
     Effect.gen(function* () {
       const client = yield* Opendata;

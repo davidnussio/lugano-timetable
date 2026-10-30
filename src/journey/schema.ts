@@ -85,5 +85,11 @@ export const StationboardResponse = Schema.Struct({
   stationboard: Schema.Array(StationboardEntry),
 });
 
+// The body of the error answers:
+// {"errors":[{"message":"The router is not reachable: ..."}]}
+export const ErrorResponse = Schema.Struct({
+  errors: Schema.Array(Schema.Struct({ message: Schema.String })),
+});
+
 // National stop codes coming from query strings
 export const StationId = Schema.String.check(Schema.isPattern(/^\d{7}$/));

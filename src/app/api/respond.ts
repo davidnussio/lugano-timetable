@@ -19,12 +19,16 @@ export function respond<A>(
   cacheControl?: string | ((body: A) => string)
 ): Promise<Response> {
   // The cause in the message: printed as an object, its status code and URL
-  // are nested too deep and the log only says "non 2xx status code"
+  // are nested too deep and the log only says "non 2xx status code". Then
+  // what the service said of the failure, when it said something.
   const upstreamError = (
     error: RtpiError | OpendataError | SwisstopoError | OpenMeteoError
   ) =>
     Effect.as(
-      Effect.logError(`${error._tag} request failed: ${String(error.cause)}`, error),
+      Effect.logError(
+        `${error._tag} request failed: ${String(error.cause)}${error.message ? `: ${error.message}` : ""}`,
+        error
+      ),
       Response.json({ error: "Upstream error" }, { status: 502 })
     );
 
