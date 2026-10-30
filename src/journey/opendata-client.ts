@@ -2,6 +2,7 @@ import { Context, Effect, Layer, Schedule, Schema } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
+  HttpClientError,
   HttpClientResponse,
 } from "effect/http";
 import {
@@ -20,6 +21,7 @@ import type {
 } from "./models";
 import {
   ConnectionsResponse,
+  ErrorResponse,
   LocationsResponse,
   StationboardResponse,
 } from "./schema";
@@ -47,9 +49,25 @@ export class OpendataError extends Schema.TaggedError<OpendataError>()(
   "OpendataError",
   {
     endpoint: Schema.String,
+    // What the service says of a failure of its own, such as "The router is
+    // not reachable: All connection attempts failed"
+    message: Schema.optionalKey(Schema.String),
     cause: Schema.Defect(),
   }
 ) {}
+
+// The message of a 5xx answer. The one of a rejected request (4xx) could
+// repeat its parameters, positions included, and they stay out of the log.
+const failureMessage = (cause: unknown): Effect.Effect<string | undefined> =>
+  HttpClientError.isHttpClientError(cause) &&
+  cause.reason._tag === "StatusCodeError" &&
+  cause.reason.response.status >= 500
+    ? HttpClientResponse.schemaBodyJson(ErrorResponse)(cause.reason.response).pipe(
+        Effect.map((body) => body.errors.map((error) => error.message).join("; ")),
+        Effect.timeout("1 second"),
+        Effect.orElseSucceed(() => undefined)
+      )
+    : Effect.succeed(undefined);
 
 const isDefined = <A>(value: A | undefined): value is A => value !== undefined;
 
@@ -101,7 +119,17 @@ export class Opendata extends Context.Service<
         client.get(`${OPENDATA_URL}/${endpoint}`, { urlParams }).pipe(
           Effect.flatMap(HttpClientResponse.schemaBodyJson(schema)),
           Effect.timeout("15 seconds"),
-          Effect.mapError((cause) => new OpendataError({ endpoint, cause })),
+          Effect.catch((cause) =>
+            Effect.flatMap(failureMessage(cause), (message) =>
+              Effect.fail(
+                new OpendataError({
+                  endpoint,
+                  cause,
+                  ...(message ? { message } : {}),
+                })
+              )
+            )
+          ),
           Effect.withSpan(`Opendata.${endpoint}`, { attributes: urlParams })
         );
 
@@ -116,7 +144,10 @@ export class Opendata extends Context.Service<
           ),
           Effect.catch((error) =>
             Effect.as(
-              Effect.logWarning(`Failed to refresh a journey leg: ${String(error.cause)}`, error),
+              Effect.logWarning(
+                `Failed to refresh a journey leg: ${String(error.cause)}${error.message ? `: ${error.message}` : ""}`,
+                error
+              ),
               null
             )
           )
