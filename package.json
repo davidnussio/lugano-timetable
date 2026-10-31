@@ -38,7 +38,7 @@
     "vitest": "^5.0.3"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.5",
+    "@effect/vitest": "4.1.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/geojson": "^7946.0.16",
     "eslint": "^9.39.5",
