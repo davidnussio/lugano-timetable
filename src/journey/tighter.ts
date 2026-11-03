@@ -4,7 +4,7 @@
 // search from the stop of the transfer, starting when the previous leg gets
 // there, finds the trains it leaves out; the app judges the transfer with
 // its own walking times, as the timer does.
-import { expected, transfer } from "~/timer/journey";
+import { expected, transfer, transferWalkingMs } from "~/timer/journey";
 import type { Connection, PlannedLeg } from "./models";
 
 // A search again from a transfer stop
@@ -20,13 +20,26 @@ const WAIT_WORTH_PROBING_MS = 3 * 60_000;
 export const probeKey = ({ from, at }: TransferProbe) =>
   `${from}@${Math.floor(at / 60_000)}`;
 
-// Waiting at the transfer to `next` beyond the walk planned to its platform
-function waitMs(arriving: PlannedLeg, next: PlannedLeg): number {
-  return (
-    next.departure.scheduled -
-    arriving.arrival.scheduled -
-    (next.walkBeforeMs ?? 0)
-  );
+// Time between getting off and the next departure, walk included: the
+// walk of the router is part of what it overestimates
+function gapMs(arriving: PlannedLeg, next: PlannedLeg): number {
+  return next.departure.scheduled - arriving.arrival.scheduled;
+}
+
+// The walk to `boarding` after getting off at `stop`: from the distance
+// between them when both positions are known, never longer than the walk of
+// the router (`plannedMs`), which keeps a margin of its own. The router
+// gives 4 minutes from the bus of Via Brentani to the trains of Lugano.
+export function walkToBoarding(
+  stop: PlannedLeg["to"],
+  boarding: PlannedLeg["from"],
+  plannedMs: number | undefined
+): number | undefined {
+  if (stop.position === undefined || boarding.position === undefined) {
+    return plannedMs;
+  }
+  const estimatedMs = Math.round(transferWalkingMs(stop, boarding) / 1000) * 1000;
+  return plannedMs === undefined ? estimatedMs : Math.min(estimatedMs, plannedMs);
 }
 
 // The transfers of `connections` with a long wait, one probe per stop and
@@ -37,7 +50,7 @@ export function transferProbes(
   const probes = new Map<string, TransferProbe>();
   for (const { legs } of connections) {
     for (let i = 0; i + 1 < legs.length; i++) {
-      if (waitMs(legs[i], legs[i + 1]) < WAIT_WORTH_PROBING_MS) continue;
+      if (gapMs(legs[i], legs[i + 1]) < WAIT_WORTH_PROBING_MS) continue;
       const probe = { from: legs[i + 1].from.id, at: legs[i].arrival.scheduled };
       probes.set(probeKey(probe), probe);
     }
@@ -69,9 +82,11 @@ export function splice(
     const [first, ...rest] = candidate.legs;
     // Starting with a walk elsewhere, or staying on the same bus
     if (first.from.id !== next.from.id || first.trip === arriving.trip) continue;
+    const walkMs = walkToBoarding(arriving.to, first.from, next.walkBeforeMs);
+    const { walkBeforeMs: _planned, ...boardingLeg } = first;
     const boarding: PlannedLeg = {
-      ...first,
-      ...(next.walkBeforeMs === undefined ? {} : { walkBeforeMs: next.walkBeforeMs }),
+      ...boardingLeg,
+      ...(walkMs === undefined || walkMs === 0 ? {} : { walkBeforeMs: walkMs }),
     };
     if (transfer(arriving, boarding).status === "missed") continue;
     const spliced: Connection = {

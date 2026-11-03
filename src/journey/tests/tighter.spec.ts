@@ -42,7 +42,7 @@ describe("transferProbes", () => {
   });
 
   it("skips the transfers without time to wait", () => {
-    const quick = { ...s10, departure: { scheduled: minutes(5, 59) } };
+    const quick = { ...s10, departure: { scheduled: minutes(5, 54) } };
     expect(transferProbes([{ legs: [bus, quick] }])).toEqual([]);
     expect(transferProbes([{ legs: [bus] }])).toEqual([]);
   });
