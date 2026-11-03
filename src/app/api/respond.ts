@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { Opendata, OpendataError } from "~/journey/opendata-client";
 import type { Swisstopo, SwisstopoError } from "~/terrain/swisstopo-client";
+import type { Lines } from "~/timetable/line-catalog";
 import type { Reliability } from "~/timetable/reliability-store";
 import type { RtpiError } from "~/timetable/rtpi-client";
 import { runtime } from "~/timetable/runtime";
@@ -14,7 +15,7 @@ export function respond<A>(
   program: Effect.Effect<
     A,
     RtpiError | OpendataError | SwisstopoError | OpenMeteoError | Schema.SchemaError,
-    Timetable | Opendata | Swisstopo | OpenMeteo | Reliability
+    Timetable | Opendata | Swisstopo | OpenMeteo | Reliability | Lines
   >,
   cacheControl?: string | ((body: A) => string)
 ): Promise<Response> {

@@ -35,6 +35,7 @@ export const it = {
     list: "Fermate",
     map: "Mappa",
     journey: "Tragitti",
+    lines: "Linee",
     history: "Storico",
   },
   footer: {
@@ -129,6 +130,26 @@ export const it = {
     // Already on the bus, without a timer
     onThisBus: "Sono su questo bus",
     whereGetOff: "Tocca la fermata dove scendi: il timer ti avviserà",
+  },
+  lines: {
+    title: "Linee",
+    choose: "Scegli una linea per vedere dove sono i bus",
+    learning: "Sto raccogliendo le linee dai dati in tempo reale: riprova tra qualche minuto",
+    notFound: "Linea non trovata",
+    towards: (dest: string) => `Verso ${dest}`,
+    direction: "Direzione",
+    buses: (buses: number) =>
+      buses === 0 ? "Nessun bus in viaggio ora" : buses === 1 ? "1 bus in viaggio" : `${buses} bus in viaggio`,
+    busHeading: (stop: string, minutes: number) =>
+      minutes <= 0 ? `Bus in arrivo a ${stop}` : `Bus verso ${stop}, tra ${minutes} min`,
+    busAt: (stop: string) => `Bus alla fermata ${stop}`,
+    busWaiting: (stop: string, minutes: number) =>
+      `Bus al capolinea ${stop}, parte tra ${minutes} min`,
+    delayed: "In ritardo",
+    estimate: "Posizioni stimate dai tempi di arrivo alle fermate: TPL non pubblica il GPS dei bus",
+    list: "Fermate",
+    map: "Mappa",
+    departuresOf: (stop: string) => `Partenze da ${stop}`,
   },
   journey: {
     title: "Tragitto",

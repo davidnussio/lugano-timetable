@@ -36,6 +36,7 @@ export const en: Messages = {
     list: "Stops",
     map: "Map",
     journey: "Journeys",
+    lines: "Lines",
     history: "History",
   },
   footer: {
@@ -129,6 +130,26 @@ export const en: Messages = {
     // Already on the bus, without a timer
     onThisBus: "I'm on this bus",
     whereGetOff: "Tap the stop where you get off: the timer will alert you",
+  },
+  lines: {
+    title: "Lines",
+    choose: "Pick a line to see where its buses are",
+    learning: "Collecting the lines from the real-time data: try again in a few minutes",
+    notFound: "Line not found",
+    towards: (dest: string) => `To ${dest}`,
+    direction: "Direction",
+    buses: (buses: number) =>
+      buses === 0 ? "No bus running now" : buses === 1 ? "1 bus running" : `${buses} buses running`,
+    busHeading: (stop: string, minutes: number) =>
+      minutes <= 0 ? `Bus arriving at ${stop}` : `Bus heading to ${stop}, in ${minutes} min`,
+    busAt: (stop: string) => `Bus at ${stop}`,
+    busWaiting: (stop: string, minutes: number) =>
+      `Bus at the terminus ${stop}, leaves in ${minutes} min`,
+    delayed: "Late",
+    estimate: "Positions estimated from the arrival times at the stops: TPL does not publish the GPS of its buses",
+    list: "Stops",
+    map: "Map",
+    departuresOf: (stop: string) => `Departures from ${stop}`,
   },
   journey: {
     title: "Journey",
