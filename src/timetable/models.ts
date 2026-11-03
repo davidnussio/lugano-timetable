@@ -31,8 +31,8 @@ export interface Vehicle {
   // Last message of the vehicle, as sent by the server
   readonly lastcom?: string;
   readonly delaySeconds?: number;
-  // Share of the trip travelled, 0 to 100
-  readonly distancePercent?: number;
+  // "distanceperc" of the server, 0 to 1: how far along, not documented
+  readonly progress?: number;
   readonly position?: { readonly lat: number; readonly lon: number };
 }
 

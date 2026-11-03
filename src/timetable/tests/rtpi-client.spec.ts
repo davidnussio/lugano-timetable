@@ -26,12 +26,11 @@ describe("rtpiMessage", () => {
     );
   });
 
-  it("asks for the lines and the lines of the stops like the official app", () => {
+  it("asks for the lines like the official app", () => {
     assert.strictEqual(
       rtpiMessage("GETROUTES", ""),
       '{source:"",destination:0,reqbasins:"TPL",type:GETROUTES}'
     );
-    assert.strictEqual(rtpiMessage("GETTARGETS", ""), '{source:"",destination:0,type:GETTARGETS}');
   });
 
   it("sends session and parameters for monitored requests", () => {
@@ -43,28 +42,29 @@ describe("rtpiMessage", () => {
 });
 
 describe("toVehicle", () => {
-  it("reads the vehicle of a routing, numbers as text included", () => {
+  // As answered for a bus of line 5 on 3 November 2026
+  it("reads the vehicle of a routing, all text", () => {
     assert.deepStrictEqual(
       toVehicle({
-        vehicle: 214,
-        lastcom: "11:32:05",
-        delay: "65",
-        distanceperc: 42.5,
-        latitude: "46,0121",
-        longitude: 8.9512,
+        vehicle: "236",
+        lastcom: "21:13:14",
+        delay: "375",
+        distanceperc: "0.7692307692307693",
+        latitude: "46.03103333361111",
+        longitude: "8.936366666666666",
       }),
       {
-        vehicle: "214",
-        lastcom: "11:32:05",
-        delaySeconds: 65,
-        distancePercent: 42.5,
-        position: { lat: 46.0121, lon: 8.9512 },
+        vehicle: "236",
+        lastcom: "21:13:14",
+        delaySeconds: 375,
+        progress: 0.7692307692307693,
+        position: { lat: 46.03103333361111, lon: 8.936366666666666 },
       }
     );
   });
 
   it("has no position without a GPS fix", () => {
-    assert.deepStrictEqual(toVehicle({ vehicle: "214", latitude: 0, longitude: 0 }), {
+    assert.deepStrictEqual(toVehicle({ vehicle: "214", latitude: "0.0", longitude: "0.0" }), {
       vehicle: "214",
     });
     assert.isUndefined(toVehicle({}));
@@ -96,12 +96,21 @@ describe("RtpiClient", () => {
     )
   );
 
-  it.effect("reads the lines from data only", () =>
+  it.effect("reads the lines of TPL", () =>
     Effect.gen(function* () {
       const rtpi = yield* RtpiClient;
       const routes = yield* rtpi.routes;
-      assert.deepStrictEqual(routes, [{ Uid: "23", ShortCode: "6" }]);
-    }).pipe(Effect.provide(rtpiClient({ data: [{ Uid: "23", ShortCode: "6", Other: 1 }] })))
+      assert.deepStrictEqual(routes, [{ Uid: 23, ShortCode: "5", Backcolor: "0068ac" }]);
+    }).pipe(
+      Effect.provide(
+        rtpiClient({
+          status: "OK",
+          source: "S1",
+          type: "Routes",
+          data: { TPL: [{ Uid: 23, ShortCode: "5", Backcolor: "0068ac", Map: "RMAP23.PNG" }] },
+        })
+      )
+    )
   );
 
   it.effect("decodes itineraries keeping only the used fields", () => {

@@ -25,6 +25,11 @@ const targets = [
   target("Centro", ["501", [["23", "1", "Breganzona"], [30, "1", "Paradiso"]]], ["502", [["23", "2", "Cornaredo"]]]),
   target("Besso", ["601", [["23", "1", "Besso"]]]),
 ];
+// Another basin, where the same ids are other lines
+targets.push({
+  Name: "Acquacalda",
+  Identifiers: [{ Id: "605", Basin: "ABL", RoutesDirections: [{ uid: 23, dir: 1, des: "Disentis" }] }],
+});
 
 describe("toLines", () => {
   const lines = toLines(routes, targets);

@@ -2,6 +2,7 @@ import { Context, Effect, Layer, Schedule, Schema } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
+  HttpClientResponse,
 } from "effect/http";
 import type { Vehicle } from "./models";
 import { rtpiNumber, rtpiText } from "./rtpi-values";
@@ -9,10 +10,9 @@ import {
   FullTarget,
   Itinerary,
   RoutingStop,
-  RtpiData,
+  RoutesResponse,
   RtpiResponse,
-  RtpiRoute,
-  TargetRoutes,
+  type RtpiRoute,
 } from "./schema";
 
 // Client for the TEQ "Bus Sapiens" RTPI server used by the official TPL Bus
@@ -29,15 +29,12 @@ import {
 // - `validity: "OK"` with an empty `data` means there is nothing to show
 //   (e.g. no buses expected soon), not an invalid session.
 
-export const RTPI_URL = "http://arcobaleno.teqmonitoring.com/RTPI-ARC/rtpi";
+// HTTPS, as in the configuration of the official app 4.0.12
+// (bussapiens/4.0.10/tpl/config.json, `network.rtpiBaseUrl`)
+export const RTPI_URL = "https://arcobaleno.teqmonitoring.com/RTPI-ARC/rtpi";
 const BASIN = "TPL";
 
-export type RtpiType =
-  | "GETFULLTARGETS"
-  | "GETTARGETS"
-  | "GETROUTES"
-  | "GETITINERARIES"
-  | "GETROUTING";
+export type RtpiType = "GETFULLTARGETS" | "GETROUTES" | "GETITINERARIES" | "GETROUTING";
 
 export function rtpiMessage(
   type: RtpiType,
@@ -48,11 +45,7 @@ export function rtpiMessage(
     // crc:0 always returns the full list (the app sends its cached CRC)
     return `{basin:'${BASIN}',reqbasin:'${BASIN}',source:'${source}',destination:0,type:GETFULLTARGETS,data:{crc:0}}`;
   }
-  // As built by the official app 4.0.12: the stops with the lines of each
-  // platform, and the lines of the basins
-  if (type === "GETTARGETS") {
-    return `{source:"${source}",destination:0,type:GETTARGETS}`;
-  }
+  // As built by the official app 4.0.12
   if (type === "GETROUTES") {
     return `{source:"${source}",destination:0,reqbasins:"${BASIN}",type:GETROUTES}`;
   }
@@ -67,8 +60,10 @@ export interface Monitor<A> {
   readonly vehicle?: Vehicle;
 }
 
-// The vehicle of a routing, from the fields next to its stops: a position
-// only with a GPS fix (the official app treats 0 as none)
+// The vehicle of a routing, from the fields next to its stops, all text:
+// {"vehicle": "236", "lastcom": "21:13:14", "delay": "375", "distanceperc":
+// "0.769", "latitude": "46.0310", "longitude": "8.9363"}. A position only
+// with a GPS fix: "0.0" before the trip starts.
 export function toVehicle(response: {
   readonly vehicle?: unknown;
   readonly lastcom?: unknown;
@@ -86,7 +81,7 @@ export function toVehicle(response: {
       delaySeconds: rtpiNumber(response.delay),
     }),
     ...(rtpiNumber(response.distanceperc) !== undefined && {
-      distancePercent: rtpiNumber(response.distanceperc),
+      progress: rtpiNumber(response.distanceperc),
     }),
     ...(lat !== undefined &&
       lon !== undefined &&
@@ -98,22 +93,7 @@ export function toVehicle(response: {
   return Object.keys(vehicle).length > 0 ? vehicle : undefined;
 }
 
-// The answers not seen yet by this server process, to log once: the
-// requests copied from the official app were never tried before
-const logged = new Set<RtpiType>();
-const SAMPLE_LENGTH = 2000;
 
-const logFirstAnswer = (type: RtpiType, body: unknown) =>
-  type === "GETFULLTARGETS" || type === "GETITINERARIES" || logged.has(type)
-    ? Effect.void
-    : Effect.suspend(() => {
-        logged.add(type);
-        const { data, ...rest } = (body ?? {}) as { data?: unknown };
-        const first = Array.isArray(data) ? data.slice(0, 2) : data;
-        return Effect.logInfo(
-          `RTPI ${type} answer: ${JSON.stringify({ ...rest, count: Array.isArray(data) ? data.length : undefined, data: first }).slice(0, SAMPLE_LENGTH)}`
-        );
-      });
 
 export class RtpiError extends Schema.TaggedError<RtpiError>()("RtpiError", {
   type: Schema.String,
@@ -124,8 +104,7 @@ export class RtpiClient extends Context.Service<
   RtpiClient,
   {
     readonly fullTargets: Effect.Effect<ReadonlyArray<FullTarget>, RtpiError>;
-    // The stops with the lines and directions of each platform
-    readonly targetRoutes: Effect.Effect<ReadonlyArray<TargetRoutes>, RtpiError>;
+    // The lines of TPL
     readonly routes: Effect.Effect<ReadonlyArray<RtpiRoute>, RtpiError>;
     itineraries(
       source: string,
@@ -159,25 +138,12 @@ export class RtpiClient extends Context.Service<
             urlParams: { data: rtpiMessage(type, source, parameters) },
           })
           .pipe(
-            Effect.flatMap((response) => response.json),
-            Effect.tap((body) => logFirstAnswer(type, body)),
-            Effect.flatMap(Schema.decodeUnknownEffect(RtpiResponse(item))),
+            Effect.flatMap(HttpClientResponse.schemaBodyJson(RtpiResponse(item))),
             Effect.timeout("5 seconds"),
             Effect.mapError((cause) => new RtpiError({ type, cause })),
             Effect.withSpan(`RtpiClient.${type}`, { attributes: { parameters } })
           );
 
-      // Not monitored, read like the official app: only `data`
-      const list = <S extends Schema.Top>(type: "GETTARGETS" | "GETROUTES", item: S) =>
-        client.get(RTPI_URL, { urlParams: { data: rtpiMessage(type, "") } }).pipe(
-          Effect.flatMap((response) => response.json),
-          Effect.tap((body) => logFirstAnswer(type, body)),
-          Effect.flatMap(Schema.decodeUnknownEffect(RtpiData(item))),
-          Effect.map((response) => response.data),
-          Effect.timeout("10 seconds"),
-          Effect.mapError((cause) => new RtpiError({ type, cause })),
-          Effect.withSpan(`RtpiClient.${type}`)
-        );
 
       const monitor = <S extends Schema.Top>(
         type: "GETITINERARIES" | "GETROUTING",
@@ -203,8 +169,15 @@ export class RtpiClient extends Context.Service<
         fullTargets: request("GETFULLTARGETS", FullTarget).pipe(
           Effect.map((response) => response.data)
         ),
-        targetRoutes: list("GETTARGETS", TargetRoutes),
-        routes: list("GETROUTES", RtpiRoute),
+        routes: client
+          .get(RTPI_URL, { urlParams: { data: rtpiMessage("GETROUTES", "") } })
+          .pipe(
+            Effect.flatMap(HttpClientResponse.schemaBodyJson(RoutesResponse)),
+            Effect.map((response) => response.data.TPL ?? []),
+            Effect.timeout("10 seconds"),
+            Effect.mapError((cause) => new RtpiError({ type: "GETROUTES", cause })),
+            Effect.withSpan("RtpiClient.GETROUTES")
+          ),
         itineraries: (source, targets) =>
           monitor("GETITINERARIES", Itinerary, source, targets),
         routing: (source, parameters) =>
