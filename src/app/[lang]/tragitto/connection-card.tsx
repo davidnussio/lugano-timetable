@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, ChevronDown, ChevronRight, Footprints } from "lucide-react";
+import { AlertTriangle, Bell, BellRing, ChevronDown, ChevronRight, Footprints } from "lucide-react";
 import { Fragment, useState } from "react";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useI18n } from "~/i18n/i18n-provider";
@@ -53,7 +53,11 @@ export function ConnectionCard({
   const { legs, walkAfterMs } = connection;
   const first = legs[0];
   const transfers = legs.length - 1;
-  const atRisk = !feasible(after ? { legs: [after, ...legs] } : connection);
+  // Not feasible with the real-time data, or planned with a transfer
+  // shorter than the official minimum: both may be missed
+  const atRisk =
+    !feasible(after ? { legs: [after, ...legs] } : connection) ||
+    legs.some((leg) => leg.tightTransfer);
 
   return (
     <li
@@ -139,6 +143,12 @@ export function LegList({ connection }: { connection: Connection }) {
             <li className="flex items-center gap-2 pl-14 text-xs text-muted-foreground">
               <Footprints className="size-3.5" />
               {m.journey.walk(walkMinutes(leg.walkBeforeMs))}
+            </li>
+          )}
+          {leg.tightTransfer && (
+            <li className="flex items-start gap-2 pl-14 text-xs font-medium text-destructive">
+              <AlertTriangle className="mt-px size-3.5 shrink-0" />
+              {m.journey.tightTransfer}
             </li>
           )}
           <li className="flex gap-3">

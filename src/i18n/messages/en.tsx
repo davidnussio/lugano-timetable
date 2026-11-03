@@ -178,6 +178,7 @@ export const en: Messages = {
     transfers: (transfers: number) =>
       transfers === 0 ? "direct" : transfers === 1 ? "1 change" : `${transfers} changes`,
     atRisk: "Connection at risk",
+    tightTransfer: "Shorter change than the official minimum: if you miss it, there is the next one",
     startTimer: (time: string) => `Start a timer for the journey at ${time}`,
     walk: (minutes: number) => `${minutes} min on foot`,
     towards: (destination: string) => `towards ${destination}`,

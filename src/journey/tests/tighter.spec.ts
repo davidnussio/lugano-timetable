@@ -56,6 +56,8 @@ describe("splice", () => {
   it("takes the earlier train that can still be caught", () => {
     const spliced = splice(routed, 0, [{ legs: [ic2] }, { legs: [s10] }]);
     expect(spliced?.legs.map((l) => l.trip)).toEqual(["bus", "ic2"]);
+    // Marked: the router would not propose it
+    expect(spliced?.legs.map((l) => l.tightTransfer)).toEqual([undefined, true]);
     // The walk of the router to the platforms stays
     expect(spliced?.legs[1].walkBeforeMs).toBe(300_000);
   });

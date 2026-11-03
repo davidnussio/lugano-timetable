@@ -184,6 +184,7 @@ export const de: Messages = {
     transfers: (transfers: number) =>
       transfers === 0 ? "direkt" : transfers === 1 ? "1 Umstieg" : `${transfers} Umstiege`,
     atRisk: "Anschluss gefährdet",
+    tightTransfer: "Kürzerer Umstieg als das offizielle Minimum: verpasst du ihn, gibt es den nächsten",
     startTimer: (time: string) => `Timer für die Verbindung um ${time} starten`,
     walk: (minutes: number) => `${minutes} min zu Fuss`,
     towards: (destination: string) => `Richtung ${destination}`,

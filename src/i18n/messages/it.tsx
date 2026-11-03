@@ -178,6 +178,8 @@ export const it = {
     transfers: (transfers: number) =>
       transfers === 0 ? "diretto" : transfers === 1 ? "1 cambio" : `${transfers} cambi`,
     atRisk: "Coincidenza a rischio",
+    // A transfer shorter than the official minimum, kept since it can be made
+    tightTransfer: "Cambio più breve del minimo ufficiale: se lo perdi, c'è la corsa dopo",
     startTimer: (time: string) => `Avvia timer per il tragitto delle ${time}`,
     walk: (minutes: number) => `A piedi ${minutes} min`,
     towards: (destination: string) => `direzione ${destination}`,
