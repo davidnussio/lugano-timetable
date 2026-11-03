@@ -76,7 +76,57 @@ export const RtpiResponse = <S extends Schema.Top>(item: S) =>
     // Only on monitored requests: "KO" while the data is not ready yet
     validity: Schema.optionalKey(Schema.Literals(["OK", "KO"])),
     data: Schema.Array(item),
+    // Only on GETROUTING, of the vehicle running the trip (as read in the
+    // official app): numbers or text, checked when used
+    itinerary: Schema.optionalKey(Schema.Unknown),
+    vehicle: Schema.optionalKey(Schema.Unknown),
+    lastcom: Schema.optionalKey(Schema.Unknown),
+    delay: Schema.optionalKey(Schema.Unknown),
+    distanceperc: Schema.optionalKey(Schema.Unknown),
+    latitude: Schema.optionalKey(Schema.Unknown),
+    longitude: Schema.optionalKey(Schema.Unknown),
   });
+
+// Answers of the requests that are not monitored, read as the official app
+// reads them: only `data`
+export const RtpiData = <S extends Schema.Top>(item: S) =>
+  Schema.Struct({ data: Schema.Array(item) });
+
+// A line, from GETROUTES. The types of the values are not documented:
+// numbers or text, normalized by `toLine`.
+export const RtpiRoute = Schema.Struct({
+  Uid: Schema.optionalKey(Schema.Unknown),
+  Code: Schema.optionalKey(Schema.Unknown),
+  // "6", as written on the bus
+  ShortCode: Schema.optionalKey(Schema.Unknown),
+  Description: Schema.optionalKey(Schema.Unknown),
+  Backcolor: Schema.optionalKey(Schema.Unknown),
+  Forecolor: Schema.optionalKey(Schema.Unknown),
+  Basin: Schema.optionalKey(Schema.Unknown),
+});
+export type RtpiRoute = typeof RtpiRoute.Type;
+
+// A stop of GETTARGETS with, for each platform, the lines and directions
+// stopping there
+export const RouteDirection = Schema.Struct({
+  uid: Schema.optionalKey(Schema.Unknown),
+  dir: Schema.optionalKey(Schema.Unknown),
+  des: Schema.optionalKey(Schema.Unknown),
+});
+
+export const TargetRoutes = Schema.Struct({
+  Name: Schema.optionalKey(Schema.Unknown),
+  Identifiers: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({
+        Id: Schema.optionalKey(Schema.Unknown),
+        Basin: Schema.optionalKey(Schema.Unknown),
+        RoutesDirections: Schema.optionalKey(Schema.Array(RouteDirection)),
+      })
+    )
+  ),
+});
+export type TargetRoutes = typeof TargetRoutes.Type;
 
 // Non-negative integer identifiers coming from query strings
 export const Identifier = Schema.NumberFromString.check(

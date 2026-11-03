@@ -18,6 +18,7 @@ import type {
   RoutingStop,
   Target,
 } from "./models";
+import { type Line, toLines } from "./lines";
 import { type Monitor, RtpiClient, type RtpiError } from "./rtpi-client";
 import { SessionStore } from "./session-store";
 
@@ -52,6 +53,8 @@ export class Timetable extends Context.Service<
   Timetable,
   {
     readonly targets: Effect.Effect<ReadonlyArray<Target>, RtpiError>;
+    // The lines, with the platforms of each direction
+    readonly lines: Effect.Effect<ReadonlyArray<Line>, RtpiError>;
     itineraries(
       targets: ReadonlyArray<number>
     ): Effect.Effect<Monitored<Departure>, RtpiError>;
@@ -87,6 +90,14 @@ export class Timetable extends Context.Service<
         Effect.cachedWithTTL((exit) => (Exit.isSuccess(exit) ? "1 hour" : 0))
       );
 
+      // The lines change with the timetable: kept for an hour like the stops
+      const lines = yield* Effect.all([rtpi.routes, rtpi.targetRoutes], {
+        concurrency: 2,
+      }).pipe(
+        Effect.map(([routes, targets]) => toLines(routes, targets)),
+        Effect.cachedWithTTL((exit) => (Exit.isSuccess(exit) ? "1 hour" : 0))
+      );
+
       // Every query gets its own session: the server monitors one set of
       // stops per session, so sharing it between queries resets the monitor.
       const monitored = <A>(
@@ -110,15 +121,16 @@ export class Timetable extends Context.Service<
             return response;
           });
 
-          const { ready, data } = yield* Effect.repeat(poll, {
+          const { ready, data, vehicle } = yield* Effect.repeat(poll, {
             schedule: pollSchedule,
             until: (response) => response.ready,
           });
-          return { ready, data };
+          return { ready, data, ...(vehicle && { vehicle }) };
         });
 
       return Timetable.of({
         targets,
+        lines,
         itineraries: Effect.fn("Timetable.itineraries")(function* (stops) {
           const result = yield* monitored(
             `rtpi:session:GETITINERARIES:${stops.join(",")}`,

@@ -40,6 +40,8 @@ const scriptedRtpi = (
   Layer.succeed(
     RtpiClient,
     RtpiClient.of({
+      targetRoutes: Effect.succeed([]),
+      routes: Effect.succeed([]),
       fullTargets: Effect.sync(() => {
         calls.fullTargets++;
         return [

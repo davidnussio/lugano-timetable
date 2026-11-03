@@ -38,6 +38,7 @@ export const de: Messages = {
     list: "Haltestellen",
     map: "Karte",
     journey: "Verbindungen",
+    lines: "Linien",
     history: "Verlauf",
   },
   footer: {
@@ -135,6 +136,28 @@ export const de: Messages = {
     // Already on the bus, without a timer
     onThisBus: "Ich bin in diesem Bus",
     whereGetOff: "Tippe auf die Haltestelle, an der du aussteigst: der Timer erinnert dich",
+  },
+  lines: {
+    title: "Linien",
+    choose: "Wähle eine Linie, um zu sehen, wo ihre Busse sind",
+    none: "Gerade keine Linie verfügbar",
+    noStops: "Keine Fahrt dieser Linie, aus der die Haltestellen gelesen werden können: versuche es später noch einmal",
+    gps: "GPS-Position",
+    notFound: "Linie nicht gefunden",
+    towards: (dest: string) => `Richtung ${dest}`,
+    direction: "Richtung",
+    buses: (buses: number) =>
+      buses === 0 ? "Gerade kein Bus unterwegs" : buses === 1 ? "1 Bus unterwegs" : `${buses} Busse unterwegs`,
+    busHeading: (stop: string, minutes: number) =>
+      minutes <= 0 ? `Bus erreicht gleich ${stop}` : `Bus Richtung ${stop}, in ${minutes} Min.`,
+    busAt: (stop: string) => `Bus an der Haltestelle ${stop}`,
+    busWaiting: (stop: string, minutes: number) =>
+      `Bus an der Endhaltestelle ${stop}, fährt in ${minutes} Min. ab`,
+    delayed: "Verspätet",
+    estimate: "Positionen geschätzt aus den Ankunftszeiten an den Haltestellen. Auf der Karte die GPS-Position der Busse, die sie senden",
+    list: "Haltestellen",
+    map: "Karte",
+    departuresOf: (stop: string) => `Abfahrten ab ${stop}`,
   },
   journey: {
     title: "Verbindung",
