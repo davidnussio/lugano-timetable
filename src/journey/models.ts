@@ -24,6 +24,9 @@ export interface PlannedLeg extends Leg {
   // "B" (bus), "S", "RE", "IR", "EC"…
   readonly category: string;
   readonly operator?: string;
+  // Boarded after a transfer shorter than the official minimum, which the
+  // router of transport.opendata.ch would not propose (see `tighter.ts`)
+  readonly tightTransfer?: boolean;
 }
 
 export interface Connection {

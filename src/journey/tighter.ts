@@ -87,6 +87,7 @@ export function splice(
     const boarding: PlannedLeg = {
       ...boardingLeg,
       ...(walkMs === undefined || walkMs === 0 ? {} : { walkBeforeMs: walkMs }),
+      tightTransfer: true,
     };
     if (transfer(arriving, boarding).status === "missed") continue;
     const spliced: Connection = {
