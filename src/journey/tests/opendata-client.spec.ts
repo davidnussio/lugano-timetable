@@ -103,15 +103,17 @@ describe("Opendata", () => {
       assert.deepStrictEqual(
         connections.map((c) => c.legs.map((leg) => leg.line)),
         [
-          ["4", "IC2"],
-          ["4", "S10"],
+          ["6", "IC2"],
+          ["6", "S10"],
         ]
       );
+      // The walk from the distance, not the 4 minutes of the router
+      assert.strictEqual(connections[0].legs[1].walkBeforeMs, 122_000);
       const probe = requested[1].searchParams;
       assert.strictEqual(probe.get("from"), "8505300");
       assert.strictEqual(probe.get("to"), "8505213");
       assert.strictEqual(probe.get("date"), "2026-11-04");
-      assert.strictEqual(probe.get("time"), "05:52");
+      assert.strictEqual(probe.get("time"), "05:57");
       assert.strictEqual(probe.get("limit"), "3");
     }).pipe(Effect.provide(opendata(respond, requested)));
   });
@@ -122,7 +124,7 @@ describe("Opendata", () => {
       const connections = yield* client.connections("8591251", "8505213");
       assert.deepStrictEqual(
         connections.map((c) => c.legs.map((leg) => leg.line)),
-        [["4", "S10"]]
+        [["6", "S10"]]
       );
     }).pipe(
       Effect.provide(

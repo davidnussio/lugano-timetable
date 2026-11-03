@@ -237,8 +237,8 @@ export const locations = {
 };
 
 // The early morning of 2026-11-04 (CET): 05:46 bus to Lugano, Stazione
-// Nord, walk to the trains and the S10 of 06:03, where the IC2 of 06:00
-// could be caught
+// Nord at 05:57, the router's 4 minutes of walk to the trains and the S10 of
+// 06:03, where the IC2 of 06:00 is caught walking the 120 m
 const at = (hours: number, minutes: number) =>
   Date.UTC(2026, 10, 4, hours - 1, minutes) / 1000;
 const brentani = station("8591251", "Lugano, Via Brentani", 46.0089, 8.9488);
@@ -278,16 +278,16 @@ export const morningBusAndS10 = {
         name: "002311",
         category: "B",
         subcategory: null,
-        number: "4",
+        number: "6",
         operator: "TPL",
         to: "Lugano, Stazione Nord",
         passList: [],
       },
       walk: null,
       departure: checkpoint(brentani, null, at(5, 46)),
-      arrival: checkpoint(stazioneNord, at(5, 52), null),
+      arrival: checkpoint(stazioneNord, at(5, 57), null),
     },
-    walk(stazioneNord, lugano, 300),
+    walk(stazioneNord, lugano, 240),
     s10,
   ],
 };
@@ -300,5 +300,5 @@ const direct = (section: typeof s10) => ({
   sections: [section],
 });
 
-// From Lugano at 05:52: both trains
+// From Lugano at 05:57: both trains
 export const morningFromLugano = [direct(ic2), direct(s10)];
