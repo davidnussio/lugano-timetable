@@ -25,6 +25,7 @@ import {
   LocationsResponse,
   StationboardResponse,
 } from "./schema";
+import { probeKey, transferProbes, withTighterTransfers } from "./tighter";
 
 // Client for transport.opendata.ch: stop search, journey planning and the
 // departures of a stop, with the real-time forecasts of every operator (TPL
@@ -72,6 +73,10 @@ const failureMessage = (cause: unknown): Effect.Effect<string | undefined> =>
 const isDefined = <A>(value: A | undefined): value is A => value !== undefined;
 
 const CONNECTIONS = 5;
+// Searched again from a transfer stop: only the first trains matter, and
+// the answer comes late or never without holding up the others
+const PROBE_CONNECTIONS = 3;
+const PROBE_TIMEOUT = "6 seconds";
 const STATIONS = 10;
 // Departures listed after the scheduled time of a leg: enough for the
 // busiest stops, where several lines leave in the same minute
@@ -153,6 +158,48 @@ export class Opendata extends Context.Service<
           )
         );
 
+      const search = (
+        from: string,
+        to: string,
+        limit: number,
+        at?: number,
+        arrival = false
+      ) =>
+        request("connections", ConnectionsResponse, {
+          from,
+          to,
+          limit: String(limit),
+          ...(at === undefined ? {} : opendataDateAndTime(at)),
+          ...(arrival ? { isArrivalTime: "1" } : {}),
+        }).pipe(
+          Effect.map((response) =>
+            response.connections.map(toConnection).filter(isDefined)
+          )
+        );
+
+      // The connections through the transfers the router finds too short
+      // (see `tighter.ts`). A failed search again keeps the router's ones.
+      const tighten = (to: string, connections: ReadonlyArray<Connection>) =>
+        Effect.forEach(
+          transferProbes(connections),
+          (probe) =>
+            search(probe.from, to, PROBE_CONNECTIONS, probe.at).pipe(
+              Effect.timeout(PROBE_TIMEOUT),
+              Effect.map((found) => [probeKey(probe), found] as const),
+              Effect.catch((error) =>
+                Effect.as(
+                  Effect.logWarning("Failed to search from a transfer stop", error),
+                  undefined
+                )
+              )
+            ),
+          { concurrency: "unbounded" }
+        ).pipe(
+          Effect.map((found) =>
+            withTighterTransfers(connections, new Map(found.filter(isDefined)))
+          )
+        );
+
       return Opendata.of({
         stations: (query) =>
           request(
@@ -170,16 +217,8 @@ export class Opendata extends Context.Service<
             )
           ),
         connections: (from, to, at, arrival = false) =>
-          request("connections", ConnectionsResponse, {
-            from,
-            to,
-            limit: String(CONNECTIONS),
-            ...(at === undefined ? {} : opendataDateAndTime(at)),
-            ...(arrival ? { isArrivalTime: "1" } : {}),
-          }).pipe(
-            Effect.map((response) =>
-              response.connections.map(toConnection).filter(isDefined)
-            )
+          search(from, to, CONNECTIONS, at, arrival).pipe(
+            Effect.flatMap((connections) => tighten(to, connections))
           ),
         legs: (legs) => Effect.forEach(legs, leg, { concurrency: "unbounded" }),
         stationboard: (id, limit) =>
