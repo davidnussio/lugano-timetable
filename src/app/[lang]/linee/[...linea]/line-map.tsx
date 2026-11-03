@@ -29,6 +29,8 @@ export interface LineMapBus {
   readonly label: string;
   readonly href: string;
   readonly delayed: boolean;
+  // Where the GPS says, rather than estimated
+  readonly gps: boolean;
 }
 
 // The stops of a line joined by straight segments (the streets are not
@@ -81,7 +83,7 @@ export function LineMap({
     features: buses.map((bus) => ({
       type: "Feature",
       id: bus.uid,
-      properties: { href: bus.href, label: bus.label, delayed: bus.delayed },
+      properties: { href: bus.href, label: bus.label, delayed: bus.delayed, gps: bus.gps },
       geometry: { type: "Point", coordinates: [bus.lon, bus.lat] },
     })),
   };
@@ -175,6 +177,8 @@ const busLayer = (color: string): LayerProps => ({
   paint: {
     "circle-color": color,
     "circle-radius": 11,
+    // Estimated positions are paler than the GPS ones
+    "circle-opacity": ["case", ["get", "gps"], 1, 0.75],
     "circle-stroke-width": 3,
     "circle-stroke-color": ["case", ["get", "delayed"], "#dc2626", "#ffffff"],
   },

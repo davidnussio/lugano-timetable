@@ -4,12 +4,11 @@ import { type Config, Layer, ManagedRuntime } from "effect";
 import { Opendata } from "~/journey/opendata-client";
 import { Swisstopo } from "~/terrain/swisstopo-client";
 import { OpenMeteo } from "~/weather/open-meteo-client";
-import { Lines } from "./line-catalog";
 import { Reliability } from "./reliability-store";
 import { Timetable } from "./timetable";
 
 type ServerRuntime = ManagedRuntime.ManagedRuntime<
-  Timetable | Opendata | Swisstopo | OpenMeteo | Reliability | Lines,
+  Timetable | Opendata | Swisstopo | OpenMeteo | Reliability,
   Config.ConfigError
 >;
 
@@ -42,9 +41,7 @@ if (globalThis.serverRuntime?.version !== version) {
         Opendata.layer,
         Swisstopo.layer,
         OpenMeteo.layer,
-        Reliability.layer,
-        // The same Timetable: layers are shared by reference
-        Lines.layer.pipe(Layer.provide(Timetable.layer))
+        Reliability.layer
       )
     ),
     version,

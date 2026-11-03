@@ -1,77 +1,60 @@
-// The lines of TPL, learned from the departures served by the RTPI server:
-// it has no list of the lines, but every departure names its line, direction
-// and routing, and with one of its stops the routing gives the stops of the
-// line in order. Plain types and functions, shared with the browser.
-import type { Itinerary } from "./schema";
+// The lines of TPL, as the official app 4.0.12 builds them: the list from
+// GETROUTES, and the platforms of each line and direction from the
+// `RoutesDirections` of every platform in GETTARGETS. The order of the stops
+// comes later, from the routing of a trip. Plain types, shared with the
+// browser.
+import { rtpiText } from "./rtpi-values";
 
-// A departure of a line in a direction, enough to ask for its routing
-export interface LineSeed {
-  readonly route: string;
-  readonly dir: string;
-  readonly routing: string;
-  // A platform where the line stops
-  readonly target: string;
-  // "6", as written on the bus
-  readonly code: string;
-  // Badge image ("6.jpg")
-  readonly img: string;
-  readonly dest: string;
+// What `toLines` reads of the answers, without depending on Effect
+interface RouteFields {
+  readonly Uid?: unknown;
+  readonly Code?: unknown;
+  readonly ShortCode?: unknown;
+  readonly Description?: unknown;
+  readonly Backcolor?: unknown;
+  readonly Forecolor?: unknown;
+}
+
+interface TargetFields {
+  readonly Name?: unknown;
+  readonly Identifiers?: ReadonlyArray<{
+    readonly Id?: unknown;
+    readonly RoutesDirections?: ReadonlyArray<{
+      readonly uid?: unknown;
+      readonly dir?: unknown;
+      readonly des?: unknown;
+    }>;
+  }>;
 }
 
 export interface LineDirection {
   readonly dir: string;
   readonly dest: string;
-  readonly target: string;
-  readonly routing: string;
+  // Platforms where the line stops in this direction, the best first to
+  // ask for the routing (not the end of the line)
+  readonly targets: ReadonlyArray<string>;
 }
 
 export interface Line {
+  // The id of the RTPI server ("23"), `Route` of the departures
   readonly route: string;
+  // "6", as written on the bus
   readonly code: string;
-  readonly img: string;
+  readonly description?: string;
+  readonly color?: string;
+  readonly textColor?: string;
   readonly directions: ReadonlyArray<LineDirection>;
 }
 
-// A seed with how many times its routing was seen: the full trips are seen
-// more often than the short ones
-export interface SeenSeed {
-  readonly seed: LineSeed;
-  readonly hits: number;
-}
+// Platforms kept per direction: the next ones are tried when a routing is
+// empty, a few are enough
+const TARGETS_PER_DIRECTION = 5;
 
-export const seedKey = ({ route, dir, routing }: LineSeed) =>
-  `${route}:${dir}:${routing}`;
-
-// Only digits, as in the routing parameters of the RTPI server
-const identifier = /^\d+$/;
-
-export function isLineSeed(value: unknown): value is LineSeed {
-  if (typeof value !== "object" || value === null) return false;
-  const seed = value as Record<string, unknown>;
-  return (
-    ["route", "dir", "routing", "target"].every(
-      (key) => typeof seed[key] === "string" && identifier.test(seed[key])
-    ) &&
-    ["code", "img", "dest"].every((key) => typeof seed[key] === "string")
-  );
-}
-
-// The seeds of the departures, one per line, direction and routing
-export function seedsOf(departures: ReadonlyArray<Itinerary>): ReadonlyArray<LineSeed> {
-  const seeds = new Map<string, LineSeed>();
-  for (const departure of departures) {
-    const seed: LineSeed = {
-      route: departure.Route,
-      dir: departure.Dir,
-      routing: departure.Routing,
-      target: departure.Target,
-      code: departure.RouteCode,
-      img: departure.Img,
-      dest: departure.Dest,
-    };
-    if (isLineSeed(seed)) seeds.set(seedKey(seed), seed);
-  }
-  return [...seeds.values()];
+// "#1E90FF", "1e90ff", "0x1E90FF" or "#fff" as "#1e90ff" or "#fff"
+export function hexColor(value: unknown): string | undefined {
+  const text = rtpiText(value);
+  const match = text && /^(?:#|0x)?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(text);
+  return match ? `#${match[1].toLowerCase()}` : undefined;
 }
 
 // Numbers first, in order ("2" before "10"), then the others by name
@@ -82,36 +65,82 @@ export const compareCodes = (a: string, b: string) => {
   return (Number.isNaN(x) ? 0 : x - y) || a.localeCompare(b, "it", { numeric: true });
 };
 
-// The lines of the seeds: for each direction the routing seen most often
-export function linesOf(seen: ReadonlyArray<SeenSeed>): ReadonlyArray<Line> {
-  const best = new Map<string, SeenSeed>();
-  for (const entry of seen) {
-    const key = `${entry.seed.route}:${entry.seed.dir}`;
-    const current = best.get(key);
-    if (current === undefined || entry.hits > current.hits) best.set(key, entry);
+const mostFrequent = (values: ReadonlyArray<string>): string | undefined => {
+  const counts = new Map<string, number>();
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+  let best: string | undefined;
+  for (const [value, count] of counts) {
+    if (best === undefined || count > counts.get(best)!) best = value;
   }
-  const lines = new Map<string, { line: Line; directions: Array<LineDirection> }>();
-  for (const { seed } of best.values()) {
-    let entry = lines.get(seed.route);
-    if (entry === undefined) {
-      const directions: Array<LineDirection> = [];
-      entry = {
-        line: { route: seed.route, code: seed.code, img: seed.img, directions },
-        directions,
-      };
-      lines.set(seed.route, entry);
+  return best;
+};
+
+export function toLines(
+  routes: ReadonlyArray<RouteFields>,
+  targets: ReadonlyArray<TargetFields>
+): ReadonlyArray<Line> {
+  // Line and direction → the platforms and destinations seen
+  const stops = new Map<
+    string,
+    { platforms: Array<{ id: string; name?: string }>; dests: Array<string> }
+  >();
+  for (const target of targets) {
+    const name = rtpiText(target.Name);
+    for (const identifier of target.Identifiers ?? []) {
+      const id = rtpiText(identifier.Id);
+      if (id === undefined) continue;
+      for (const direction of identifier.RoutesDirections ?? []) {
+        const uid = rtpiText(direction.uid);
+        const dir = rtpiText(direction.dir);
+        if (uid === undefined || dir === undefined) continue;
+        const key = `${uid}:${dir}`;
+        let entry = stops.get(key);
+        if (entry === undefined) {
+          entry = { platforms: [], dests: [] };
+          stops.set(key, entry);
+        }
+        if (!entry.platforms.some((platform) => platform.id === id)) {
+          entry.platforms.push({ id, ...(name && { name }) });
+        }
+        const dest = rtpiText(direction.des);
+        if (dest) entry.dests.push(dest);
+      }
     }
-    entry.directions.push({
-      dir: seed.dir,
-      dest: seed.dest,
-      target: seed.target,
-      routing: seed.routing,
+  }
+
+  const lines = new Map<string, Line>();
+  for (const route of routes) {
+    const uid = rtpiText(route.Uid);
+    if (uid === undefined || lines.has(uid)) continue;
+    const directions: Array<LineDirection> = [];
+    for (const [key, entry] of stops) {
+      const [line, dir] = key.split(":");
+      if (line !== uid) continue;
+      const dest = mostFrequent(entry.dests) ?? "";
+      // A platform named as the destination is where the trips end: asked
+      // last, it may have no trip to give the routing of
+      const ordered = [
+        ...entry.platforms.filter((platform) => platform.name !== dest),
+        ...entry.platforms.filter((platform) => platform.name === dest),
+      ];
+      directions.push({
+        dir,
+        dest,
+        targets: ordered.slice(0, TARGETS_PER_DIRECTION).map((platform) => platform.id),
+      });
+    }
+    directions.sort((a, b) => a.dir.localeCompare(b.dir, "it", { numeric: true }));
+    const description = rtpiText(route.Description);
+    const color = hexColor(route.Backcolor);
+    const textColor = hexColor(route.Forecolor);
+    lines.set(uid, {
+      route: uid,
+      code: rtpiText(route.ShortCode) ?? rtpiText(route.Code) ?? uid,
+      ...(description && { description }),
+      ...(color && { color }),
+      ...(textColor && { textColor }),
+      directions,
     });
   }
-  return [...lines.values()]
-    .map(({ line, directions }) => ({
-      ...line,
-      directions: directions.sort((a, b) => a.dir.localeCompare(b.dir)),
-    }))
-    .sort((a, b) => compareCodes(a.code, b.code));
+  return [...lines.values()].sort((a, b) => compareCodes(a.code, b.code));
 }

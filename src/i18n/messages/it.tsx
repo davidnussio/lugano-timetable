@@ -134,7 +134,9 @@ export const it = {
   lines: {
     title: "Linee",
     choose: "Scegli una linea per vedere dove sono i bus",
-    learning: "Sto raccogliendo le linee dai dati in tempo reale: riprova tra qualche minuto",
+    none: "Nessuna linea disponibile al momento",
+    noStops: "Nessuna corsa di questa linea da cui leggere le fermate: riprova più tardi",
+    gps: "Posizione GPS",
     notFound: "Linea non trovata",
     towards: (dest: string) => `Verso ${dest}`,
     direction: "Direzione",
@@ -146,7 +148,7 @@ export const it = {
     busWaiting: (stop: string, minutes: number) =>
       `Bus al capolinea ${stop}, parte tra ${minutes} min`,
     delayed: "In ritardo",
-    estimate: "Posizioni stimate dai tempi di arrivo alle fermate: TPL non pubblica il GPS dei bus",
+    estimate: "Posizioni stimate dai tempi di arrivo alle fermate. Sulla mappa, la posizione GPS dei bus che la trasmettono",
     list: "Fermate",
     map: "Mappa",
     departuresOf: (stop: string) => `Partenze da ${stop}`,

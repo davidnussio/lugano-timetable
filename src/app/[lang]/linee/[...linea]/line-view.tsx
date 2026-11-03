@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { LineBadge } from "~/app/components/line-badge";
+import useSWR from "swr";
+import { RouteBadge } from "~/app/components/route-badge";
 import { LiveStatus } from "~/app/components/live-status";
 import { PageHeader } from "~/app/components/page-header";
 import { SkeletonList } from "~/app/components/skeleton-list";
@@ -18,7 +19,8 @@ import { town } from "~/lib/format";
 import { type LineBus, lineBuses } from "~/lib/line-buses";
 import { lineColor } from "~/lib/lines";
 import { cn } from "~/lib/utils";
-import type { Departure, RoutingStop, Target } from "~/timetable/models";
+import type { Departure, Monitored, RoutingStop, Target } from "~/timetable/models";
+import { fetcher } from "~/utils/fetcher";
 import type { LineMapBus, LineMapStop } from "./line-map";
 
 // MapLibre needs the browser: loaded only when the map is shown
@@ -40,17 +42,36 @@ export function LineView({ route, dir }: { route: string; dir?: string }) {
   const direction =
     line?.directions.find((candidate) => candidate.dir === dir) ?? line?.directions[0];
   const [mode, setMode] = useState<Mode>("list");
-  const color = lineColor(route);
+  const color = line?.color ?? lineColor(route);
   const now = useNow();
   const targets = useTargets();
 
-  // The stops of the line, from the routing of one of its trips
+  // The stops of the line, in order, from the routing of the next trip at
+  // one of its platforms; the next platform when that one has no trip
+  const [attempt, setAttempt] = useState({ dir: direction?.dir, index: 0 });
+  const tried = attempt.dir === direction?.dir ? attempt.index : 0;
+  const target = direction?.targets[tried];
   const routing = useMonitored<RoutingStop>(
     "/api/timetable/routing",
     "routing",
-    direction ? [direction.target, route, direction.dir, direction.routing] : null
+    direction && target ? [target, route, direction.dir] : null,
+    { once: true }
   );
   const stops = routing.data;
+  const exhausted =
+    direction !== undefined &&
+    (direction.targets.length === 0 ||
+      (routing.ready && stops.length === 0 && tried >= direction.targets.length - 1));
+  // Adjusted while rendering: the answer for the next platform is not
+  // ready yet, so this happens once per platform
+  if (
+    direction &&
+    routing.ready &&
+    stops.length === 0 &&
+    tried < direction.targets.length - 1
+  ) {
+    setAttempt({ dir: direction.dir, index: tried + 1 });
+  }
 
   // The departures of every stop of the line: where its trips get next
   const platforms = useMemo(
@@ -96,7 +117,14 @@ export function LineView({ route, dir }: { route: string; dir?: string }) {
       title={
         <span className="flex items-center gap-2">
           {line && (
-            <LineBadge img={line.img} route={route} line={line.code} size={26} className="rounded-md" />
+            <RouteBadge
+              code={line.code}
+              route={route}
+              color={line.color}
+              textColor={line.textColor}
+              size={26}
+              className="rounded-md"
+            />
           )}
           <span className="truncate">
             {direction ? m.lines.towards(direction.dest) : m.lines.title}
@@ -119,7 +147,7 @@ export function LineView({ route, dir }: { route: string; dir?: string }) {
       <main className="flex flex-1 flex-col">
         {header}
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-          {lines.length === 0 ? m.lines.learning : m.lines.notFound}
+          {m.lines.notFound}
         </p>
       </main>
     );
@@ -157,6 +185,10 @@ export function LineView({ route, dir }: { route: string; dir?: string }) {
         {(routing.isError || linesError) && stops.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
             {m.common.serviceUnavailable}
+          </p>
+        ) : exhausted ? (
+          <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+            {m.lines.noStops}
           </p>
         ) : routing.isLoading || stops.length === 0 ? (
           <div className="-mx-4">
@@ -305,6 +337,42 @@ function StopRail({
   );
 }
 
+// The GPS of the buses that send it, from the routing of each trip: one
+// request per bus, so only while the map is shown
+function useVehiclePositions(
+  buses: ReadonlyArray<LineBus>,
+  route: string,
+  dir: string
+): ReadonlyMap<number, { readonly lat: number; readonly lon: number }> {
+  const trips = buses.map((bus) => ({
+    uid: bus.uid,
+    query: new URLSearchParams(
+      [bus.departure.Target, route, dir, bus.departure.Routing].map((value) => [
+        "routing",
+        value,
+      ])
+    ).toString(),
+  }));
+  const { data } = useSWR(
+    trips.length > 0 ? ["vehicles", ...trips.map((trip) => `${trip.uid}:${trip.query}`)] : null,
+    () =>
+      Promise.all(
+        trips.map(async (trip) => {
+          const routing: Monitored<RoutingStop> = await fetcher(
+            `/api/timetable/routing?${trip.query}`
+          ).catch(() => ({ ready: false, data: [] }));
+          const position = routing.vehicle?.position;
+          return position ? ([trip.uid, position] as const) : undefined;
+        })
+      ),
+    { refreshInterval: 10_000, keepPreviousData: true }
+  );
+  return useMemo(
+    () => new Map((data ?? []).filter((entry) => entry !== undefined)),
+    [data]
+  );
+}
+
 // The line on the map, the buses between the stops
 function MapPanel({
   stops,
@@ -335,9 +403,25 @@ function MapPanel({
     };
   });
   const mapStops = located.filter((stop): stop is LineMapStop => stop !== undefined);
+  const gps = useVehiclePositions(buses, route, dir);
 
-  // Between the two stops around it, as far as it went
+  // Where its GPS says, or between the two stops around it, as far as it went
   const mapBuses = buses.flatMap((bus): ReadonlyArray<LineMapBus> => {
+    const fix = gps.get(bus.uid);
+    const label = busLabel(m, bus, stops[bus.next]?.Name ?? "");
+    if (fix) {
+      return [
+        {
+          uid: bus.uid,
+          lat: fix.lat,
+          lon: fix.lon,
+          label: `${label} · ${m.lines.gps}`,
+          href: tripHref(bus, route, dir),
+          delayed: bus.delayed,
+          gps: true,
+        },
+      ];
+    }
     const from = located[Math.floor(bus.position)];
     const to = located[Math.min(Math.ceil(bus.position), located.length - 1)];
     if (!from || !to) return [];
@@ -347,9 +431,10 @@ function MapPanel({
         uid: bus.uid,
         lat: from.lat + (to.lat - from.lat) * fraction,
         lon: from.lon + (to.lon - from.lon) * fraction,
-        label: busLabel(m, bus, stops[bus.next]?.Name ?? ""),
+        label,
         href: tripHref(bus, route, dir),
         delayed: bus.delayed,
+        gps: false,
       },
     ];
   });

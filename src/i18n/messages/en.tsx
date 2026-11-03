@@ -134,7 +134,9 @@ export const en: Messages = {
   lines: {
     title: "Lines",
     choose: "Pick a line to see where its buses are",
-    learning: "Collecting the lines from the real-time data: try again in a few minutes",
+    none: "No line available right now",
+    noStops: "No trip of this line to read its stops from: try again later",
+    gps: "GPS position",
     notFound: "Line not found",
     towards: (dest: string) => `To ${dest}`,
     direction: "Direction",
@@ -146,7 +148,7 @@ export const en: Messages = {
     busWaiting: (stop: string, minutes: number) =>
       `Bus at the terminus ${stop}, leaves in ${minutes} min`,
     delayed: "Late",
-    estimate: "Positions estimated from the arrival times at the stops: TPL does not publish the GPS of its buses",
+    estimate: "Positions estimated from the arrival times at the stops. On the map, the GPS position of the buses that send it",
     list: "Stops",
     map: "Map",
     departuresOf: (stop: string) => `Departures from ${stop}`,

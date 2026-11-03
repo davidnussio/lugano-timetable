@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LineBadge } from "~/app/components/line-badge";
+import { RouteBadge } from "~/app/components/route-badge";
 import { useLines } from "~/hooks/use-lines";
 import { useI18n } from "~/i18n/i18n-provider";
 
@@ -29,7 +29,7 @@ export function LineList() {
 
   if (lines.length === 0) {
     return (
-      <p className="px-6 py-10 text-center text-sm text-muted-foreground">{m.lines.learning}</p>
+      <p className="px-6 py-10 text-center text-sm text-muted-foreground">{m.lines.none}</p>
     );
   }
 
@@ -43,13 +43,20 @@ export function LineList() {
               href={`/linee/${line.route}`}
               aria-label={m.common.line(line.code)}
               className="flex h-full items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/60 active:bg-muted">
-              <LineBadge img={line.img} route={line.route} line={line.code} size={40} />
+              <RouteBadge
+                code={line.code}
+                route={line.route}
+                color={line.color}
+                textColor={line.textColor}
+              />
               <span className="flex min-w-0 flex-col text-xs leading-snug text-muted-foreground">
-                {line.directions.map((direction) => (
-                  <span key={direction.dir} className="truncate">
-                    {direction.dest}
-                  </span>
-                ))}
+                {line.directions.length > 0
+                  ? line.directions.map((direction) => (
+                      <span key={direction.dir} className="truncate">
+                        {direction.dest}
+                      </span>
+                    ))
+                  : line.description && <span className="line-clamp-2">{line.description}</span>}
               </span>
             </Link>
           </li>

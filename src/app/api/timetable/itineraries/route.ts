@@ -1,6 +1,5 @@
 import { Effect, Schema } from "effect";
 import type { NextRequest } from "next/server";
-import { Lines } from "~/timetable/line-catalog";
 import { Reliability } from "~/timetable/reliability-store";
 import { Identifier } from "~/timetable/schema";
 import { Timetable } from "~/timetable/timetable";
@@ -25,9 +24,6 @@ export function GET(request: NextRequest) {
       // never waits for the storage
       const reliability = yield* Reliability;
       yield* Effect.forkDetach(reliability.record(result.data));
-      // And which lines run where, for the lines page
-      const lines = yield* Lines;
-      yield* Effect.forkDetach(lines.record(result.data));
       return result;
     }),
     monitoredCacheControl
