@@ -2,7 +2,14 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { OPENDATA_URL, Opendata } from "../opendata-client";
-import { centroBoard, connection, locations, stationboard } from "./fixtures";
+import {
+  centroBoard,
+  connection,
+  locations,
+  morningBusAndS10,
+  morningFromLugano,
+  stationboard,
+} from "./fixtures";
 
 // HttpClient answering with `respond(url)`, recording the requested URLs
 const fakeHttp = (respond: (url: URL) => Response, requested: Array<URL>) =>
@@ -80,6 +87,53 @@ describe("Opendata", () => {
       Effect.provide(opendata(json({ connections: [connection] }), requested))
     );
   });
+
+  it.effect("finds the trains the router misses at a transfer", () => {
+    const requested: Array<URL> = [];
+    const respond = (url: URL) =>
+      Response.json({
+        connections:
+          url.searchParams.get("from") === "8505300"
+            ? morningFromLugano
+            : [morningBusAndS10],
+      });
+    return Effect.gen(function* () {
+      const client = yield* Opendata;
+      const connections = yield* client.connections("8591251", "8505213");
+      assert.deepStrictEqual(
+        connections.map((c) => c.legs.map((leg) => leg.line)),
+        [
+          ["4", "IC2"],
+          ["4", "S10"],
+        ]
+      );
+      const probe = requested[1].searchParams;
+      assert.strictEqual(probe.get("from"), "8505300");
+      assert.strictEqual(probe.get("to"), "8505213");
+      assert.strictEqual(probe.get("date"), "2026-11-04");
+      assert.strictEqual(probe.get("time"), "05:52");
+      assert.strictEqual(probe.get("limit"), "3");
+    }).pipe(Effect.provide(opendata(respond, requested)));
+  });
+
+  it.effect("keeps the router's connections when the search again fails", () =>
+    Effect.gen(function* () {
+      const client = yield* Opendata;
+      const connections = yield* client.connections("8591251", "8505213");
+      assert.deepStrictEqual(
+        connections.map((c) => c.legs.map((leg) => leg.line)),
+        [["4", "S10"]]
+      );
+    }).pipe(
+      Effect.provide(
+        opendata((url) =>
+          url.searchParams.get("from") === "8505300"
+            ? Response.json({ error: "nope" })
+            : Response.json({ connections: [morningBusAndS10] })
+        )
+      )
+    )
+  );
 
   it.effect("refreshes legs from the departures of their stop", () => {
     const requested: Array<URL> = [];

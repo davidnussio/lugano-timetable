@@ -235,3 +235,70 @@ export const locations = {
     { ...station("8505550", "Lugano Centrale (lago)", 46.002969, 8.951559), distance: 215.3, icon: "ship" },
   ],
 };
+
+// The early morning of 2026-11-04 (CET): 05:46 bus to Lugano, Stazione
+// Nord, walk to the trains and the S10 of 06:03, where the IC2 of 06:00
+// could be caught
+const at = (hours: number, minutes: number) =>
+  Date.UTC(2026, 10, 4, hours - 1, minutes) / 1000;
+const brentani = station("8591251", "Lugano, Via Brentani", 46.0089, 8.9488);
+
+const train = (
+  name: string,
+  category: string,
+  number: string,
+  departure: number,
+  arrival: number
+) => ({
+  journey: {
+    name,
+    category,
+    subcategory: null,
+    number,
+    operator: "SBB",
+    to: "Bellinzona",
+    passList: [],
+  },
+  walk: null,
+  departure: checkpoint(lugano, null, departure),
+  arrival: checkpoint(bellinzona, arrival, null),
+});
+
+const s10 = train("025003", "S", "10", at(6, 3), at(6, 31));
+const ic2 = train("000852", "IC", "2", at(6, 0), at(6, 13));
+
+export const morningBusAndS10 = {
+  from: checkpoint(brentani, null, at(5, 46)),
+  to: checkpoint(bellinzona, at(6, 31), null),
+  duration: "00d00:45:00",
+  transfers: 1,
+  sections: [
+    {
+      journey: {
+        name: "002311",
+        category: "B",
+        subcategory: null,
+        number: "4",
+        operator: "TPL",
+        to: "Lugano, Stazione Nord",
+        passList: [],
+      },
+      walk: null,
+      departure: checkpoint(brentani, null, at(5, 46)),
+      arrival: checkpoint(stazioneNord, at(5, 52), null),
+    },
+    walk(stazioneNord, lugano, 300),
+    s10,
+  ],
+};
+
+const direct = (section: typeof s10) => ({
+  from: section.departure,
+  to: section.arrival,
+  duration: "00d00:20:00",
+  transfers: 0,
+  sections: [section],
+});
+
+// From Lugano at 05:52: both trains
+export const morningFromLugano = [direct(ic2), direct(s10)];
