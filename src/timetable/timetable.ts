@@ -71,7 +71,10 @@ export class Timetable extends Context.Service<
       const sessions = yield* SessionStore;
 
       // The stop list rarely changes: keep successful results for an hour
-      const targets = yield* rtpi.fullTargets.pipe(
+      const fullTargets = yield* rtpi.fullTargets.pipe(
+        Effect.cachedWithTTL((exit) => (Exit.isSuccess(exit) ? "1 hour" : 0))
+      );
+      const targets = yield* fullTargets.pipe(
         Effect.map(
           Arr.map((target): Target => {
             const code = target.Identifiers.find(
@@ -91,7 +94,7 @@ export class Timetable extends Context.Service<
       );
 
       // The lines change with the timetable: kept for an hour like the stops
-      const lines = yield* Effect.all([rtpi.routes, rtpi.targetRoutes], {
+      const lines = yield* Effect.all([rtpi.routes, fullTargets], {
         concurrency: 2,
       }).pipe(
         Effect.map(([routes, targets]) => toLines(routes, targets)),

@@ -1,6 +1,6 @@
 // The lines of TPL, as the official app 4.0.12 builds them: the list from
 // GETROUTES, and the platforms of each line and direction from the
-// `RoutesDirections` of every platform in GETTARGETS. The order of the stops
+// `RoutesDirections` of every platform of the stops. The order of the stops
 // comes later, from the routing of a trip. Plain types, shared with the
 // browser.
 import { rtpiText } from "./rtpi-values";
@@ -19,13 +19,14 @@ interface TargetFields {
   readonly Name?: unknown;
   readonly Identifiers?: ReadonlyArray<{
     readonly Id?: unknown;
-    readonly RoutesDirections?: ReadonlyArray<{
-      readonly uid?: unknown;
-      readonly dir?: unknown;
-      readonly des?: unknown;
-    }>;
+    readonly Basin?: unknown;
+    // {"dir": 1, "uid": 26, "des": "Viganello"}
+    readonly RoutesDirections?: ReadonlyArray<unknown>;
   }>;
 }
+
+// The ids of the lines are only unique in a basin
+const BASIN = "TPL";
 
 export interface LineDirection {
   readonly dir: string;
@@ -88,8 +89,11 @@ export function toLines(
     const name = rtpiText(target.Name);
     for (const identifier of target.Identifiers ?? []) {
       const id = rtpiText(identifier.Id);
-      if (id === undefined) continue;
-      for (const direction of identifier.RoutesDirections ?? []) {
+      const basin = rtpiText(identifier.Basin);
+      if (id === undefined || (basin !== undefined && basin.toUpperCase() !== BASIN)) continue;
+      for (const item of identifier.RoutesDirections ?? []) {
+        if (typeof item !== "object" || item === null) continue;
+        const direction = item as Record<string, unknown>;
         const uid = rtpiText(direction.uid);
         const dir = rtpiText(direction.dir);
         if (uid === undefined || dir === undefined) continue;

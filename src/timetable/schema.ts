@@ -35,6 +35,11 @@ export const FullTarget = Schema.Struct({
       // WGS84 degrees as strings, "0.0" when unknown
       Lat: Schema.optionalKey(Schema.String),
       Lon: Schema.optionalKey(Schema.String),
+      // "TPL"
+      Basin: Schema.optionalKey(Schema.String),
+      // The lines stopping at the platform: {"dir": 1, "uid": 26, "des":
+      // "Viganello"}, one per destination
+      RoutesDirections: Schema.optionalKey(Schema.Array(Schema.Unknown)),
     })
   ),
 });
@@ -87,46 +92,24 @@ export const RtpiResponse = <S extends Schema.Top>(item: S) =>
     longitude: Schema.optionalKey(Schema.Unknown),
   });
 
-// Answers of the requests that are not monitored, read as the official app
-// reads them: only `data`
-export const RtpiData = <S extends Schema.Top>(item: S) =>
-  Schema.Struct({ data: Schema.Array(item) });
-
-// A line, from GETROUTES. The types of the values are not documented:
-// numbers or text, normalized by `toLine`.
+// A line of GETROUTES: {"Uid": 23, "Code": "5", "ShortCode": "5",
+// "Description": "Viganello San Siro - Lamone Cadempino", "Backcolor":
+// "0068ac", "Forecolor": "ffffff", …}. Types checked by `toLines`.
 export const RtpiRoute = Schema.Struct({
   Uid: Schema.optionalKey(Schema.Unknown),
   Code: Schema.optionalKey(Schema.Unknown),
-  // "6", as written on the bus
   ShortCode: Schema.optionalKey(Schema.Unknown),
   Description: Schema.optionalKey(Schema.Unknown),
   Backcolor: Schema.optionalKey(Schema.Unknown),
   Forecolor: Schema.optionalKey(Schema.Unknown),
-  Basin: Schema.optionalKey(Schema.Unknown),
 });
 export type RtpiRoute = typeof RtpiRoute.Type;
 
-// A stop of GETTARGETS with, for each platform, the lines and directions
-// stopping there
-export const RouteDirection = Schema.Struct({
-  uid: Schema.optionalKey(Schema.Unknown),
-  dir: Schema.optionalKey(Schema.Unknown),
-  des: Schema.optionalKey(Schema.Unknown),
+// GETROUTES answers the lines by basin: {"data": {"TPL": [...]}}
+export const RoutesResponse = Schema.Struct({
+  status: Schema.Literal("OK"),
+  data: Schema.Record(Schema.String, Schema.Array(RtpiRoute)),
 });
-
-export const TargetRoutes = Schema.Struct({
-  Name: Schema.optionalKey(Schema.Unknown),
-  Identifiers: Schema.optionalKey(
-    Schema.Array(
-      Schema.Struct({
-        Id: Schema.optionalKey(Schema.Unknown),
-        Basin: Schema.optionalKey(Schema.Unknown),
-        RoutesDirections: Schema.optionalKey(Schema.Array(RouteDirection)),
-      })
-    )
-  ),
-});
-export type TargetRoutes = typeof TargetRoutes.Type;
 
 // Non-negative integer identifiers coming from query strings
 export const Identifier = Schema.NumberFromString.check(
