@@ -27,6 +27,10 @@ export interface PlannedLeg extends Leg {
   // Boarded after a transfer shorter than the official minimum, which the
   // router of transport.opendata.ch would not propose (see `tighter.ts`)
   readonly tightTransfer?: boolean;
+  // Track of the train ("4") or stand of the bus ("A") where the leg starts
+  // and ends, the real-time one when it changes. Most bus stops have none.
+  readonly departurePlatform?: string;
+  readonly arrivalPlatform?: string;
 }
 
 export interface Connection {
@@ -39,6 +43,8 @@ export interface Connection {
 export type LegUpdate = {
   readonly departure: Timing;
   readonly arrival: Timing;
+  readonly departurePlatform?: string;
+  readonly arrivalPlatform?: string;
 } | null;
 
 // A departure of a stop, from the stationboard of transport.opendata.ch

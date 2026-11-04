@@ -2,6 +2,8 @@ import { cn } from "~/lib/utils";
 
 const TRAINS = new Set(["S", "R", "RE", "IR", "IC", "ICE", "EC", "EN", "NJ", "PE", "TGV", "RJX", "EXT"]);
 
+export const isTrain = (category: string) => TRAINS.has(category.toUpperCase());
+
 // Colors of the operators: TPL in the app color, trains in red, regional
 // buses (ARL, PostBus) in yellow
 function badgeColors(category: string, operator: string | undefined) {

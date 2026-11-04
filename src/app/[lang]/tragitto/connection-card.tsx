@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Bell, BellRing, ChevronDown, ChevronRight, Footprints } from "lucide-react";
 import { Fragment, useState } from "react";
+import { PlatformTag } from "~/app/components/platform-tag";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useI18n } from "~/i18n/i18n-provider";
 import { formatDuration } from "~/lib/format";
@@ -163,6 +164,7 @@ export function LegList({ connection }: { connection: Connection }) {
               <p className="flex items-baseline gap-2">
                 <Time timing={leg.departure} className="w-[4.75rem] shrink-0 font-semibold" />
                 <span className="truncate">{leg.from.name}</span>
+                <PlatformTag platform={leg.departurePlatform} category={leg.category} className="ml-auto" />
               </p>
               <p className="truncate pl-[5.25rem] text-xs text-muted-foreground">
                 {m.journey.towards(leg.destination)}
@@ -170,6 +172,7 @@ export function LegList({ connection }: { connection: Connection }) {
               <p className="flex items-baseline gap-2">
                 <Time timing={leg.arrival} className="w-[4.75rem] shrink-0 font-semibold" />
                 <span className="truncate">{leg.to.name}</span>
+                <PlatformTag platform={leg.arrivalPlatform} category={leg.category} className="ml-auto" />
               </p>
             </div>
           </li>

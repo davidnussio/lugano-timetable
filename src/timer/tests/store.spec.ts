@@ -265,6 +265,17 @@ describe("applyLegUpdates", () => {
     expect(next[0]).toBe(legs[0]);
     expect(next[1]).toMatchObject({ ...update, line: "S10", walkBeforeMs: 4 * MIN });
   });
+
+  it("updates the platforms and keeps the planned ones when missing", () => {
+    const planned = [{ ...legs[1], departurePlatform: "3", arrivalPlatform: "2" }];
+    const timings = { departure: planned[0].departure, arrival: planned[0].arrival };
+    expect(applyLegUpdates(planned, [timings])).toBe(planned);
+    expect(applyLegUpdates(planned, [{ ...timings, departurePlatform: "3" }])).toBe(planned);
+    expect(applyLegUpdates(planned, [{ ...timings, departurePlatform: "5" }])[0]).toMatchObject({
+      departurePlatform: "5",
+      arrivalPlatform: "2",
+    });
+  });
 });
 
 describe("liveLegs", () => {
