@@ -185,6 +185,9 @@ export const it = {
     towards: (destination: string) => `direzione ${destination}`,
     // Track of a train station
     track: (track: string) => `Binario ${track}`,
+    // Short labels of the platform chip, the full ones read aloud
+    trackShort: "Bin",
+    standShort: "Corsia",
     nearYou: "Vicino a te",
     favoriteStops: "Fermate preferite",
     searchUnavailable: "Ricerca non disponibile, riprova tra poco",

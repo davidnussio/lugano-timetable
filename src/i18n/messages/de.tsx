@@ -190,6 +190,9 @@ export const de: Messages = {
     towards: (destination: string) => `Richtung ${destination}`,
     // Track of a train station
     track: (track: string) => `Gleis ${track}`,
+    // Short labels of the platform chip, the full ones read aloud
+    trackShort: "Gl",
+    standShort: "Kante",
     nearYou: "In deiner Nähe",
     favoriteStops: "Lieblingshaltestellen",
     searchUnavailable: "Suche nicht verfügbar, versuche es gleich nochmals",

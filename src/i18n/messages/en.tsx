@@ -184,6 +184,9 @@ export const en: Messages = {
     towards: (destination: string) => `towards ${destination}`,
     // Track of a train station
     track: (track: string) => `Platform ${track}`,
+    // Short labels of the platform chip, the full ones read aloud
+    trackShort: "Pl",
+    standShort: "Pl",
     nearYou: "Near you",
     favoriteStops: "Favourite stops",
     searchUnavailable: "Search unavailable, try again shortly",
