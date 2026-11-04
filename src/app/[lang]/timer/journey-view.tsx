@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Fragment } from "react";
 import useSWR from "swr";
 import { Time } from "~/app/components/leg-time";
+import { PlatformTag } from "~/app/components/platform-tag";
 import { TransportBadge } from "~/app/components/transport-badge";
 import { useTargets } from "~/hooks/use-targets";
 import { useI18n } from "~/i18n/i18n-provider";
@@ -121,10 +122,12 @@ export function JourneySection({ now }: { now: number }) {
                   <p className="flex items-baseline gap-2">
                     <Time timing={leg.departure} className="w-[4.75rem] shrink-0 font-semibold" />
                     <span className="truncate">{leg.from.name}</span>
+                    <PlatformTag platform={leg.departurePlatform} category={leg.category} className="ml-auto" />
                   </p>
                   <p className="flex items-baseline gap-2">
                     <Time timing={leg.arrival} className="w-[4.75rem] shrink-0 font-semibold" />
                     <span className="truncate">{leg.to.name}</span>
+                    <PlatformTag platform={leg.arrivalPlatform} category={leg.category} className="ml-auto" />
                   </p>
                 </div>
               </li>

@@ -396,12 +396,21 @@ export function applyLegUpdates(
     if (
       !update ||
       (sameTiming(leg.departure, update.departure) &&
-        sameTiming(leg.arrival, update.arrival))
+        sameTiming(leg.arrival, update.arrival) &&
+        (update.departurePlatform ?? leg.departurePlatform) === leg.departurePlatform &&
+        (update.arrivalPlatform ?? leg.arrivalPlatform) === leg.arrivalPlatform)
     ) {
       return leg;
     }
     changed = true;
-    return { ...leg, departure: update.departure, arrival: update.arrival };
+    // A platform missing from the update keeps the planned one
+    return {
+      ...leg,
+      departure: update.departure,
+      arrival: update.arrival,
+      ...(update.departurePlatform ? { departurePlatform: update.departurePlatform } : {}),
+      ...(update.arrivalPlatform ? { arrivalPlatform: update.arrivalPlatform } : {}),
+    };
   });
   return changed ? next : legs;
 }

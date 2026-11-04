@@ -51,6 +51,11 @@ function timing(
   };
 }
 
+// The track or stand of a stop, the real-time one when it changes
+function platformOf(checkpoint: Checkpoint): string | undefined {
+  return checkpoint.prognosis?.platform || checkpoint.platform || undefined;
+}
+
 // Buses, trams and the like are known by their number, trains by category
 // and number ("S10", "RE80"), long distance trains by category ("IC", "EC")
 const LOCAL = new Set(["B", "BN", "BUS", "T", "M", "NFB", "NFO", "FUN", "BAT"]);
@@ -81,6 +86,8 @@ export function toConnection(
     const departure = timing(section.departure, "departure");
     const arrival = timing(section.arrival, "arrival");
     if (!from || !to || !departure || !arrival) return undefined;
+    const departurePlatform = platformOf(section.departure);
+    const arrivalPlatform = platformOf(section.arrival);
     legs.push({
       trip: journey.name,
       category: journey.category,
@@ -92,6 +99,8 @@ export function toConnection(
       departure,
       arrival,
       ...(walkMs === undefined ? {} : { walkBeforeMs: walkMs }),
+      ...(departurePlatform ? { departurePlatform } : {}),
+      ...(arrivalPlatform ? { arrivalPlatform } : {}),
     });
     walkMs = undefined;
   }
@@ -114,7 +123,15 @@ export function toLegUpdate(
   );
   const departure = timing(entry.stop, "departure");
   const arrival = stop && timing(stop, "arrival");
-  return departure && arrival ? { departure, arrival } : null;
+  if (!departure || !arrival) return null;
+  const departurePlatform = platformOf(entry.stop);
+  const arrivalPlatform = platformOf(stop);
+  return {
+    departure,
+    arrival,
+    ...(departurePlatform ? { departurePlatform } : {}),
+    ...(arrivalPlatform ? { arrivalPlatform } : {}),
+  };
 }
 
 // A departure of the stationboard. Without a scheduled time there is
@@ -125,7 +142,7 @@ export function toStationDeparture(
   const departure = timing(entry.stop, "departure");
   const destination = entry.to ?? entry.passList.at(-1)?.station.name;
   if (!departure || !destination) return undefined;
-  const platform = entry.stop.prognosis?.platform ?? entry.stop.platform;
+  const platform = platformOf(entry.stop);
   return {
     trip: entry.name,
     line: lineLabel(entry.category, entry.number),

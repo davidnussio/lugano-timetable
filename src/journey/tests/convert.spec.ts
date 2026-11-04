@@ -114,6 +114,32 @@ describe("toConnection", () => {
     expect(toConnection(connections[0])?.walkAfterMs).toBe(300_000);
   });
 
+  it("keeps the tracks, the real-time one when it changes", () => {
+    expect(result?.legs.map((leg) => leg.departurePlatform)).toEqual([undefined, undefined]);
+    const train = connection.sections[3];
+    const { connections } = decode(ConnectionsResponse, {
+      connections: [
+        {
+          sections: [
+            {
+              ...train,
+              departure: { ...train.departure, platform: "4" },
+              arrival: {
+                ...train.arrival,
+                platform: "1",
+                prognosis: train.arrival.prognosis && { ...train.arrival.prognosis, platform: "2" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(toConnection(connections[0])?.legs[0]).toMatchObject({
+      departurePlatform: "4",
+      arrivalPlatform: "2",
+    });
+  });
+
   it("drops connections without rides", () => {
     const { connections } = decode(ConnectionsResponse, {
       connections: [{ sections: [connection.sections[0]] }],

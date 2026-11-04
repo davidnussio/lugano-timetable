@@ -188,6 +188,11 @@ export const de: Messages = {
     startTimer: (time: string) => `Timer für die Verbindung um ${time} starten`,
     walk: (minutes: number) => `${minutes} min zu Fuss`,
     towards: (destination: string) => `Richtung ${destination}`,
+    // Track of a train station
+    track: (track: string) => `Gleis ${track}`,
+    // Short labels of the platform chip, the full ones read aloud
+    trackShort: "Gl",
+    standShort: "Kante",
     nearYou: "In deiner Nähe",
     favoriteStops: "Lieblingshaltestellen",
     searchUnavailable: "Suche nicht verfügbar, versuche es gleich nochmals",
