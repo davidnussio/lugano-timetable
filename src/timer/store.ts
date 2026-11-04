@@ -397,8 +397,12 @@ export function applyLegUpdates(
       !update ||
       (sameTiming(leg.departure, update.departure) &&
         sameTiming(leg.arrival, update.arrival) &&
-        (update.departurePlatform ?? leg.departurePlatform) === leg.departurePlatform &&
-        (update.arrivalPlatform ?? leg.arrivalPlatform) === leg.arrivalPlatform)
+        (!update.departurePlatform ||
+          (update.departurePlatform === leg.departurePlatform &&
+            !!update.departurePlatformChanged === !!leg.departurePlatformChanged)) &&
+        (!update.arrivalPlatform ||
+          (update.arrivalPlatform === leg.arrivalPlatform &&
+            !!update.arrivalPlatformChanged === !!leg.arrivalPlatformChanged)))
     ) {
       return leg;
     }
@@ -408,8 +412,14 @@ export function applyLegUpdates(
       ...leg,
       departure: update.departure,
       arrival: update.arrival,
-      ...(update.departurePlatform ? { departurePlatform: update.departurePlatform } : {}),
-      ...(update.arrivalPlatform ? { arrivalPlatform: update.arrivalPlatform } : {}),
+      ...(update.departurePlatform && {
+        departurePlatform: update.departurePlatform,
+        departurePlatformChanged: !!update.departurePlatformChanged,
+      }),
+      ...(update.arrivalPlatform && {
+        arrivalPlatform: update.arrivalPlatform,
+        arrivalPlatformChanged: !!update.arrivalPlatformChanged,
+      }),
     };
   });
   return changed ? next : legs;

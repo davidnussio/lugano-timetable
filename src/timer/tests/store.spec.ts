@@ -271,9 +271,22 @@ describe("applyLegUpdates", () => {
     const timings = { departure: planned[0].departure, arrival: planned[0].arrival };
     expect(applyLegUpdates(planned, [timings])).toBe(planned);
     expect(applyLegUpdates(planned, [{ ...timings, departurePlatform: "3" }])).toBe(planned);
-    expect(applyLegUpdates(planned, [{ ...timings, departurePlatform: "5" }])[0]).toMatchObject({
+    expect(
+      applyLegUpdates(planned, [{ ...timings, departurePlatform: "5", departurePlatformChanged: true }])[0]
+    ).toMatchObject({
       departurePlatform: "5",
+      departurePlatformChanged: true,
       arrivalPlatform: "2",
+    });
+  });
+
+  it("clears the change when the train is back on its platform", () => {
+    const moved = [{ ...legs[1], departurePlatform: "5", departurePlatformChanged: true }];
+    const timings = { departure: moved[0].departure, arrival: moved[0].arrival };
+    expect(applyLegUpdates(moved, [{ ...timings, departurePlatform: "5", departurePlatformChanged: true }])).toBe(moved);
+    expect(applyLegUpdates(moved, [{ ...timings, departurePlatform: "3" }])[0]).toMatchObject({
+      departurePlatform: "3",
+      departurePlatformChanged: false,
     });
   });
 });

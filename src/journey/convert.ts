@@ -56,6 +56,24 @@ function platformOf(checkpoint: Checkpoint): string | undefined {
   return checkpoint.prognosis?.platform || checkpoint.platform || undefined;
 }
 
+// The real-time platform is not the one of the timetable
+function platformChanged(checkpoint: Checkpoint): boolean {
+  const live = checkpoint.prognosis?.platform;
+  return !!live && live !== checkpoint.platform;
+}
+
+// The platforms where a leg starts and ends, flagged when they change
+function legPlatforms(departure: Checkpoint, arrival: Checkpoint) {
+  const departurePlatform = platformOf(departure);
+  const arrivalPlatform = platformOf(arrival);
+  return {
+    ...(departurePlatform ? { departurePlatform } : {}),
+    ...(arrivalPlatform ? { arrivalPlatform } : {}),
+    ...(platformChanged(departure) ? { departurePlatformChanged: true } : {}),
+    ...(platformChanged(arrival) ? { arrivalPlatformChanged: true } : {}),
+  };
+}
+
 // Buses, trams and the like are known by their number, trains by category
 // and number ("S10", "RE80"), long distance trains by category ("IC", "EC")
 const LOCAL = new Set(["B", "BN", "BUS", "T", "M", "NFB", "NFO", "FUN", "BAT"]);
@@ -86,8 +104,6 @@ export function toConnection(
     const departure = timing(section.departure, "departure");
     const arrival = timing(section.arrival, "arrival");
     if (!from || !to || !departure || !arrival) return undefined;
-    const departurePlatform = platformOf(section.departure);
-    const arrivalPlatform = platformOf(section.arrival);
     legs.push({
       trip: journey.name,
       category: journey.category,
@@ -99,8 +115,7 @@ export function toConnection(
       departure,
       arrival,
       ...(walkMs === undefined ? {} : { walkBeforeMs: walkMs }),
-      ...(departurePlatform ? { departurePlatform } : {}),
-      ...(arrivalPlatform ? { arrivalPlatform } : {}),
+      ...legPlatforms(section.departure, section.arrival),
     });
     walkMs = undefined;
   }
@@ -124,14 +139,7 @@ export function toLegUpdate(
   const departure = timing(entry.stop, "departure");
   const arrival = stop && timing(stop, "arrival");
   if (!departure || !arrival) return null;
-  const departurePlatform = platformOf(entry.stop);
-  const arrivalPlatform = platformOf(stop);
-  return {
-    departure,
-    arrival,
-    ...(departurePlatform ? { departurePlatform } : {}),
-    ...(arrivalPlatform ? { arrivalPlatform } : {}),
-  };
+  return { departure, arrival, ...legPlatforms(entry.stop, stop) };
 }
 
 // A departure of the stationboard. Without a scheduled time there is

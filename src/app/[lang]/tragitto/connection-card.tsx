@@ -164,7 +164,7 @@ export function LegList({ connection }: { connection: Connection }) {
               <p className="flex items-baseline gap-2">
                 <Time timing={leg.departure} className="w-[4.75rem] shrink-0 font-semibold" />
                 <span className="truncate">{leg.from.name}</span>
-                <PlatformTag platform={leg.departurePlatform} category={leg.category} className="ml-auto" />
+                <PlatformTag platform={leg.departurePlatform} category={leg.category} changed={leg.departurePlatformChanged} className="ml-auto" />
               </p>
               <p className="truncate pl-[5.25rem] text-xs text-muted-foreground">
                 {m.journey.towards(leg.destination)}
@@ -172,7 +172,7 @@ export function LegList({ connection }: { connection: Connection }) {
               <p className="flex items-baseline gap-2">
                 <Time timing={leg.arrival} className="w-[4.75rem] shrink-0 font-semibold" />
                 <span className="truncate">{leg.to.name}</span>
-                <PlatformTag platform={leg.arrivalPlatform} category={leg.category} className="ml-auto" />
+                <PlatformTag platform={leg.arrivalPlatform} category={leg.category} changed={leg.arrivalPlatformChanged} className="ml-auto" />
               </p>
             </div>
           </li>

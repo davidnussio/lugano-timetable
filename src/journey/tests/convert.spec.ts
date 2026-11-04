@@ -134,10 +134,36 @@ describe("toConnection", () => {
         },
       ],
     });
-    expect(toConnection(connections[0])?.legs[0]).toMatchObject({
+    const [leg] = toConnection(connections[0])?.legs ?? [];
+    expect(leg).toMatchObject({
       departurePlatform: "4",
       arrivalPlatform: "2",
+      arrivalPlatformChanged: true,
     });
+    expect(leg.departurePlatformChanged).toBeUndefined();
+  });
+
+  it("does not flag a forecast on the planned platform", () => {
+    const train = connection.sections[3];
+    const { connections } = decode(ConnectionsResponse, {
+      connections: [
+        {
+          sections: [
+            {
+              ...train,
+              departure: {
+                ...train.departure,
+                platform: "4",
+                prognosis: train.departure.prognosis && { ...train.departure.prognosis, platform: "4" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const [leg] = toConnection(connections[0])?.legs ?? [];
+    expect(leg.departurePlatform).toBe("4");
+    expect(leg.departurePlatformChanged).toBeUndefined();
   });
 
   it("drops connections without rides", () => {

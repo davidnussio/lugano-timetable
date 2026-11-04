@@ -31,6 +31,9 @@ export interface PlannedLeg extends Leg {
   // and ends, the real-time one when it changes. Most bus stops have none.
   readonly departurePlatform?: string;
   readonly arrivalPlatform?: string;
+  // The real-time platform is not the one of the timetable
+  readonly departurePlatformChanged?: boolean;
+  readonly arrivalPlatformChanged?: boolean;
 }
 
 export interface Connection {
@@ -45,6 +48,8 @@ export type LegUpdate = {
   readonly arrival: Timing;
   readonly departurePlatform?: string;
   readonly arrivalPlatform?: string;
+  readonly departurePlatformChanged?: boolean;
+  readonly arrivalPlatformChanged?: boolean;
 } | null;
 
 // A departure of a stop, from the stationboard of transport.opendata.ch

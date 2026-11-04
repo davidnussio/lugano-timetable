@@ -188,6 +188,7 @@ export const it = {
     // Short labels of the platform chip, the full ones read aloud
     trackShort: "Bin",
     standShort: "Corsia",
+    platformChanged: (platform: string) => `${platform}, cambiato`,
     nearYou: "Vicino a te",
     favoriteStops: "Fermate preferite",
     searchUnavailable: "Ricerca non disponibile, riprova tra poco",

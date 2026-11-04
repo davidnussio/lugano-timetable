@@ -193,6 +193,7 @@ export const de: Messages = {
     // Short labels of the platform chip, the full ones read aloud
     trackShort: "Gl",
     standShort: "Kante",
+    platformChanged: (platform: string) => `${platform}, geändert`,
     nearYou: "In deiner Nähe",
     favoriteStops: "Lieblingshaltestellen",
     searchUnavailable: "Suche nicht verfügbar, versuche es gleich nochmals",
