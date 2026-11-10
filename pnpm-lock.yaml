@@ -48,8 +48,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       effect:
-        specifier: 4.0.5
-        version: 4.0.5
+        specifier: 4.1.2
+        version: 4.1.2
       lucide-react:
         specifier: ^1.51.0
         version: 1.66.0(@types/react@19.3.0)(react@19.3.1)
@@ -83,7 +83,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 4.1.2
-        version: 4.1.2(effect@4.0.5)(vitest@5.1.0(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)))
+        version: 4.1.2(effect@4.1.2)(vitest@5.1.0(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)))
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3
@@ -1581,8 +1581,8 @@ packages:
   earcut@3.2.4:
     resolution: {integrity: sha512-FHc6yNpnTORB0tM5kmZ03iD2mDuNakDE2lvf4Hw1XkfxtEHIGVi01B/GqUSwx+NcC1WGjidAfpTXzeALtPtfpg==}
 
-  effect@4.0.5:
-    resolution: {integrity: sha512-BY4/28NlpOd99yzmV741xbVGmp+1U7tks4oB7F/Png64bTa5tm5eCA6W0RiXsnuLDDoJpjfVSo4Dnq4BZb/89Q==}
+  effect@4.1.2:
+    resolution: {integrity: sha512-d3Oah1WyKxFLFh19yWheS5IXIVaITzxZ71JkE1rkUozq/6EcJSU5nPk5bF2QrSygZ3SQoiNQB8TsxFriyMeMaQ==}
 
   electron-to-chromium@1.5.472:
     resolution: {integrity: sha512-s4+nfT29b0FKpVKoaIxl2pWsoNcn7A/nMPSrxayw4T3BsmPeV2lF9Y06BsAQeMGhCTQ4nYJ5XST7jkqe4ZEqFw==}
@@ -3145,9 +3145,9 @@ snapshots:
       '@babel/helper-string-parser': 7.29.11
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@effect/vitest@4.1.2(effect@4.0.5)(vitest@5.1.0(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)))':
+  '@effect/vitest@4.1.2(effect@4.1.2)(vitest@5.1.0(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)))':
     dependencies:
-      effect: 4.0.5
+      effect: 4.1.2
       vitest: 5.1.0(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0))
 
   '@emnapi/runtime@1.11.3':
@@ -4301,7 +4301,7 @@ snapshots:
 
   earcut@3.2.4: {}
 
-  effect@4.0.5: {}
+  effect@4.1.2: {}
 
   electron-to-chromium@1.5.472: {}
 
