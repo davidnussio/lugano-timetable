@@ -3,24 +3,24 @@
 lockfile_version = 3
 
 [[tools.pnpm]]
-version = "10.34.9"
+version = "12.21.0"
 backend = "aqua:pnpm/pnpm"
-specifiers = ["10.34.9"]
+specifiers = ["12.21.0"]
 
 [tools.pnpm."platforms.linux-x64"]
-checksum = "sha256:3ec79240658f0ee4e8977f21ee2c598c7a8b8d06b86dc564f2ec6cb099fd8ac2"
-checksum_source = "mise-versions"
-url = "https://github.com/pnpm/pnpm/releases/download/v10.34.9/pnpm-linux-x64"
-url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/675654765"
+checksum = "sha256:84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-linux-x64.tar.gz"
+url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/744357264"
+provenance = "github-attestations"
 
 [tools.pnpm."platforms.macos-arm64"]
-checksum = "sha256:984b2f4316de371dc314243649e5f9ea392195d541dedbfdb990dc24d6c6e1a2"
-checksum_source = "mise-versions"
-url = "https://github.com/pnpm/pnpm/releases/download/v10.34.9/pnpm-macos-arm64"
-url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/675654768"
+checksum = "sha256:5c4d73018e00dd602531ce714625594fb693cbe110e6719df2b043b0ae62ab1a"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-darwin-arm64.tar.gz"
+url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/744357270"
+provenance = "github-attestations"
 
 [tools.pnpm."platforms.macos-x64"]
-checksum = "sha256:58b35a997d2d5167ef60e24b6ac0d71b76a5e1a4b3346cb1075b1dface50bd32"
-checksum_source = "mise-versions"
-url = "https://github.com/pnpm/pnpm/releases/download/v10.34.9/pnpm-macos-x64"
-url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/675654760"
+checksum = "sha256:415c05ae4262c89b8f24ca58c693be5d969856ae909c086aa06996951fca30ea"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-darwin-x64.tar.gz"
+url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/744357251"
+provenance = "github-attestations"
