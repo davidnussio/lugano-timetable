@@ -1,5 +1,5 @@
-// Background colors of the TPL line badges (bs.tplsa.ch/images/routes),
-// keyed by RTPI route id. Used to tint the route timeline.
+// Background colors of the TPL lines, keyed by RTPI route id: they tint the
+// route timeline, and the badges until the colors of the server are loaded.
 const LINE_COLORS: Record<string, string> = {
   "2": "#F36F23",
   "19": "#C62525",
@@ -23,12 +23,4 @@ const LINE_COLORS: Record<string, string> = {
 
 export function lineColor(route: string): string {
   return LINE_COLORS[route] ?? "var(--primary)";
-}
-
-// The badge image of a route, from the itinerary `Img` ("20.jpg") or the id
-export function lineImage(imgOrRoute: string): string {
-  const name = imgOrRoute.includes(".")
-    ? imgOrRoute.replace(".jpg", ".png")
-    : `${imgOrRoute}.png`;
-  return `http://bs.tplsa.ch/images/routes/${name}`;
 }
