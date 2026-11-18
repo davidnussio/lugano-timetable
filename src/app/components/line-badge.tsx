@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
+import { useLines } from "~/hooks/use-lines";
 import { useI18n } from "~/i18n/i18n-provider";
-import { lineColor, lineImage } from "~/lib/lines";
 import { cn } from "~/lib/utils";
+import { RouteBadge } from "./route-badge";
 import { TransportBadge } from "./transport-badge";
 
 interface LineBadgeProps {
-  // Itinerary `Img` ("20.jpg") or route id ("20")
+  // Itinerary `Img` ("20.jpg") or route id ("20"): empty when the trip is
+  // not a TPL line of the real-time data
   readonly img: string;
   readonly route: string;
   readonly line?: string;
@@ -15,8 +16,9 @@ interface LineBadgeProps {
   readonly className?: string;
 }
 
-// The official square badge of a TPL line. Without an image (a planned
-// journey not found yet in the real-time data), the name of the line.
+// The number of a TPL line on its color, as in the list of the lines.
+// Without a route (a planned journey not found yet in the real-time data),
+// the name of the line.
 export function LineBadge({
   img,
   route,
@@ -25,6 +27,7 @@ export function LineBadge({
   className,
 }: LineBadgeProps) {
   const { m } = useI18n();
+  const { lines } = useLines();
   if (img === "") {
     return (
       <TransportBadge
@@ -36,16 +39,17 @@ export function LineBadge({
       />
     );
   }
+  const known = lines?.find((candidate) => candidate.route === route);
+  const code = known?.code ?? line ?? "";
   return (
-    <div
-      className={cn("shrink-0 overflow-hidden rounded-xl shadow-sm", className)}
-      style={{ width: size, height: size, backgroundColor: lineColor(route) }}>
-      <Image
-        src={lineImage(img)}
-        alt={m.common.line(line)}
-        width={size}
-        height={size}
-      />
-    </div>
+    <RouteBadge
+      code={code}
+      route={route}
+      color={known?.color}
+      textColor={known?.textColor}
+      label={m.common.line(code || undefined)}
+      size={size}
+      className={className}
+    />
   );
 }
