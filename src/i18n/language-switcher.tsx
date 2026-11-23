@@ -15,7 +15,8 @@ function choose(locale: Locale) {
 
 export function LanguageSwitcher({ current, label }: { current: Locale; label: string }) {
   return (
-    <nav aria-label={label} className="flex justify-center gap-1 pt-2">
+    // gap-3: the tap boxes of 44px around the narrow buttons do not overlap
+    <nav aria-label={label} className="flex justify-center gap-3 pt-2">
       {locales.map((locale) => (
         <button
           key={locale}

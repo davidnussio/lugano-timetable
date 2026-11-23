@@ -110,6 +110,37 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
+  /* Every control takes a tap on at least 44×44px, whatever its drawn size:
+     an invisible box centred on it, larger than the control only when the
+     control is smaller. Links inside a sentence are left as they are. The
+     controls become positioned for the box; :where() weighs nothing, so a
+     position utility on the element still wins. Controls side by side need a
+     gap of at least half of what each lacks, or their boxes cover each other. */
+  :where(button, [role="button"], [role="switch"], [role="tab"], summary, a[href]):not(
+      :where(p, h1, h2, h3) a
+    ) {
+    position: relative;
+  }
+  :where(button, [role="button"], [role="switch"], [role="tab"], summary, a[href]):not(
+      :where(p, h1, h2, h3) a
+    )::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* The controls of MapLibre, stacked without gaps: drawn at 44px rather than
+   29px, since a larger tap box would cover the next button. Two classes, to
+   win over the stylesheet of MapLibre, loaded after this one */
+.maplibregl-ctrl.maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
 }
 
 /* The departure board on the map: the popup of MapLibre without its white

@@ -299,7 +299,7 @@ export function RoutingView({ routing }: { routing: string[] }) {
                 <button
                   type="button"
                   onClick={() => setShowPassed(true)}
-                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60">
+                  className="flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60">
                   <span className="grid w-8 place-items-center">
                     <ChevronUp className="size-4" />
                   </span>
