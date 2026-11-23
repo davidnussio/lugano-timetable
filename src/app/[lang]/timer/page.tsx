@@ -776,7 +776,9 @@ function NextStopRow({
   );
 }
 
-// Where to get off the bus, chosen on the line page
+// Where to get off the bus, chosen on the line page. The line under the title
+// is a sentence: it goes on a second line on narrow phones rather than being
+// cut.
 function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
   const { ride } = useTimer();
   const { m } = useI18n();
@@ -790,7 +792,7 @@ function GetOffLink({ active, href }: { active: ActiveTimer; href: string }) {
         <p className="truncate text-sm font-semibold">
           {getOff ? m.timer.getOffAt(getOff.name) : m.timer.whereGetOff}
         </p>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="line-clamp-2 text-xs text-muted-foreground">
           {getOff
             ? [
                 getOff.arrivalAt === undefined
