@@ -17,8 +17,10 @@ type View = (typeof views)[number]["href"] | "/storico";
 
 // The switch between the stop list, the journey planner, the lines and the
 // map, below the name of the app, which names the view: its title is only
-// for screen readers. Only the current view shows its label on narrow
-// screens. The history of the trips, opened less often, is a button on the
+// for screen readers. Only the current view shows its label, at every width:
+// the others keep only their icon (and the label for screen readers), so the
+// switch fits whatever the length of the labels in the language of the
+// visitor. The history of the trips, opened less often, is a button on the
 // line of the name.
 export function StopsHeader({ title, current }: { title: string; current: View }) {
   const { m } = useI18n();
@@ -61,7 +63,7 @@ export function StopsHeader({ title, current }: { title: string; current: View }
                 : "text-muted-foreground hover:text-foreground"
             )}>
             <Icon className="size-4" />
-            <span className={cn(href !== current && "sr-only min-[420px]:not-sr-only")}>
+            <span className={cn(href !== current && "sr-only")}>
               {m.nav[label]}
             </span>
           </Link>
